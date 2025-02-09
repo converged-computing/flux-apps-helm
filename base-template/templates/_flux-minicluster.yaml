@@ -1,3 +1,4 @@
+{{- define "base-template.flux-minicluster" -}}
 apiVersion: flux-framework.org/v1alpha2
 kind: MiniCluster
 metadata:
@@ -19,19 +20,20 @@ spec:
 
   containers:
   - image: "{{ default "ghcr.io/converged-computing/metric-lammps-cpu:zen4-reax" .Values.minicluster.image }}"
-    command: /bin/bash /tmp/run_lammps.sh
+    command: /bin/bash /tmp/run_${app}.sh
     launcher: true
     commands:
-      post: cat /tmp/lammps.out
+      post: cat /tmp/${app}.out
       pre: |
-         cat <<EOF >> /tmp/run_lammps.sh
+         cat <<EOF >> /tmp/run_${app}.sh
          #!/bin/bash
          mkdir -p /tmp/output
          for i in $(seq 1 {{ default 1 .Values.experiment.iterations }})
          do
            echo "Running iteration \${i}"
-           cmd='flux run -N{{ if .Values.experiment.nodes }}{{ .Values.experiment.nodes }}{{ else }}1{{ end }} {{ if .Values.experiment.tasks }}-n {{ .Values.experiment.tasks }}{{ end }} -o cpu-affinity=per-task {{ default "/usr/bin/lmp" .Values.lammps.binary }} -v x {{ default 2 .Values.lammps.x }} -v y {{ default 2 .Values.lammps.y }} -v z {{ default 2 .Values.lammps.z }} -in {{ default "in.reaxff.hns" .Values.lammps.input }} {{ default "-nocite" .Values.lammps.flags }}'
-           \$cmd >> /tmp/lammps.out
+           cmd='flux run -N{{ if .Values.experiment.nodes }}{{ .Values.experiment.nodes }}{{ else }}1{{ end }} {{ if .Values.experiment.tasks }}-n {{ .Values.experiment.tasks }}{{ end }} -o cpu-affinity=per-task ${apprun}'
+           \$cmd >> /tmp/${app}.out
          done
          EOF
-         cat /tmp/run_lammps.sh
+         cat /tmp/run_${app}.sh
+{{ end }}

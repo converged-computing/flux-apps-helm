@@ -1,0 +1,4 @@
+{{ include "base-template.flux-minicluster" . }}
+    environment:
+      app: lammps
+      apprun: '{{ default "/usr/bin/lmp" .Values.lammps.binary }} -v x {{ default 2 .Values.lammps.x }} -v y {{ default 2 .Values.lammps.y }} -v z {{ default 2 .Values.lammps.z }} -in {{ default "in.reaxff.hns" .Values.lammps.input }} {{ default "-nocite" .Values.lammps.flags }}'
