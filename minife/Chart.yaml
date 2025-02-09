@@ -1,6 +1,6 @@
 apiVersion: v2
 name: chart
-description: A Helm chart to deploy mt-gemm with Flux in Kubernetes
+description: A Helm chart to deploy minife with Flux in Kubernetes
 
 # A chart can be either an 'application' or a 'library' chart.
 #

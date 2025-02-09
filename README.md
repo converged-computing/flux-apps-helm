@@ -249,7 +249,7 @@ helm uninstall lammps
 
 ## Examples
 
-Here are all the examples.  For any example, if you make a change to the template, do:
+Here are all the examples.  For any example, you need to update dependencies before you run:
 
 ```bash
 helm dependency update ./<app>
@@ -257,6 +257,8 @@ helm dependency update ./<app>
 ```bash
 helm install lammps ./lammps-reax
 helm install amg ./amg2023
+helm install mtgemm ./mt-gemm
+helm install minife ./minife
 ```
 
 ## License
