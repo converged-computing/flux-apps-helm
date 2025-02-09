@@ -11,7 +11,7 @@ jobs:
   build:
     strategy:
       matrix:
-        app: [lammps-reax]    
+        app: [lammps-reax, amg2023]  
     name: Prepare charts
     runs-on: ubuntu-latest
     steps:

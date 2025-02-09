@@ -6,6 +6,8 @@ These are simple helm charts to run HPC applications in Kubernetes using the Flu
  - Applications:
    - [lammps-reax](lammps-reax): for running the hns-reaxff app.
 
+## Overview
+
 For the applications above (more to come) they can be customized for anything related to the MiniCluster (e.g., size, flux view, logging, TBA resources), and anything related to the application itself (parameters, containers, etc). Given the use of a common template, the actual definition of the application is fairly small (and thus they are easy to write). This is a nice approach because:
 
 - We don't require extra software installed into the MiniCluster
@@ -13,6 +15,29 @@ For the applications above (more to come) they can be customized for anything re
 - Changing logic for the MiniCluster only needs to be done in one place!
 - Applications can be proggramatically built and tested (TBA)
 - Experiments can be orchestrated via using these helm charts with a custom values.yaml for each application (example will likely be provided in the future).
+
+## Variables
+
+The following variables are available for every experiment, and already part of the template.  Variables with a default will have the default set, otherwise the flag (or similar) is usually left out.
+
+| Name  | Description | Default | Options |
+|-------|-------------|---------|---------|
+| nodes | Number of nodes `-N` for each job | 1 | |
+| tasks | Number of tasks `-n` for each job | unset | |
+| cpu_affinity | Set `--cpu-affinity` | `per-task` | (off|per-task|map:LIST|on) | 
+| gpu_affinity | Set `--gpu-affinity` | `off` | (off|per-task|map:LIST|on) |
+| run_threads | sets `OMP_NUM_THREADS` | unset | |
+| cores_per_task | Set `--cores-per-task` | unset | |
+| exclusive | Add the `--exclusive` flag | unset | |
+
+You define them via `--set experiment.<name>=<value>` or in a values.yaml to create the experiment from:
+
+```yaml
+experiment:
+  nodes: 5
+```
+
+Experiment specific variables are defined in the values.yaml files associated with the experiment.
 
 ## Usage
 
@@ -220,6 +245,18 @@ To clean up:
 
 ```bash
 helm uninstall lammps
+```
+
+## Examples
+
+Here are all the examples.  For any example, if you make a change to the template, do:
+
+```bash
+helm dependency update ./<app>
+```
+
+```bash
+helm install amg ./amg2023
 ```
 
 ## License
