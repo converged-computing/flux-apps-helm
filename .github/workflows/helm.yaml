@@ -66,11 +66,11 @@ jobs:
     - name: Determine Skip Test
       run: |
         if [[ -e "$app/.skip-test" ]]; then
-          echo "skip_test=1" >> $GITHUB_ENV
+          echo "skip_test=yes" >> $GITHUB_ENV
         fi
 
     - name: Test Completion
-      if: env.skip_test != '1'
+      if: (env.skip_test != 'yes')
       run: |
         echo "Waiting for MiniCluster job to complete"
         sleep 10
