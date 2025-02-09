@@ -4,6 +4,8 @@ These are simple helm charts to run lammps in Kubernetes using the Flux Operator
 
 ## Usage
 
+This example will walk through running lammps. Other example runs are [also provided below](#examples).
+
 ### 1. Setup the Cluster
 
 ```bash
@@ -19,7 +21,7 @@ kubectl apply -f https://raw.githubusercontent.com/flux-framework/flux-operator/
 Here are the values we can customize (any can be exposed really, it's very simple).
 
 ```bash
-$ helm show values ./lammps
+$ helm show values ./lammps-reax
 ```
 ```console
 # Default values for lammps experiment
@@ -59,6 +61,13 @@ minicluster:
   addFlux: true
 ```
 
+If there are changes to the base template:
+
+```bash
+helm dependency update lammps-reax/
+helm install lammps lammps-reax/ --debug --dry-run
+```
+
 ### 3. Install LAMMPS Chart
 
 Then install the chart. This will deploy the Flux MiniCluster and run lammps for some number of iterations. All variables are technically defined so you don't need any `--set`.
@@ -67,7 +76,7 @@ Then install the chart. This will deploy the Flux MiniCluster and run lammps for
 helm install \
   --set minicluster.size=1 \
   --set minicluster.image=ghcr.io/converged-computing/metric-lammps-cpu:zen4-reax \
-  lammps ./lammps
+  lammps ./lammps-reax
 ```
 ```console
 NAME: lammps
@@ -78,7 +87,7 @@ REVISION: 1
 TEST SUITE: None
 ```
 
-Or just look at [the chart](./lammps/values.yaml)
+Or just look at [the chart](./lammps-reax/values.yaml)
 
 If you want to debug or otherwise print to the console:
 
@@ -213,4 +222,5 @@ See [LICENSE](https://github.com/converged-computing/cloud-select/blob/main/LICE
 SPDX-License-Identifier: (MIT)
 
 LLNL-CODE- 842614
+
 
