@@ -8,19 +8,20 @@ logging:
 
 experiment:
   iterations: 1
+  # num_threads: 3
+  # cores_per_task: 3
   nodes: 1
-  tasks: 4
+  tasks: 8
   
-lammps:
-  binary: /usr/bin/lmp
-  input: in.reaxff.hns
-  x: 2
-  y: 2
-  z: 2
-  
+amg:
+  binary: amg
+  problem_size: "12 12 12"
+  processor_topology: "2 2 2"
+  problem_number: 2
+
 minicluster:
   # Container image
-  image: "ghcr.io/converged-computing/metric-lammps-cpu:zen4-reax"
+  image: "ghcr.io/converged-computing/metric-amg2023:spack-slim-cpu-int64-zen3"
 
   # Interactive MiniCluster?
   interactive: false
@@ -29,7 +30,11 @@ minicluster:
   size: 1
   
   # Minicluster tasks
-  tasks: 4
+  tasks: 8
 
   # Add flux on the fly (set to false if Flux is already in the container)
   addFlux: false
+  
+  # Logic to source the spack environment (needed for the default container)
+  commands: 
+    init: ". /etc/profile.d/z10_spack_environment.sh && flux R encode --hosts=${hosts} --local > ${viewroot}/etc/flux/system/R"

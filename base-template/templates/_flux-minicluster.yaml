@@ -16,7 +16,7 @@ spec:
   # This disables installing flux via the view
   flux:
     container:
-      disable: {{ if .Values.minicluster.addFlux }}true{{ else }}false{{ end }}
+      disable: {{ if .Values.minicluster.addFlux }}false{{ else }}true{{ end }}
 
   containers:
   - image: "{{ default "ghcr.io/converged-computing/metric-lammps-cpu:zen4-reax" .Values.minicluster.image }}"
@@ -24,6 +24,7 @@ spec:
     launcher: true
     commands:
       post: cat /tmp/${app}.out
+      {{ if .Values.minicluster.commands.init }}init: {{ .Values.minicluster.commands.init }}{{ end }}
       pre: |
          cat <<EOF >> /tmp/run_${app}.sh
          #!/bin/bash
@@ -31,7 +32,7 @@ spec:
          for i in $(seq 1 {{ default 1 .Values.experiment.iterations }})
          do
            echo "Running iteration \${i}"
-           cmd='flux run -N{{ if .Values.experiment.nodes }}{{ .Values.experiment.nodes }}{{ else }}1{{ end }} {{ if .Values.experiment.tasks }}-n {{ .Values.experiment.tasks }}{{ end }} -o cpu-affinity=per-task ${apprun}'
+           cmd='flux run -N{{ if .Values.experiment.nodes }}{{ .Values.experiment.nodes }}{{ else }}1{{ end }} {{ if .Values.experiment.tasks }}-n {{ .Values.experiment.tasks }}{{ end }} -o cpu-affinity={{ default "per-task" .Values.experiment.cpu_affinity }} -o gpu-affinity={{ default "off" .Values.experiment.gpu_affinity }} {{ if .Values.experiment.run_threads }}--env OMP_NUM_THREADS={{ .Values.experiment.run_threads }}{{ end }} {{ if .Values.experiment.cores_per_task }}--cores-per-task {{ .Values.experiment.cores_per_task }}{{ end }} {{ if .Values.experiment.exclusive }}--exclusive{{ end }} ${apprun}'
            \$cmd >> /tmp/${app}.out
          done
          EOF
