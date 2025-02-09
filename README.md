@@ -254,8 +254,8 @@ Here are all the examples.  For any example, if you make a change to the templat
 ```bash
 helm dependency update ./<app>
 ```
-
 ```bash
+helm install lammps ./lammps-reax
 helm install amg ./amg2023
 ```
 
