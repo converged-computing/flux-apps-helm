@@ -24,8 +24,8 @@ The following variables are available for every experiment, and already part of 
 |-------|-------------|---------|---------|
 | nodes | Number of nodes `-N` for each job | 1 | |
 | tasks | Number of tasks `-n` for each job | unset | |
-| cpu_affinity | Set `--cpu-affinity` | `per-task` | `(off|per-task|map:LIST|on)` | 
-| gpu_affinity | Set `--gpu-affinity` | `off` | `(off|per-task|map:LIST|on)` |
+| cpu_affinity | Set `--cpu-affinity` | `per-task` | `(off,per-task,map:LIST,on)` | 
+| gpu_affinity | Set `--gpu-affinity` | `off` | `(off,per-task,map:LIST,on)` |
 | run_threads | sets `OMP_NUM_THREADS` | unset | |
 | cores_per_task | Set `--cores-per-task` | unset | |
 | exclusive | Add the `--exclusive` flag | unset | |
