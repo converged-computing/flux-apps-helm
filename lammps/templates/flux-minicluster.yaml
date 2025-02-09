@@ -1,0 +1,37 @@
+apiVersion: flux-framework.org/v1alpha2
+kind: MiniCluster
+metadata:
+  name: {{ .Release.Name }}
+  labels:
+    {{- include "chart.labels" . | nindent 4 }}
+spec:
+  size: {{ default 1 .Values.minicluster.size }}
+  {{- if .Values.minicluster.interactive }}interactive: true {{ end }}
+  {{ if .Values.minicluster.tasks }}tasks: {{ .Values.minicluster.tasks }}{{ end }}
+
+  logging:
+    quiet: {{ if .Values.logging.quiet }}true{{ else }}false{{ end }}
+
+  # This disables installing flux via the view
+  flux:
+    container:
+      disable: {{ if .Values.minicluster.addFlux }}true{{ else }}false{{ end }}
+
+  containers:
+  - image: "{{ default "ghcr.io/converged-computing/metric-lammps-cpu:zen4-reax" .Values.minicluster.image }}"
+    command: /bin/bash /tmp/run_lammps.sh
+    launcher: true
+    commands:
+      post: cat /tmp/lammps.out
+      pre: |
+         cat <<EOF >> /tmp/run_lammps.sh
+         #!/bin/bash
+         mkdir -p /tmp/output
+         for i in $(seq 1 {{ default 1 .Values.experiment.iterations }})
+         do
+           echo "Running iteration \${i}"
+           cmd='flux run -N{{ if .Values.experiment.nodes }}{{ .Values.experiment.nodes }}{{ else }}1{{ end }} {{ if .Values.experiment.tasks }}-n {{ .Values.experiment.tasks }}{{ end }} -o cpu-affinity=per-task {{ default "/usr/bin/lmp" .Values.lammps.binary }} -v x {{ default 2 .Values.lammps.x }} -v y {{ default 2 .Values.lammps.y }} -v z {{ default 2 .Values.lammps.z }} -in {{ default "in.reaxff.hns" .Values.lammps.input }} {{ default "-nocite" .Values.lammps.flags }}'
+           \$cmd >> /tmp/lammps.out
+         done
+         EOF
+         cat /tmp/run_lammps.sh

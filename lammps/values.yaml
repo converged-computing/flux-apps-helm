@@ -1,0 +1,37 @@
+# Default values for ramble chart.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Logging (quiet will hide output except for ramble)
+logging:
+  quiet: true
+
+experiment:
+  iterations: 1
+  nodes: 1
+  tasks: 4
+  
+lammps:
+  binary: /usr/bin/lmp
+  input: in.reaxff.hns
+  x: 2
+  y: 2
+  z: 2
+  
+# Container image
+minicluster:
+  image: "ghcr.io/converged-computing/metric-lammps-cpu:zen4-reax"
+
+  # Interactive MiniCluster?
+  interactive: false
+  
+  # MiniCluster size
+  size: 1
+  
+  # Minicluster tasks
+  tasks: 4
+
+  # Add flux on the fly (set to false if Flux is already in the container)
+  addFlux: true
+
+
