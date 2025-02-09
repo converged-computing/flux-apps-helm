@@ -1,6 +1,18 @@
 # Flux Operator Apps
 
-These are simple helm charts to run lammps in Kubernetes using the Flux Operator. You can customize each different application to your needs, from the container, to size, to iterations, etc.
+These are simple helm charts to run HPC applications in Kubernetes using the Flux Operator. You can customize each different application to your needs, from the container, to size, to iterations, etc. We have a simple strategy that uses:
+
+ - [base-template](base-template): A base template MiniCluster that is used acrossed apps.
+ - Applications:
+   - [lammps-reax](lammps-reax): for running the hns-reaxff app.
+
+For the applications above (more to come) they can be customized for anything related to the MiniCluster (e.g., size, flux view, logging, TBA resources), and anything related to the application itself (parameters, containers, etc). Given the use of a common template, the actual definition of the application is fairly small (and thus they are easy to write). This is a nice approach because:
+
+- We don't require extra software installed into the MiniCluster
+- An application definition is simple (and can be written easily / quickly)
+- Changing logic for the MiniCluster only needs to be done in one place!
+- Applications can be proggramatically built and tested (TBA)
+- Experiments can be orchestrated via using these helm charts with a custom values.yaml for each application (example will likely be provided in the future).
 
 ## Usage
 

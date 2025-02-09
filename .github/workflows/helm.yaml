@@ -48,6 +48,7 @@ jobs:
     - name: Push Helm Chart
       if: (github.event_name != 'pull_request')
       env:
+        app: ${{ matrix.app }}
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
