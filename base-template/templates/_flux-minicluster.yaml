@@ -7,7 +7,7 @@ metadata:
     {{- include "chart.labels" . | nindent 4 }}
 spec:
   size: {{ default 1 .Values.minicluster.size }}
-  {{- if .Values.minicluster.interactive }}interactive: true {{ end }}
+  {{ if .Values.minicluster.interactive }}interactive: true {{ end }}
   {{ if .Values.minicluster.tasks }}tasks: {{ .Values.minicluster.tasks }}{{ end }}
 
   logging:
@@ -24,7 +24,7 @@ spec:
     launcher: true
     commands:
       post: cat /tmp/${app}.out
-      {{ if .Values.minicluster.commands.init }}init: {{ .Values.minicluster.commands.init }}{{ end }}
+      {{ if .Values.minicluster.commands_init }}init: {{ .Values.minicluster.commands_init }}{{ end }}
       pre: |
          cat <<EOF >> /tmp/run_${app}.sh
          #!/bin/bash
