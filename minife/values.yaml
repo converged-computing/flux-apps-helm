@@ -11,7 +11,7 @@ experiment:
   # num_threads: 3
   # cores_per_task: 3
   nodes: 1
-  tasks: 8
+  tasks: 2
   
 minife:
   binary: miniFE.x

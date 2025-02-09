@@ -27,7 +27,7 @@ minicluster:
   size: 1
   
   # Minicluster tasks
-  tasks: 4
+  tasks: 2
 
   # Add flux on the fly (set to false if Flux is already in the container)
   addFlux: false
