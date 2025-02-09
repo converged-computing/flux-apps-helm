@@ -64,6 +64,8 @@ jobs:
 
      # Some are too computationally intensive to test here
     - name: Determine Skip Test
+      env:
+        app: ${{ matrix.app }}
       run: |
         if [[ -e "$app/.skip-test" ]]; then
           echo "Skipping test"

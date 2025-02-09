@@ -28,6 +28,7 @@ spec:
       pre: |
          cat <<EOF >> /tmp/run_${app}.sh
          #!/bin/bash
+         set -euo pipefail
          mkdir -p /tmp/output
          flux resource list
          for i in $(seq 1 {{ default 1 .Values.experiment.iterations }})
