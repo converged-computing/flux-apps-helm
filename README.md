@@ -22,11 +22,11 @@ Here are the values we can customize (any can be exposed really, it's very simpl
 $ helm show values ./lammps
 ```
 ```console
-# Default values for lammps chart
+# Default values for lammps experiment
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-# Logging (quiet will hide output except for ramble)
+# Logging (quiet will hide flux setup)
 logging:
   quiet: true
 
@@ -42,8 +42,8 @@ lammps:
   y: 2
   z: 2
   
-# Container image
 minicluster:
+  # Container image
   image: "ghcr.io/converged-computing/metric-lammps-cpu:zen4-reax"
 
   # Interactive MiniCluster?

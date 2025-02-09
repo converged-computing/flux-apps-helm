@@ -1,8 +1,8 @@
-# Default values for ramble chart.
+# Default values for lammps experiment
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-# Logging (quiet will hide output except for ramble)
+# Logging (quiet will hide flux setup)
 logging:
   quiet: true
 
@@ -18,8 +18,8 @@ lammps:
   y: 2
   z: 2
   
-# Container image
 minicluster:
+  # Container image
   image: "ghcr.io/converged-computing/metric-lammps-cpu:zen4-reax"
 
   # Interactive MiniCluster?
@@ -33,5 +33,3 @@ minicluster:
 
   # Add flux on the fly (set to false if Flux is already in the container)
   addFlux: true
-
-
