@@ -1,0 +1,4 @@
+{{ include "base-template.flux-minicluster" . }}
+    environment:
+      app: minife
+      apprun: '{{ default "miniFE.x" .Values.minife.binary }} nx={{ .Values.minife.nx }} ny={{ .Values.minife.ny }} nz={{ .Values.minife.nz }} use_locking={{ .Values.minife.use_locking }} elem_group_size={{ .Values.minife.elem_group_size }} use_elem_mat_fields={{ .Values.minife.use_elem_mat_fields }} verify_solution={{ .Values.minife.verify_solution }}'

@@ -11,12 +11,12 @@ experiment:
   # num_threads: 3
   # cores_per_task: 3
   nodes: 1
-  tasks: 8
+  tasks: 2
   
 amg:
   binary: amg
-  problem_size: "12 12 12"
-  processor_topology: "2 2 2"
+  problem_size: "2 2 2"
+  processor_topology: "2 1 1"
   problem_number: 2
 
 minicluster:

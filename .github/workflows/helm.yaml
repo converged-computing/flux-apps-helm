@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        app: [lammps-reax, amg2023]  
+        app: [lammps-reax, amg2023, mt-gemm, minife]  
     name: Prepare charts
     runs-on: ubuntu-latest
     steps:
@@ -64,13 +64,19 @@ jobs:
 
      # Some are too computationally intensive to test here
     - name: Determine Skip Test
+      env:
+        app: ${{ matrix.app }}
       run: |
         if [[ -e "$app/.skip-test" ]]; then
-          echo "skip_test=1" >> $GITHUB_ENV
+          echo "Skipping test"
+          echo "skip_test=yes" >> $GITHUB_ENV
+        else
+          echo "skip_test=no" >> $GITHUB_ENV
+          echo "Test will be run"        
         fi
 
     - name: Test Completion
-      if: env.skip_test != '1'
+      if: (env.skip_test == 'no')
       run: |
         echo "Waiting for MiniCluster job to complete"
         sleep 10
