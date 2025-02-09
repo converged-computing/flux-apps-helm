@@ -95,7 +95,7 @@ If you want to debug or otherwise print to the console:
 helm template --debug \
   --set minicluster.size=4 \
   --set minicluster.image=ghcr.io/converged-computing/metric-lammps-cpu:zen4-reax \
-  ./lammps
+  ./lammps-reax
 ```
 
 ### 4. View Output

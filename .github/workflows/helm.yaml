@@ -11,7 +11,7 @@ jobs:
   build:
     strategy:
       matrix:
-        app: [lammps]        
+        app: [lammps-reax]    
     name: Prepare charts
     runs-on: ubuntu-latest
     steps:
@@ -32,17 +32,26 @@ jobs:
       run: |
         export HELM_EXPERIMENTAL_OCI=1
         curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash        
-      
-    - name: Login to Helm
+
+    - name: Build Helm
+      env:
+        app: ${{ matrix.app }}
+      run: |
+        helm dependency update ./$app
+        PKG_RESPONSE=$(helm package ./$app)
+        echo "$PKG_RESPONSE"
+        CHART_TAR_GZ=$(basename "$PKG_RESPONSE") 
+        echo "helm push "$CHART_TAR_GZ" oci://ghcr.io/converged-computing/flux-apps-helm-${app}"
+        echo $CHART_TAR_GZ >> chart-name.txt
+        cat chart-name.txt
+
+    - name: Push Helm Chart
       if: (github.event_name != 'pull_request')
       env:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
-        app: ${{ matrix.app }}
       run: |
         echo "${password}" | helm registry login -u ${username} --password-stdin ${registry} 
-        PKG_RESPONSE=$(helm package ./$app)
-        echo "$PKG_RESPONSE"
-        CHART_TAR_GZ=$(basename "$PKG_RESPONSE") 
+        CHART_TAR_GZ=$(cat ./chart-name.txt) 
         helm push "$CHART_TAR_GZ" oci://ghcr.io/converged-computing/flux-apps-helm-${app}
