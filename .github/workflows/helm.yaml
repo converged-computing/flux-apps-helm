@@ -62,7 +62,15 @@ jobs:
         app: ${{ matrix.app }}
       run: helm install app ./${app}
 
+     # Some are too computationally intensive to test here
+    - name: Determine Skip Test
+      run: |
+        if [[ -e "$app/.skip-test" ]]; then
+          echo "skip_test=1" >> $GITHUB_ENV
+        fi
+
     - name: Test Completion
+      if: env.skip_test != '1'
       run: |
         echo "Waiting for MiniCluster job to complete"
         sleep 10

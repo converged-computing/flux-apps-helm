@@ -1,0 +1,37 @@
+# Default values for experiment
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Logging (quiet will hide flux setup)
+logging:
+  quiet: true
+
+experiment:
+  iterations: 1
+  # num_threads: 3
+  # cores_per_task: 3
+  nodes: 1
+  tasks: 8
+  
+mtgemm:
+  binary: /opt/dense_linear_algebra/gemm/mpi/build/1_dense_gemm_mpi
+
+minicluster:
+  # Container image
+  image: "ghcr.io/converged-computing/mt-gemm:cpu-zen4"
+
+  # Interactive MiniCluster?
+  interactive: false
+  
+  # MiniCluster size
+  size: 1
+  
+  # Minicluster tasks
+  tasks: 4
+
+  # Add flux on the fly (set to false if Flux is already in the container)
+  addFlux: false
+  
+  # Logic to source the spack environment (needed for the default container)
+  commands: 
+    init: ". /etc/profile.d/z10_spack_environment.sh && flux R encode --hosts=${hosts} --local > ${viewroot}/etc/flux/system/R"
