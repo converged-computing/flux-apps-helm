@@ -22,6 +22,8 @@ spec:
   - image: "{{ default "ghcr.io/converged-computing/metric-lammps-cpu:zen4-reax" .Values.minicluster.image }}"
     command: /bin/bash /tmp/run_${app}.sh
     launcher: true
+    securityContext:
+      privileged: {{ if .Values.minicluster.privileged }}true{{ else }}false{{ end }}
     commands:
       post: cat /tmp/${app}.out
       {{ if .Values.minicluster.commands_init }}init: {{ .Values.minicluster.commands_init }}{{ end }}
