@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        app: [lammps-reax, amg2023, mt-gemm, minife]  
+        app: [lammps-reax, amg2023, mt-gemm, minife, stream]  
     name: Prepare charts
     runs-on: ubuntu-latest
     steps:
