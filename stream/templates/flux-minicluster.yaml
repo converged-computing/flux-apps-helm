@@ -1,0 +1,4 @@
+{{ include "base-template.flux-minicluster" . }}
+    environment:
+      app: stream
+      apprun: '{{ default "stream_c.exe" .Values.stream.binary }}'
