@@ -255,10 +255,16 @@ Here are all the examples.  For any example, you need to update dependencies bef
 helm dependency update ./<app>
 ```
 ```bash
-helm install lammps ./lammps-reax
 helm install amg ./amg2023
-helm install mtgemm ./mt-gemm
+helm install lammps ./lammps-reax
+helm install laghos ./laghos
 helm install minife ./minife
+helm install mtgemm ./mixbench
+helm install mtgemm ./mt-gemm
+helm install stream ./osu-benchmarks
+helm install stream ./quicksilver
+helm install stream ./single-node
+helm install stream ./stream
 ```
 
 ## License
