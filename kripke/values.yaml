@@ -11,28 +11,23 @@ experiment:
   # num_threads: 3
   # cores_per_task: 3
   nodes: 1
-  tasks: 2
-
-quicksilver:
-  binary: qs
-  # inputfile: "/opt/quicksilver/Examples/CORAL2_Benchmark/Problem1/Coral2_P1.inp"
-  # X: 128
-  # Y: 64
-  # Z: 64
-  # x: 128
-  # y: 64
-  # z: 64
-  # I: 8
-  # J: 8
-  # K: 8
-  # n: 167772160
+  tasks: 1
+  
+kripke:
+  binary: kripke
+  # layout: DGZ
+  # dset: 16 
+  # zones: "448,168,256"
+  # gset: 16 
+  # groups: 16
+  # niter: 500
+  # legendre: 2
+  # quad: 16
+  # procs: "8,14,16"
 
 minicluster:
   # Container image
-  image: "ghcr.io/converged-computing/metric-quicksilver-cpu:zen4"
-
-  # This needs priviledged
-  privileged: true
+  image: "ghcr.io/converged-computing/metric-kripke-cpu:zen4"
 
   # Interactive MiniCluster?
   interactive: false
