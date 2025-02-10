@@ -256,6 +256,7 @@ helm dependency update ./<app>
 ```
 ```bash
 helm install amg ./amg2023
+helm install kripke ./kripke
 helm install lammps ./lammps-reax
 helm install laghos ./laghos
 helm install minife ./minife
