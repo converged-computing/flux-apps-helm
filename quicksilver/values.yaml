@@ -1,0 +1,43 @@
+# Default values for experiment
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Logging (quiet will hide flux setup)
+logging:
+  quiet: true
+
+experiment:
+  iterations: 1
+  # num_threads: 3
+  # cores_per_task: 3
+  nodes: 1
+  tasks: 2
+
+quicksilver:
+  binary: qs
+
+  # /opt/quicksilver/Examples/CORAL2_Benchmark/Problem1/Coral2_P1.inp'
+  inputfile: ""
+  
+  # These can be further broken up, but for testing I'm not using an inputfile
+  # -X 128 -Y 64  -Z 64  -x 128 -y 64  -z 64  -I 8  -J 8  -K 8  -n 167772160
+  parameters: ""    
+
+minicluster:
+  # Container image
+  image: "ghcr.io/converged-computing/metric-quicksilver-cpu:zen4"
+
+  # This needs priviledged
+  privileged: true
+
+  # Interactive MiniCluster?
+  interactive: false
+  
+  # MiniCluster size
+  size: 1
+  
+  # Minicluster tasks
+  tasks: 8
+
+  # Add flux on the fly (set to false if Flux is already in the container)
+  addFlux: false
