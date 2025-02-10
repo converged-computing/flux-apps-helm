@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        app: [lammps-reax, amg2023, mt-gemm, minife, stream, single-node, quicksilver]  
+        app: [lammps-reax, amg2023, mt-gemm, minife, stream, single-node, quicksilver, osu-benchmarks]  
     name: Prepare charts
     runs-on: ubuntu-latest
     steps:
@@ -47,6 +47,7 @@ jobs:
         cat chart-name.txt
 
     - name: Create Kind Cluster
+      if: (github.event_name == 'pull_request')
       uses: helm/kind-action@v1.5.0
       with:
         cluster_name: kind
@@ -55,15 +56,18 @@ jobs:
         config: ./kind-config.yaml
 
     - name: Install Flux Operator
+      if: (github.event_name == 'pull_request')
       run: kubectl apply -f https://raw.githubusercontent.com/flux-framework/flux-operator/refs/heads/main/examples/dist/flux-operator.yaml
 
     - name: Deploy Helm
+      if: (github.event_name == 'pull_request')
       env:
         app: ${{ matrix.app }}
       run: helm install app ./${app}
 
      # Some are too computationally intensive to test here
     - name: Determine Skip Test
+      if: (github.event_name == 'pull_request')
       env:
         app: ${{ matrix.app }}
       run: |
@@ -75,12 +79,20 @@ jobs:
           echo "Test will be run"        
         fi
 
+    - name: Determine Skip Test (non-PR)
+      if: (github.event_name != 'pull_request')
+      env:
+        app: ${{ matrix.app }}
+      run: |
+        echo "Skipping test"
+        echo "skip_test=yes" >> $GITHUB_ENV
+
     - name: Test Completion
       if: (env.skip_test == 'no')
       run: |
         echo "Waiting for MiniCluster job to complete"
-        sleep 10
-        kubectl wait --for=condition=complete --timeout=600s job/app
+        sleep 20
+        kubectl wait --for=condition=complete --timeout=800s job/app
         # This is the lead broker, regardless of size
         pod_name=$(kubectl get pods -o json | jq -r .items[0].metadata.name)
         kubectl logs ${pod_name}
