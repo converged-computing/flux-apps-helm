@@ -239,7 +239,7 @@ If you specify more than one iteration, it will be there too.
 
 At this point we might upload them somewhere, and arguably this could be done in the template.
 
-### 4. Delete
+### 5. Delete
 
 To clean up:
 
@@ -266,6 +266,12 @@ helm install stream ./osu-benchmarks
 helm install stream ./quicksilver
 helm install stream ./single-node
 helm install stream ./stream
+```
+
+And an example to use a custom yaml file (more ideal for reproducible experiments):
+
+```bash
+helm install amg -f ./examples/amg2023/flux-minicluster.yaml ./amg2023
 ```
 
 ## License

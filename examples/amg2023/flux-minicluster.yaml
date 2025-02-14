@@ -1,0 +1,58 @@
+# Logging (quiet will hide flux setup)
+logging:
+  quiet: true
+
+experiment:
+  iterations: 2
+  # num_threads: 3
+  # cores_per_task: 3
+  nodes: 1
+  tasks: 2
+
+amg:
+  binary: amg
+  problem_size: "2 2 2"
+  processor_topology: "2 1 1"
+  problem_number: 2
+
+env:
+  ORAS_USER: vsoch
+  ORAS_PASS: test
+  ORAS_URI: ghcr.io/converged-computing/google-performance-study:amg2023-test
+
+minicluster:
+  # Container image
+  image: "ghcr.io/converged-computing/metric-amg2023:spack-slim-cpu-int64-zen3"
+
+  # Interactive MiniCluster?
+  interactive: false
+  
+  # MiniCluster size
+  size: 1
+  
+  # Minicluster tasks
+  tasks: 8
+
+  # Add flux on the fly (set to false if Flux is already in the container)
+  addFlux: false
+  
+  # Logic to source the spack environment (needed for the default container)
+  commands_init: ". /etc/profile.d/z10_spack_environment.sh && flux R encode --hosts=${hosts} --local > ${viewroot}/etc/flux/system/R"
+  commands_finish:
+    - output=./results/${app}
+    - ls $output
+  commands_post: 
+    # - echo \$ORAS_PASS | oras login -u \$ORAS_USER --password-stdin ghcr.io
+    - output=./results/\${app}
+    - apt-get update && apt-get install -y jq
+    - mkdir -p \$output
+    - for jobid in \$(flux jobs -a --json | jq -r .jobs[].id); do
+    -   study_id=\$(flux job info \$jobid jobspec | jq -r ".attributes.user.study_id")    
+    -   echo "Parsing jobid \${jobid} and study id \${study_id}"
+    -   flux job attach \$jobid &> \$output/\${study_id}-\${jobid}.out 
+    -   echo "START OF JOBSPEC" >> \$output/\${study_id}-\${jobid}.out 
+    -   flux job info \$jobid jobspec >> \$output/\${study_id}-\${jobid}.out 
+    -   echo "START OF EVENTLOG" >> \$output/\${study_id}-\${jobid}.out 
+    -   flux job info \$jobid guest.exec.eventlog >> \$output/\${study_id}-\${jobid}.out
+    - done
+    # - oras push ${ORAS_URI} $output
