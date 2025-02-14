@@ -1,4 +1,4 @@
 {{ include "base-template.flux-minicluster" . }}
     environment:
-      app: osu
       apprun: '{{ default "/opt/osu-benchmark/build.openmpi/mpi/pt2pt/osu_latency" .Values.osu.binary }}'
+      {{- include "base-template.environment" . }}

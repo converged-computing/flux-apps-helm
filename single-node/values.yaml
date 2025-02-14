@@ -13,6 +13,9 @@ experiment:
   nodes: 1
   tasks: 2
 
+env:
+  app: single-node
+
 minicluster:
   # Container image
   image: "ghcr.io/converged-computing/metric-single-node:cpu-zen4"

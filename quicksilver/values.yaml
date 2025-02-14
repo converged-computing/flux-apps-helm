@@ -6,6 +6,9 @@
 logging:
   quiet: true
 
+env:
+  app: quicksilver
+
 experiment:
   iterations: 1
   # num_threads: 3

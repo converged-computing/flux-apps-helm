@@ -13,6 +13,9 @@ experiment:
   nodes: 1
   tasks: 2
   
+env:
+  app: mixbench
+
 mixbench:
   binary: mixbench-cpu
   problem_size: 2

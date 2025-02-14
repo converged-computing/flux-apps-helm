@@ -2,5 +2,5 @@
 {{- $processor_topology := .Values.amg.processor_topology | required ".Values.amg.processor_topology is required." -}}
 {{ include "base-template.flux-minicluster" . }}
     environment:
-      app: amg2023
       apprun: '{{ default "amg" .Values.amg.binary }} -n {{ default "12 12 12" $problem_size }} -P {{ default "2 2 2" $processor_topology }} -problem {{ default 2 .Values.amg.problem_number }}'
+      {{- include "base-template.environment" . }}
