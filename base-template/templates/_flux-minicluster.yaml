@@ -25,19 +25,22 @@ spec:
     securityContext:
       privileged: {{ if .Values.minicluster.privileged }}true{{ else }}false{{ end }}
     commands:
-      post: cat /tmp/${app}.out
       {{ if .Values.minicluster.commands_init }}init: {{ .Values.minicluster.commands_init }}{{ end }}
+      post: |
+        cat /tmp/${app}.out
+        {{- if .Values.minicluster.commands_finish }}{{- range $k, $v := .Values.minicluster.commands_finish }}
+          {{ . | toYaml | indent 4 | trim }}
+        {{- end }}{{- end }}
+
       pre: |
          cat <<EOF >> /tmp/run_${app}.sh
          #!/bin/bash
          set -euo pipefail
          mkdir -p /tmp/output
          flux resource list
-         for i in $(seq 1 {{ default 1 .Values.experiment.iterations }})
+         for i in {1..{{ default 1 .Values.experiment.iterations}}}
          do
-           echo "Running iteration \${i}"
-           cmd='flux run --setattr=user.study_id=${app}-iter-${i} -N{{ if .Values.experiment.nodes }}{{ .Values.experiment.nodes }}{{ else }}1{{ end }} {{ if .Values.experiment.tasks }}-n {{ .Values.experiment.tasks }}{{ end }} -o cpu-affinity={{ default "per-task" .Values.experiment.cpu_affinity }} -o gpu-affinity={{ default "off" .Values.experiment.gpu_affinity }} {{ if .Values.experiment.run_threads }}--env OMP_NUM_THREADS={{ .Values.experiment.run_threads }}{{ end }} {{ if .Values.experiment.cores_per_task }}--cores-per-task {{ .Values.experiment.cores_per_task }}{{ end }} {{ if .Values.experiment.exclusive }}--exclusive{{ end }} ${apprun}'
-           \$cmd >> /tmp/${app}.out
+           flux run --setattr=user.study_id=$app-iter-\$i -N{{ if .Values.experiment.nodes }}{{ .Values.experiment.nodes }}{{ else }}1{{ end }} {{ if .Values.experiment.tasks }}-n {{ .Values.experiment.tasks }}{{ end }} -o cpu-affinity={{ default "per-task" .Values.experiment.cpu_affinity }} -o gpu-affinity={{ default "off" .Values.experiment.gpu_affinity }} {{ if .Values.experiment.run_threads }}--env OMP_NUM_THREADS={{ .Values.experiment.run_threads }}{{ end }} {{ if .Values.experiment.cores_per_task }}--cores-per-task {{ .Values.experiment.cores_per_task }}{{ end }} {{ if .Values.experiment.exclusive }}--exclusive{{ end }} ${apprun} >> /tmp/${app}.out
          done
          {{- if .Values.minicluster.commands_post }}{{- range $k, $v := .Values.minicluster.commands_post }}
            {{ . | toYaml | indent 4 | trim }}
