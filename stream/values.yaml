@@ -13,6 +13,9 @@ experiment:
   nodes: 1
   tasks: 2
   
+env:
+  app: stream
+
 stream:
   binary: stream_c.exe
 

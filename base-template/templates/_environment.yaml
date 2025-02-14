@@ -1,0 +1,6 @@
+{{- define "base-template.environment" -}}
+{{- range $key, $value := .Values.env }}
+      {{ $key }}: {{ $value | quote }}
+{{ end }}
+{{ end }}
+

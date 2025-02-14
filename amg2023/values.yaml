@@ -12,7 +12,10 @@ experiment:
   # cores_per_task: 3
   nodes: 1
   tasks: 2
-  
+
+env:
+  app: "amg2023"
+
 amg:
   binary: amg
   problem_size: "2 2 2"

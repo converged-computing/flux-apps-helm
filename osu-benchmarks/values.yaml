@@ -13,6 +13,9 @@ experiment:
   nodes: 1
   tasks: 2
   
+env:
+  app: osu
+
 osu:
   # All the binaries for point to point, collective, etc. are under "mpi"
   binary: /opt/osu-benchmark/build.openmpi/mpi/pt2pt/osu_latency

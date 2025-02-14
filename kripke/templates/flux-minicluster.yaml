@@ -1,4 +1,4 @@
 {{ include "base-template.flux-minicluster" . }}
     environment:
-      app: kripke
       apprun: '{{ default "kripke" .Values.kripke.binary }} {{ if .Values.kripke.layout }} --layout {{ .Values.kripke.layout }}{{ end }} {{ if .Values.kripke.dset }} --dset {{ .Values.kripke.dset }}{{ end }} {{ if .Values.kripke.zones }} --zones {{ .Values.kripke.zones }}{{ end }} {{ if .Values.kripke.gset }} --gset {{ .Values.kripke.gset }}{{ end }} {{ if .Values.kripke.groups }} --groups {{ .Values.kripke.groups }}{{ end }} {{ if .Values.kripke.niter }} --niter {{ .Values.kripke.niter }}{{ end }} {{ if .Values.kripke.legendre }} --legendre {{ .Values.kripke.legendre }}{{ end }} {{ if .Values.kripke.quad }} --quad {{ .Values.kripke.quad }}{{ end }} {{ if .Values.kripke.procs }} --procs {{ .Values.kripke.procs }}{{ end }}' 
+      {{- include "base-template.environment" . }}

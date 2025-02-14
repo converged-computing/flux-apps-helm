@@ -10,7 +10,10 @@ experiment:
   iterations: 1
   nodes: 1
   tasks: 2
-  
+
+env:
+  app: lammps
+
 lammps:
   binary: /usr/bin/lmp
   input: in.reaxff.hns

@@ -6,6 +6,9 @@
 logging:
   quiet: true
 
+env:
+  app: kripke
+
 experiment:
   iterations: 1
   # num_threads: 3
