@@ -8,7 +8,6 @@ metadata:
 spec:
   size: {{ default 1 .Values.minicluster.size }}
   {{ if .Values.minicluster.interactive }}interactive: true {{ end }}
-  {{ if .Values.minicluster.tasks }}tasks: {{ .Values.minicluster.tasks }}{{ end }}
 
   logging:
     quiet: {{ if .Values.logging.quiet }}true{{ else }}false{{ end }}
@@ -24,6 +23,9 @@ spec:
     launcher: true
     securityContext:
       privileged: {{ if .Values.minicluster.privileged }}true{{ else }}false{{ end }}
+    resources:
+      limits:
+        nvidia.com/gpu: "{{ .Values.minicluster.gpus }}"
     commands:
       {{ if .Values.minicluster.commands_init }}init: {{ .Values.minicluster.commands_init }}{{ end }}
       post: |
@@ -33,6 +35,11 @@ spec:
         {{- end }}{{- end }}
 
       pre: |
+         {{ if .Values.minicluster.gpus }}procs=$(nproc); procs=$((procs - 1));   
+         gpus={{ .Values.minicluster.gpus }}; gpus=$((gpus - 1)); {{ $gpus := (.Values.minicluster.gpus | int) }}
+         {{ $gpus := (subf $gpus 1 | int) }}flux R encode --hosts=${hosts} --cores=0-${procs} --gpu=0-${gpus} > ${viewroot}/etc/flux/system/R
+         cat ${viewroot}/etc/flux/system/R
+         export CUDA_VISIBLE_DEVICES=0{{ range untilStep 1 $gpus 1 }},{{ . }}{{ end }}{{ end }}
          cat <<EOF >> /tmp/run_${app}.sh
          #!/bin/bash
          set -euo pipefail
