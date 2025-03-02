@@ -29,8 +29,8 @@ minicluster:
   # MiniCluster size
   size: 1
   
-  # Minicluster tasks
-  tasks: 2
+  # Number of NVIDIA gpus
+  gpus: 0
 
   # Add flux on the fly (set to false if Flux is already in the container)
   addFlux: false
