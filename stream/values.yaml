@@ -10,8 +10,8 @@ experiment:
   iterations: 1
   # num_threads: 3
   # cores_per_task: 3
-  nodes: 1
-  tasks: 2
+  # nodes: 1
+  # tasks: 2
   
 env:
   app: stream
@@ -29,8 +29,8 @@ minicluster:
   # MiniCluster size
   size: 1
   
-  # Minicluster tasks
-  tasks: 8
+  # Number of NVIDIA gpus
+  gpus: 0
 
   # Add flux on the fly (set to false if Flux is already in the container)
   addFlux: false

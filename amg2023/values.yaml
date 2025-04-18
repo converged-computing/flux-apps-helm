@@ -28,13 +28,13 @@ minicluster:
 
   # Interactive MiniCluster?
   interactive: false
+
+  # Number of NVIDIA gpus
+  gpus: 0
   
   # MiniCluster size
   size: 1
   
-  # Minicluster tasks
-  tasks: 8
-
   # Add flux on the fly (set to false if Flux is already in the container)
   addFlux: false
   
