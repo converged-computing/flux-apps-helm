@@ -80,14 +80,14 @@ Iterations is not relevant for this one
          for i in \$hosts; do
            dequeue_from_list \$list
            for j in \$list; do
-             echo "FLUX-RUN START $app-iter-\${i} \${j}"
+             echo "FLUX-RUN START $app-iter-\${i}-\${j}"
              flux run -N 2 {{ if .Values.experiment.tasks }}-n {{ .Values.experiment.tasks }}{{ end }}  \
-               --setattr=user.study_id=$app-iter-\$i \
+               --setattr=user.study_id=$app-iter-\$i-\${j} \
                --requires="hosts:\${i},\${j}" \
                {{ include "chart.fluxopts" . }} \
                ${apprun}
              iter=\$((iter+1))
-             echo "FLUX-RUN END $app-iter-\${i} \${j}"
+             echo "FLUX-RUN END $app-iter-\${i}-\${j}"
          done
          done                  
 {{- end }}
