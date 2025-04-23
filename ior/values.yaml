@@ -1,0 +1,114 @@
+# Default values for experiment
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Logging (quiet will hide flux setup)
+logging:
+  quiet: true
+
+experiment:
+  iterations: 1
+  # num_threads: 3
+  # cores_per_task: 3
+  nodes: 1
+  tasks: 2
+
+env:
+  app: "ior"
+
+ior:
+  binary: ior
+  filename: testfile
+  #   -c, --collective              Use collective I/O
+  collective: false
+  # -C                            reorderTasks -- changes task ordering for readback (useful to avoid client cache)
+  reorderTasks: false
+  # -e                            fsync -- perform a fsync() operation at the end of each read/write phase
+  fsync: false
+  # -E                            useExistingTestFile -- do not remove test file before write access
+  useExistingTestFile: false
+  # -F                            filePerProc -- file-per-process
+  # filePerProc: # not sure what default should be
+  # -g                            intraTestBarriers -- use barriers between open, write/read, and close
+  intraTestBarriers: false
+  # -k                            keepFile -- don't remove the test file(s) on program exit
+  keepFile: false
+  # -K                            keepFileWithError  -- keep error-filled file(s) after data-checking
+  keepFileWithError: false
+  # -m                            multiFile -- use number of reps (-i) for multiple file count
+  multiFile: false
+  # -r                            readFile -- read existing file
+  readFile: true
+  # -R                            checkRead -- verify that the output of read matches the expected signature (used with -G)
+  checkRead: false
+  # -u                            uniqueDir -- use unique directory name for each file-per-process
+  uniqueDir: false
+  # -v                            verbose -- output information (repeating flag increases level)
+  verbose: false
+  # -w                            writeFile -- write file
+  writeFile: true
+  # -W                            checkWrite -- check read after write
+  checkWrite: false
+  # -x                            singleXferAttempt -- do not retry transfer if incomplete
+  singleXferAttempt: false
+  # -y                            dualMount -- use dual mount points for a filesystem
+  dualMount: false
+  # -Y                            fsyncPerWrite -- perform sync operation after every write operation
+  fsyncPerWrite: false
+  # -z                            randomOffset -- access is to random, not sequential, offsets within a file
+  randomOffset: false
+  # -Z                            reorderTasksRandom -- changes task ordering to random ordering for readback
+  reorderTasksRandom: false
+  # --warningAsErrors             Any warning should lead to an error.
+  warningAsErrors: false
+  # --dryRun                      do not perform any I/Os just run evtl. inputs print dummy output
+  dryRun: false
+  # Not exposing these until needed
+  # -a=POSIX                      API for I/O [POSIX|PMDK|DUMMY|MPIIO|NCMPI|MMAP|CEPHFS|Gfarm]
+  # io_api: POSIX
+  # -A=0                          refNum -- user supplied reference number to include in the summary
+  # -b=1048576                    blockSize -- contiguous bytes to write per task  (e.g.: 8, 4k, 2m, 1g)
+  # -d=0                          interTestDelay -- delay between reps in seconds
+  # -D=0                          deadlineForStonewalling -- seconds before stopping write or read phase
+  # -O stoneWallingWearOut=1           -- once the stonewalling timeout is over, all process finish to access the amount of data
+  # -O stoneWallingWearOutIterations=N -- stop after processing this number of iterations, needed for reading data back written with stoneWallingWearOut
+  # -O stoneWallingStatusFile=FILE     -- this file keeps the number of iterations from stonewalling during write and allows to use them for read
+  # -O minTimeDuration=0           -- minimum Runtime for the run (will repeat from beginning of the file if time is not yet over)
+  # -f=STRING                     scriptFile -- test script name
+  # -G=0                          setTimeStampSignature -- set value for time stamp signature/random seed
+  # -i=1                          repetitions -- number of repetitions of test
+  # -j=0                          outlierThreshold -- warn on outlier N seconds from mean
+  # -l, --dataPacketType=STRING   datapacket type-- type of packet that will be created [offset|incompressible|timestamp|random|o|i|t|r]
+  # -M=STRING                     memoryPerNode -- hog memory on the node  (e.g.: 2g, 75%)
+  # -N=-1                         numTasks -- number of tasks that are participating in the test (overrides MPI)
+  # -o=testFile                   testFile -- full name for test
+  # -O=STRING                     string of IOR directives (e.g. -O checkRead=1,GPUid=2)
+  # -Q=1                          taskPerNodeOffset for read tests use with -C & -Z options (-C constant N, -Z at least N)
+  # -s=1                          segmentCount -- number of segments
+  # -t=262144                     transferSize -- size of transfer in bytes (e.g.: 8, 4k, 2m, 1g)
+  # -T=0                          maxTimeDuration -- max time in minutes executing repeated test; it aborts only between iterations and not within a test!
+  # -X=0                          reorderTasksRandomSeed -- random seed for -Z option
+  # --randomPrefill=0             For random -z access only: Prefill the file with this blocksize, e.g., 2m
+  # --random-offset-seed=-1       The seed for -z
+  # -O summaryFile=FILE                 -- store result data into this file
+  # -O summaryFormat=[default,JSON,CSV] -- use the format for outputting the summary
+  # -O saveRankPerformanceDetailsCSV=<FILE> -- store the performance of each rank into the named CSV file.
+
+minicluster:
+  # Container image
+  image: "ghcr.io/flux-framework/metric-ior:24.04"
+
+  # Interactive MiniCluster?
+  interactive: false
+
+  # Number of NVIDIA gpus
+  gpus: 0
+  
+  # MiniCluster size
+  size: 1
+  
+  # Add flux on the fly (set to false if Flux is already in the container)
+  addFlux: false
+  
+  # Logic to source the spack environment (needed for the default container)
+  commands_init: ". /etc/profile.d/z10_spack_environment.sh && flux R encode --hosts=${hosts} --local > ${viewroot}/etc/flux/system/R"
