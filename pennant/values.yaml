@@ -34,4 +34,4 @@ minicluster:
   size: 1
   
   # Add flux on the fly (set to false if Flux is already in the container)
-  addFlux: false
+  addFlux: true

@@ -36,5 +36,4 @@ minicluster:
   workdir: /coral2/NiO/dmc-a32-e384-batched_driver-DU32/
 
   # Add flux on the fly (set to false if Flux is already in the container)
-  addFlux: false
- 
+  addFlux: true 
