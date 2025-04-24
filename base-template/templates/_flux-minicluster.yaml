@@ -16,6 +16,7 @@ spec:
   flux:
     container:
       disable: {{ if .Values.minicluster.addFlux }}false{{ else }}true{{ end }}
+      {{ if .Values.flux.image }}image: {{ .Values.flux.image }}{{ end }}
 
   containers:
   - image: "{{ default "ghcr.io/converged-computing/metric-lammps-cpu:zen4-reax" .Values.minicluster.image }}"

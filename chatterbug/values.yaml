@@ -1,0 +1,63 @@
+# Default values for experiment
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Logging (quiet will hide flux setup)
+logging:
+  quiet: true
+
+experiment:
+  iterations: 1
+  # num_threads: 3
+  # cores_per_task: 3
+  nodes: 1
+  tasks: 8
+
+env:
+  app: "chatterbug"
+
+# cd /root/chatterbug
+# pairs
+#   pairs/pairs.x msg_size MAX_ITER <randomize_pairs> 
+#   msg_size: size of message per pair (in bytes)
+#   MAX_ITER: how many iters to run
+#   This worked
+#   flux run -N2 -n2 pairs/pairs.x 100 2 1
+
+#   ping-pong
+#   spread
+#   stencil3d
+# ./stencil3d.x 2 2 2 10 10 10 4 1"
+#   stencil4d
+#   subcom2d-coll
+#   subcom2d-a2a
+#   unstr-mesh
+
+chatterbug:
+  # Expected to be at <binary>/<binary>.x
+  binary: stencil3d
+  # For stencil3d, these are nx ny nz bx by bz 
+  # nx * ny * nz needs to equal number of ranks
+  args: "2 2 2 10 10 10 4 1"
+
+flux:
+  image: ghcr.io/converged-computing/flux-view-ubuntu:tag-focal
+
+minicluster:
+  # Container image
+  image: "ghcr.io/converged-computing/metric-chatterbug:latest"
+
+  # Interactive MiniCluster?
+  interactive: false
+
+  # Number of NVIDIA gpus
+  gpus: 0
+
+  # Working directory
+  workdir: /root/chatterbug
+
+  # MiniCluster size
+  size: 1
+    
+  # Add flux on the fly (set to false if Flux is already in the container)
+  addFlux: true
