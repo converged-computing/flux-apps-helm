@@ -14,15 +14,26 @@ experiment:
   tasks: 2
 
 env:
-  app: "pennant"
+  app: "netmark"
 
-pennant:
-  binary: pennant
-  app: /opt/pennant/test/sedovsmall/sedovsmall.pnt
+# sage: netmark.x [options]
+# -w <warmups> : number of warmups
+# -t <trials> : number of trials
+# -c <send-recv-cycles> : number of send-recv cycles
+# -b <msg size in B> : message size in bytes
+# -s: store each trial flag
+
+netmark:
+  binary: netmark
+  warmups: 10
+  trials: 20
+  sendReceiveCycles: 100
+  messageSizeBytes: 0
+  storeTrials: true
 
 minicluster:
   # Container image
-  image: "ghcr.io/converged-computing/metrics-pennant:cpu"
+  image: "ghcr.io/rse-ops/netmark-efa:ubuntu-22.04"
 
   # Interactive MiniCluster?
   interactive: false

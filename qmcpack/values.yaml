@@ -14,15 +14,16 @@ experiment:
   tasks: 2
 
 env:
-  app: "pennant"
+  app: "qmcpack"
 
-pennant:
-  binary: pennant
-  app: /opt/pennant/test/sedovsmall/sedovsmall.pnt
+qmcpack:
+  binary: qmcpack
+  xml: NiO-fcc-S8-dmc-strongscale.xml
+
 
 minicluster:
   # Container image
-  image: "ghcr.io/converged-computing/metrics-pennant:cpu"
+  image: "ghcr.io/converged-computing/metric-qmcpack:latest"
 
   # Interactive MiniCluster?
   interactive: false
@@ -32,6 +33,8 @@ minicluster:
   
   # MiniCluster size
   size: 1
-  
+  workdir: /coral2/NiO/dmc-a32-e384-batched_driver-DU32/
+
   # Add flux on the fly (set to false if Flux is already in the container)
   addFlux: false
+ 

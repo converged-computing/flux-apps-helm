@@ -1,0 +1,4 @@
+{{ include "base-template.flux-minicluster" . }}
+    environment:	
+      apprun: '{{ default "netmark" .Values.netmark.binary }} -w {{ .Values.netmark.warmups }} -t {{ .Values.netmark.trials }} -c {{ .Values.netmark.sendReceiveCycles }} -b {{ .Values.netmark.messageSizeBytes }} {{ if .Values.netmark.storeTrials }}-s{{ end }}'
+      {{- include "base-template.environment" . }}
