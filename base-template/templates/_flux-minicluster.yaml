@@ -12,6 +12,9 @@ spec:
   logging:
     quiet: {{ if .Values.logging.quiet }}true{{ else }}false{{ end }}
 
+  {{ if .Values.minicluster.serviceAccountName }}pod:
+    serviceAccountName: {{  .Values.minicluster.serviceAccountName }}{{ end }}
+
   # This disables installing flux via the view
   flux:
     container:
