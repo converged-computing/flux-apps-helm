@@ -20,6 +20,7 @@ spec:
   containers:
   - image: "{{ default "ghcr.io/converged-computing/metric-lammps-cpu:zen4-reax" .Values.minicluster.image }}"
     command: /bin/bash /tmp/run_${app}.sh
+{{ if .Values.minicluster.workdir }}    workdir: {{ .Values.minicluster.workdir }}{{ end }}
     launcher: true
     securityContext:
       privileged: {{ if .Values.minicluster.privileged }}true{{ else }}false{{ end }}

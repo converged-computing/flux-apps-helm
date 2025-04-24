@@ -1,0 +1,4 @@
+{{ include "base-template.flux-minicluster" . }}
+    environment:
+      apprun: '{{ default "fio" .Values.ior.binary }} fio --randrepeat={{ .Values.fio.randrepeat }} --ioengine={{ default "libaoi" .Values.fio.ioengine }} --direct={{ .Values.fio.direct }} --gtod_reduce={{ .Values.fio.gtod_reduce }} --name={{ .Values.fio.testname }} --bs={{ .Values.fio.blocksize }} --iodepth={{ .Values.fio.iodepth }} --readwrite={{ default "randrw" .Values.fio.readwrite }} --rwmixread={{ .Values.fio.rwmixread }} --size={{ .Values.fio.size }} --filename={{ .Values.fio.filename }} --output-format={{ .Values.fio.outputFormat }}'
+      {{- include "base-template.environment" . }}

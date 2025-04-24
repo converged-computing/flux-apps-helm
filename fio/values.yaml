@@ -1,0 +1,48 @@
+# Default values for experiment
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Logging (quiet will hide flux setup)
+logging:
+  quiet: true
+
+experiment:
+  iterations: 1
+  # num_threads: 3
+  # cores_per_task: 3
+  nodes: 1
+  tasks: 2
+
+env:
+  app: "fio"
+
+fio:
+  binary: fio
+  testname: test
+  randrepeat: 1
+  direct: 1
+  ioengine: libaoi
+  gtod_reduce: 1
+  blocksize: "4k"
+  iodepth: 64
+  readwrite: randrw
+  rwmixread: 75
+  size: "4G"
+  filename: testfile
+  outputFormat: json
+
+minicluster:
+  # Container image
+  image: "ghcr.io/converged-computing/metric-fio:latest"
+
+  # Interactive MiniCluster?
+  interactive: false
+
+  # Number of NVIDIA gpus
+  gpus: 0
+  
+  # MiniCluster size
+  size: 1
+  
+  # Add flux on the fly (set to false if Flux is already in the container)
+  addFlux: true
