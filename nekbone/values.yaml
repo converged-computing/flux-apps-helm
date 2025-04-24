@@ -1,0 +1,39 @@
+# Default values for experiment
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Logging (quiet will hide flux setup)
+logging:
+  quiet: true
+
+experiment:
+  iterations: 1
+  # num_threads: 3
+  # cores_per_task: 3
+  nodes: 1
+  tasks: 2
+
+env:
+  app: "nekbone"
+
+nekbone:
+  binary: nekbone
+
+minicluster:
+  # Container image
+  image: "ghcr.io/converged-computing/metric-nekbone:latest"
+
+  # Interactive MiniCluster?
+  interactive: false
+
+  # The working directory should be for the example we want to run
+  workdir: /root/nekbone-3.0/test/example2
+
+  # Number of NVIDIA gpus
+  gpus: 0
+
+  # MiniCluster size
+  size: 1
+    
+  # Add flux on the fly (set to false if Flux is already in the container)
+  addFlux: true

@@ -1,0 +1,4 @@
+{{ include "base-template.flux-minicluster" . }}
+    environment:
+      apprun: '{{ default "nekbone" .Values.nekbone.binary }}'
+      {{- include "base-template.environment" . }}
