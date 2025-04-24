@@ -1,0 +1,43 @@
+# Default values for experiment
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Logging (quiet will hide flux setup)
+logging:
+  quiet: true
+
+experiment:
+  iterations: 1
+  # num_threads: 3
+  # cores_per_task: 3
+  nodes: 1
+  tasks: 2
+
+env:
+  app: "pennant"
+
+pennant:
+  binary: pennant
+  app: /opt/pennant/test/sedovsmall/sedovsmall.pnt
+
+minicluster:
+  # Container image
+  image: "ghcr.io/converged-computing/metrics-pennant:cpu"
+
+  # Interactive MiniCluster?
+  interactive: false
+
+  # working directory
+  workdir: /opt/nekrs
+
+  # Number of NVIDIA gpus
+  gpus: 0
+  
+  # MiniCluster size
+  size: 1
+  
+  # Add flux on the fly (set to false if Flux is already in the container)
+  addFlux: false
+  
+  # Pull the data to the working directory, which we assume is bound
+  commands_init: "oras pull ghcr.io/converged-computing/metric-nek5000:libfabric-cpu-data"
