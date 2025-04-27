@@ -28,6 +28,7 @@ spec:
     launcher: true
     securityContext:
       privileged: {{ if .Values.minicluster.privileged }}true{{ else }}false{{ end }}
+      {{ if .Values.minicluster.addCapabilities }}addCapabilities: [{{ "{{ .Values.minicluster.addCapabilities }}" }}]{{ end }}
     resources:
       limits:
         nvidia.com/gpu: "{{ .Values.minicluster.gpus }}"

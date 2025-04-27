@@ -96,7 +96,7 @@ ior:
 
 minicluster:
   # Container image
-  image: "ghcr.io/flux-framework/metric-ior:24.04"
+  image: "ghcr.io/converged-computing/metric-ior:latest"
 
   # Interactive MiniCluster?
   interactive: false

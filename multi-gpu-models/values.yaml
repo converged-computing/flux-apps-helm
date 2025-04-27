@@ -1,0 +1,42 @@
+# Default values for experiment
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Logging (quiet will hide flux setup)
+logging:
+  quiet: true
+
+experiment:
+  iterations: 1
+  gpu_affinity: per-task
+  # num_threads: 3
+  # cores_per_task: 3
+  nodes: 1
+  tasks: 2
+
+env:
+  app: "multi-gpu-models"
+
+multi-gpu-models:
+  binary: /opt/multi-gpu-programming-models/mpi/jacobi
+  niter: 10000
+  nx: 32768
+  ny: 32768
+
+minicluster:
+  # Container image
+  image: "ghcr.io/converged-computing/multi-gpu-models:flux-gpu"
+
+  # Interactive MiniCluster?
+  interactive: false
+
+  # Number of NVIDIA gpus
+  gpus: 1
+  
+  # MiniCluster size
+  size: 1
+
+  workdir: /opt/multi-gpu-programming-models/mpi
+  
+  # Add flux on the fly (set to false if Flux is already in the container)
+  addFlux: false
