@@ -33,11 +33,14 @@ netmark:
 
 minicluster:
   # Container image
-  image: "ghcr.io/rse-ops/netmark-efa:ubuntu-22.04"
+  image: "ghcr.io/converged-computing/netmark:latest"
 
   # Interactive MiniCluster?
   interactive: false
 
+  # working directory we can copy results from
+  workdir: /results/netmark
+  
   # Number of NVIDIA gpus
   gpus: 0
   
@@ -45,4 +48,4 @@ minicluster:
   size: 1
   
   # Add flux on the fly (set to false if Flux is already in the container)
-  addFlux: false
+  addFlux: true

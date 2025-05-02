@@ -18,7 +18,7 @@ env:
 
 nekrs:
   binary: nekrs
-  par: ./turbPipe/turbPipe.par
+  par: ./examples/turbPipePeriodic/turbPipe.par
   # For shared, local data
 
 minicluster:

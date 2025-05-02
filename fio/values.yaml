@@ -21,15 +21,15 @@ fio:
   testname: test
   randrepeat: 1
   direct: 1
-  ioengine: libaoi
   gtod_reduce: 1
-  blocksize: "4k"
-  iodepth: 64
   readwrite: randrw
-  rwmixread: 75
-  size: "4G"
   filename: testfile
   outputFormat: json
+#  ioengine: libaoi
+#  iodepth: 64
+#  blocksize: "4k"
+#  size: "4G"
+#  rwmixread: 75
 
 minicluster:
   # Container image

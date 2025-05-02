@@ -14,15 +14,15 @@ experiment:
   tasks: 2
 
 env:
-  app: "pennant"
-
-pennant:
-  binary: pennant
-  app: /opt/pennant/test/sedovsmall/sedovsmall.pnt
+  app: "havoc"
+  
+havoc:
+  binary: havoqgt
+  # For shared, local data
 
 minicluster:
   # Container image
-  image: "ghcr.io/converged-computing/metrics-pennant:cpu"
+  image: "ghcr.io/rse-ops/havoqgt:flux"
 
   # Interactive MiniCluster?
   interactive: false
@@ -35,3 +35,5 @@ minicluster:
   
   # Add flux on the fly (set to false if Flux is already in the container)
   addFlux: true
+  commands_init: flux run -n $(nproc) src/generate_rmat -s 17 -o outgraph
+

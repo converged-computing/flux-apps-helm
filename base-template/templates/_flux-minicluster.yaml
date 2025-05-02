@@ -24,7 +24,13 @@ spec:
   containers:
   - image: "{{ default "ghcr.io/converged-computing/metric-lammps-cpu:zen4-reax" .Values.minicluster.image }}"
     command: /bin/bash /tmp/run_${app}.sh
-{{ if .Values.minicluster.workdir }}    workdir: {{ .Values.minicluster.workdir }}{{ end }}
+    {{ if .Values.minicluster.volumeName }}volumes:
+       {{ .Values.minicluster.volumeName }}:
+         path: {{ default "/shared" .Values.minicluster.volumePath }}
+         {{ if .Values.minicluster.volumeClaim }}claimName: {{ .Values.minicluster.volumeClaim }}{{ end }}
+    {{ end }}
+    {{ if .Values.minicluster.workdir }}workingDir: {{ .Values.minicluster.workdir }}{{ end }}
+    {{ if .Values.minicluster.pullAlways }}pullAlways: true{{ end }}
     launcher: true
     securityContext:
       privileged: {{ if .Values.minicluster.privileged }}true{{ else }}false{{ end }}
@@ -33,6 +39,7 @@ spec:
       limits:
         nvidia.com/gpu: "{{ .Values.minicluster.gpus }}"
     commands:
+      {{ if .Values.minicluster.commands_broker_pre }}brokerPre: {{ .Values.minicluster.commands_broker_pre }}{{ end }}
       {{ if .Values.minicluster.commands_init }}init: {{ .Values.minicluster.commands_init }}{{ end }}
       post: |
          {{ include "chart.fluxfinish" . }}

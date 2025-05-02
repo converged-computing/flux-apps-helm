@@ -1,0 +1,4 @@
+{{ include "base-template.flux-minicluster" . }}
+    environment:
+      apprun: '{{ .Values.miniamr.binary }} --nx {{ .Values.miniamr.nx }} --ny {{ .Values.miniamr.ny }} --nz {{ .Values.miniamr.nz }} --npx {{ .Values.miniamr.npx }} --npy {{ .Values.miniamr.npy }} --npz {{ .Values.miniamr.npz }}'
+      {{- include "base-template.environment" . }}

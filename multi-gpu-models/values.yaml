@@ -17,7 +17,7 @@ experiment:
 env:
   app: "multi-gpu-models"
 
-multi-gpu-models:
+mgm:
   binary: /opt/multi-gpu-programming-models/mpi/jacobi
   niter: 10000
   nx: 32768

@@ -1,0 +1,18 @@
+{{ include "base-template.flux-minicluster" . }}
+    environment:
+      apprun: '{{ .Values.cfdscope.binary }} --domain-size {{ .Values.cfdscope.domain_size }} --cell-size {{ .Values.cfdscope.cell_size }} --end-time {{ .Values.cfdscope.end_time }} --lid-speed {{ .Values.cfdscope.lid_speed }} --step-size {{ .Values.cfdscope.step_size }} --output-prefix {{ .Values.cfdscope.output_prefix }} --output-format {{ .Values.cfdscope.output_format }} --preconditioner {{ .Values.cfdscope.preconditioner }}'
+      {{- include "base-template.environment" . }}
+      
+#  -l, --log-level arg       Log level (trace, debug, info, warn, err, 
+#                            critical or off) (default: info)
+#  -d, --domain-size arg     Number of the simulation cells along all three 
+#                            axes (default: 20)
+#  -c, --cell-size arg       Size of each simulation cell (default: 1.0)
+#  -e, --end-time arg        Simulation duration (seconds) (default: 5.0)
+#  -s, --step-size arg       Simulation step size (seconds) (default: 0.4)
+#  -u, --lid-speed arg       Lid speed (cells/second) (default: 10)
+#  -o, --output-prefix arg   Output file prefix (default: fields)
+#  -f, --output-format arg   Output file format (csv, raw) (default: csv)
+#  -p, --preconditioner arg  Preconditioner type (none, jacobi, dic) 
+#                            (default: dic)
+#  -h, --help                Print usage

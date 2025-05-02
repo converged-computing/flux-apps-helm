@@ -35,6 +35,7 @@ env:
 
 chatterbug:
   # Expected to be at <binary>/<binary>.x
+  # https://github.com/hpcgroup/chatterbug.git
   binary: stencil3d
   # For stencil3d, these are nx ny nz bx by bz 
   # nx * ny * nz needs to equal number of ranks

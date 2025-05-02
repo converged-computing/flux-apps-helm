@@ -20,10 +20,11 @@ qmcpack:
   binary: qmcpack
   xml: NiO-fcc-S8-dmc-strongscale.xml
 
-
 minicluster:
   # Container image
   image: "ghcr.io/converged-computing/metric-qmcpack:latest"
+  # This one has flux installed, the above does not.
+  # image: ghcr.io/converged-computing/metric-qmcpack:flux
 
   # Interactive MiniCluster?
   interactive: false

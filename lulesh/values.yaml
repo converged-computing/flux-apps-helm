@@ -1,0 +1,69 @@
+# Default values for experiment
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Logging (quiet will hide flux setup)
+logging:
+  quiet: true
+
+experiment:
+  iterations: 1
+  # num_threads: 3
+  # cores_per_task: 3
+  nodes: 1
+  tasks: 2
+
+env:
+  app: "lulesh"
+
+lulesh:
+  binary: lulesh
+  iterations: 100
+  size: 40
+  regions: 11
+  balance: 1 
+  cost: 1 
+  # numfiles: 
+
+# Usage: lulesh [opts]
+# where [opts] is one or more of:
+# -q              : quiet mode - suppress all stdout
+# -i <iterations> : number of cycles to run
+# -s <size>       : length of cube mesh along side
+# -r <numregions> : Number of distinct regions (def: 11)
+# -b <balance>    : Load balance between regions of a domain (def: 1)
+# -c <cost>       : Extra cost of more expensive regions (def: 1)
+# -f <numfiles>   : Number of files to split viz dump into (def: (np+10)/9)
+# -p              : Print out progress
+# -v              : Output viz file (requires compiling with -DVIZ_MESH
+# -h              : This message
+
+minicluster:
+  # Container image
+  image: ghcr.io/rse-ops/lulesh:flux
+  
+  # Interactive MiniCluster?
+  interactive: false
+
+  # Number of NVIDIA gpus
+  gpus: 0
+  
+  # MiniCluster size
+  size: 1
+  
+  # Add flux on the fly (set to false if Flux is already in the container)
+  addFlux: false
+
+# Usage: lulesh [opts]
+# where [opts] is one or more of:
+# -q              : quiet mode - suppress all stdout
+# -i <iterations> : number of cycles to run
+# -s <size>       : length of cube mesh along side
+# -r <numregions> : Number of distinct regions (def: 11)
+# -b <balance>    : Load balance between regions of a domain (def: 1)
+# -c <cost>       : Extra cost of more expensive regions (def: 1)
+# -f <numfiles>   : Number of files to split viz dump into (def: (np+10)/9)
+# -p              : Print out progress
+# -v              : Output viz file (requires compiling with -DVIZ_MESH
+# -h              : This message
+

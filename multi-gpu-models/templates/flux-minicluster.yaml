@@ -1,4 +1,4 @@
 {{ include "base-template.flux-minicluster" . }}
     environment:	
-      apprun: '{{ .Values.multi-gpu-models.binary }} -niter {{ .Values.multi-gpu-models.niter }} -nx {{ .Values.multi-gpu-models.nx }} -ny {{ .Values.multi-gpu-models.ny }}'
+      apprun: '{{ .Values.mgm.binary }} -niter {{ .Values.mgm.niter }} -nx {{ .Values.mgm.nx }} -ny {{ .Values.mgm.ny }}'
       {{- include "base-template.environment" . }}

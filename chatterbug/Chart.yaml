@@ -1,6 +1,6 @@
 apiVersion: v2
 name: chart
-description: A Helm chart to deploy amg2023 with Flux in Kubernetes
+description: A Helm chart to deploy an HPC app with Flux in Kubernetes
 
 # A chart can be either an 'application' or a 'library' chart.
 #

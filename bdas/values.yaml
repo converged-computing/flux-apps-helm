@@ -17,8 +17,7 @@ env:
   app: "bdas"
 
 bdas:
-  binary: bdas
-  filename: testfile
+  binary: Rscript
   # Other files in this directory, both take rows/cols
   # kmeans.r  princomp.r  svm.r  utils.r
   benchmark: /opt/bdas/benchmarks/r/princomp.r

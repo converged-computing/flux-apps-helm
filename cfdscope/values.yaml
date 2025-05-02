@@ -1,0 +1,61 @@
+# Default values for experiment
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Logging (quiet will hide flux setup)
+logging:
+  quiet: true
+
+experiment:
+  iterations: 1
+  # num_threads: 3
+  # cores_per_task: 3
+  nodes: 1
+  tasks: 2
+
+env:
+  app: "cfdscope"
+
+cfdscope:
+  binary: cfdscope
+  domain_size: 64
+  cell_size: 1.0
+  end_time: 5.0
+  lid_speed: 10
+  step_size: 0.4
+  lid_speed: 10
+  output_prefix: fields
+  output_format: csv
+  preconditioner: dic
+
+#  -l, --log-level arg       Log level (trace, debug, info, warn, err, 
+#                            critical or off) (default: info)
+#  -d, --domain-size arg     Number of the simulation cells along all three 
+#                            axes (default: 20)
+#  -c, --cell-size arg       Size of each simulation cell (default: 1.0)
+#  -e, --end-time arg        Simulation duration (seconds) (default: 5.0)
+#  -s, --step-size arg       Simulation step size (seconds) (default: 0.4)
+#  -u, --lid-speed arg       Lid speed (cells/second) (default: 10)
+#  -o, --output-prefix arg   Output file prefix (default: fields)
+#  -f, --output-format arg   Output file format (csv, raw) (default: csv)
+#  -p, --preconditioner arg  Preconditioner type (none, jacobi, dic) 
+#                            (default: dic)
+#  -h, --help                Print usage
+
+
+minicluster:
+  # Container image
+  image: ghcr.io/rse-ops/cfdscope:flux 
+  
+  # Interactive MiniCluster?
+  interactive: false
+
+  # Number of NVIDIA gpus
+  gpus: 0
+  
+  # MiniCluster size
+  size: 1
+  
+  # Add flux on the fly (set to false if Flux is already in the container)
+  addFlux: false
+  

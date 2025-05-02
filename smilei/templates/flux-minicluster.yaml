@@ -1,0 +1,4 @@
+{{ include "base-template.flux-minicluster" . }}
+    environment:	
+      apprun: '{{ default "smilei" .Values.smilei.binary }} {{ .Values.smilei.example }}'
+      {{- include "base-template.environment" . }}

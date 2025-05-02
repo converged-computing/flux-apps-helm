@@ -1,0 +1,4 @@
+{{ include "base-template.flux-minicluster" . }}
+    environment:	
+      apprun: '{{ default "likwid-topology" .Values.likwid.binary }} {{ if .Values.likwid.args }}{{ .Values.likwid.args }}{{ end }}'
+      {{- include "base-template.environment" . }}
