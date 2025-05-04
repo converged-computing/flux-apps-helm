@@ -14,19 +14,17 @@ experiment:
   tasks: 2
 
 env:
-  app: "pennant"
+  app: "enzyme"
 
-pennant:
-  binary: pennant
-  app: /opt/pennant/test/sedovsmall/sedovsmall.pnt
-
-flux:
-  image: ghcr.io/converged-computing/flux-view-ubuntu:tag-focal
+# Repository to run this seems private?
+# https://github.com/LLNL/benchpark/blob/develop/repo/ad/package.py
+enzyme:
+  binary: NA
 
 minicluster:
   # Container image
-  image: "ghcr.io/converged-computing/metrics-pennant:cpu"
-
+  image: ghcr.io/rse-ops/enzyme:flux
+  
   # Interactive MiniCluster?
   interactive: false
 
@@ -37,4 +35,8 @@ minicluster:
   size: 1
   
   # Add flux on the fly (set to false if Flux is already in the container)
-  addFlux: true
+  addFlux: false
+  
+  # Logic to source the spack environment (needed for the default container)
+  # That was only for a spack install
+  commands_init: ". /opt/spack/share/spack/setup-env.sh && spack env activate /opt/spack-environment"

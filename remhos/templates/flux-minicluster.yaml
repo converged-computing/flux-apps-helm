@@ -1,0 +1,4 @@
+{{ include "base-template.flux-minicluster" . }}
+    environment:	
+      apprun: '{{ default "remhos" .Values.remhos.binary }} -m {{ .Values.remhos.mesh }}'
+      {{- include "base-template.environment" . }}

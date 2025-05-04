@@ -12,9 +12,12 @@ experiment:
   # cores_per_task: 3
   nodes: 1
   tasks: 2
+  # Num processors must be a cube of an integer (1, 8, 27, ...)
 
 env:
-  app: "lulesh"
+  app: lulesh
+
+ flux run -N2 -n 125 -o cpu-affinity=per-task -o gpu-affinity=off lulesh -i 100 -s 50 -r 11 -b 1 -c 1
 
 lulesh:
   binary: lulesh
@@ -23,25 +26,12 @@ lulesh:
   regions: 11
   balance: 1 
   cost: 1 
-  # numfiles: 
-
-# Usage: lulesh [opts]
-# where [opts] is one or more of:
-# -q              : quiet mode - suppress all stdout
-# -i <iterations> : number of cycles to run
-# -s <size>       : length of cube mesh along side
-# -r <numregions> : Number of distinct regions (def: 11)
-# -b <balance>    : Load balance between regions of a domain (def: 1)
-# -c <cost>       : Extra cost of more expensive regions (def: 1)
-# -f <numfiles>   : Number of files to split viz dump into (def: (np+10)/9)
-# -p              : Print out progress
-# -v              : Output viz file (requires compiling with -DVIZ_MESH
-# -h              : This message
+  # numfiles
 
 minicluster:
   # Container image
-  image: ghcr.io/rse-ops/lulesh:flux
-  
+  image: "ghcr.io/rse-ops/lulesh:flux"
+
   # Interactive MiniCluster?
   interactive: false
 
@@ -53,17 +43,3 @@ minicluster:
   
   # Add flux on the fly (set to false if Flux is already in the container)
   addFlux: false
-
-# Usage: lulesh [opts]
-# where [opts] is one or more of:
-# -q              : quiet mode - suppress all stdout
-# -i <iterations> : number of cycles to run
-# -s <size>       : length of cube mesh along side
-# -r <numregions> : Number of distinct regions (def: 11)
-# -b <balance>    : Load balance between regions of a domain (def: 1)
-# -c <cost>       : Extra cost of more expensive regions (def: 1)
-# -f <numfiles>   : Number of files to split viz dump into (def: (np+10)/9)
-# -p              : Print out progress
-# -v              : Output viz file (requires compiling with -DVIZ_MESH
-# -h              : This message
-

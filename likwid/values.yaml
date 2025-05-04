@@ -11,15 +11,16 @@ experiment:
   # num_threads: 3
   # cores_per_task: 3
   nodes: 1
-  tasks: 2
+  # tasks: 2
 
 env:
   app: "likwid"
   
 likwid:
-  binary: likwid-topology
-  # binary: likwid-bench
-  # args: 
+  # binary: likwid-topology
+  # likwid-bench
+  binary: likwid-bench-all
+  args: S0:100MB
 
 minicluster:
   # Container image

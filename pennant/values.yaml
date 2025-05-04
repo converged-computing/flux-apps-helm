@@ -1,0 +1,42 @@
+# Default values for experiment
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Logging (quiet will hide flux setup)
+logging:
+  quiet: true
+
+experiment:
+  iterations: 1
+  # num_threads: 3
+  # cores_per_task: 3
+  nodes: 1
+  # tasks: 2
+  # tasks should generally not be set
+  
+env:
+  app: "pennant"
+
+pennant:
+  binary: pennant
+  app: /opt/pennant/test/sedovflatx4/sedovflatx4.pnt
+  # These are run on coral 2
+  # sedovflatx120/ sedovflatx16/  sedovflatx4/   sedovflatx40/
+  # see https://asc.llnl.gov/sites/asc/files/2020-09/PENNANT_CORAL2_V2.pdf
+
+minicluster:
+  # Container image
+  image: "ghcr.io/rse-ops/pennant:flux"
+
+  # Interactive MiniCluster?
+  interactive: false
+
+  # Number of NVIDIA gpus
+  gpus: 0
+  
+  # MiniCluster size
+  size: 1
+  
+  # Add flux on the fly (set to false if Flux is already in the container)
+  addFlux: false
+  commands_init: ". /opt/spack-environment/spack/share/spack/setup-env.sh && spack env activate /opt/spack-environment"

@@ -1,0 +1,4 @@
+{{ include "base-template.flux-minicluster" . }}
+    environment:
+      apprun: '{{ .Values.gromacs.binary }} mdrun -v -deffnm system -s {{ .Values.gromacs.tpr }} -ntomp {{ .Values.gromacs.ntomp }}'
+      {{- include "base-template.environment" . }}      

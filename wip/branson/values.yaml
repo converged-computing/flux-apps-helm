@@ -1,0 +1,48 @@
+# Default values for experiment
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Logging (quiet will hide flux setup)
+logging:
+  quiet: true
+
+experiment:
+  iterations: 1
+  # num_threads: 3
+  # cores_per_task: 3
+  nodes: 1
+  # tasks: 2
+
+env:
+  app: "branson"
+
+branson:
+  binary: BRANSON
+  input: big_cube.xml  
+  # flux run --setattr=user.study_id=branson-iter-$i -N2 -o cpu-affinity=per-task -o gpu-affinity=off     BRANSON big_cube.xml
+
+#  Other inputs
+#  inputs/3D_hohlraum_multi_node.xml
+#  inputs/3D_hohlraum_single_node.xml
+#  inputs/big_cube.xml
+#  inputs/cube_decomp_test.xml
+#  inputs/hot_zone_input.xml
+#  inputs/marshak_wave_dd.xml
+#  inputs/marshak_wave_replicated.xml
+
+minicluster:
+  # Container image
+  image: ghcr.io/rse-ops/branson:flux
+  
+  # Interactive MiniCluster?
+  interactive: false
+
+  # Number of NVIDIA gpus
+  gpus: 0
+  
+  # MiniCluster size
+  size: 1
+  
+  # Add flux on the fly (set to false if Flux is already in the container)
+  addFlux: true
+  workdir: /opt/branson/inputs

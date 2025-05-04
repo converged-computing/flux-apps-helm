@@ -37,15 +37,14 @@ spec:
       {{ if .Values.minicluster.addCapabilities }}addCapabilities: [{{ "{{ .Values.minicluster.addCapabilities }}" }}]{{ end }}
     resources:
       limits:
-        nvidia.com/gpu: "{{ .Values.minicluster.gpus }}"
+        nvidia.com/gpu: "{{ default 0  .Values.minicluster.gpus }}"
     commands:
       {{ if .Values.minicluster.commands_broker_pre }}brokerPre: {{ .Values.minicluster.commands_broker_pre }}{{ end }}
       {{ if .Values.minicluster.commands_init }}init: {{ .Values.minicluster.commands_init }}{{ end }}
       post: |
          {{ include "chart.fluxfinish" . }}
-
       pre: |
-         {{ include "chart.gpus" . }}
+         {{ if .Values.minicluster.gpus }}{{ include "chart.gpus" . }}{{ end }}
          cat <<EOF >> /tmp/run_${app}.sh
          #!/bin/bash
          set -euo pipefail
@@ -57,5 +56,5 @@ spec:
          {{ include "chart.fluxpost" . }}
          {{ include "chart.savelogs" . }}
          EOF
-         cat /tmp/run_${app}.sh         
+         cat /tmp/run_${app}.sh
 {{ end }}
