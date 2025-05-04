@@ -17,7 +17,7 @@ env:
   app: "hpl"
 
 hpl:  
-  binary: hpl
+  binary: xhpl
 
 minicluster:
   # Container image

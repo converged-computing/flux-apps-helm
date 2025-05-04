@@ -17,7 +17,7 @@ env:
   app: "hpcg"
 
 hpcg:  
-  binary: hpcg
+  binary: xhpcg
 
 minicluster:
   # Container image
@@ -36,3 +36,5 @@ minicluster:
   # Add flux on the fly (set to false if Flux is already in the container)
   addFlux: false
   commands_init: ". /opt/spack-environment/spack/share/spack/setup-env.sh && spack env activate /opt/spack-environment"  
+  # This is how we see the output in each iteration
+  commands_post_iteration: "cat *.txt; rm *.txt"

@@ -18,7 +18,9 @@ env:
 
 rajaperf:
   binary: /opt/RAJAPerf/build/bin/raja-perf.exe 
-
+  # kernels:
+  # ./rajaperf --select-kernels STREAM_COPY DAXPY REDUCE_SUM DIFFUSION_3D
+  
 minicluster:
   # Container image
   image: ghcr.io/rse-ops/rajaperf:flux
@@ -34,4 +36,4 @@ minicluster:
   
   # Add flux on the fly (set to false if Flux is already in the container)
   addFlux: false
-
+  commands_post_iteration: "echo RAJAPerf RAJAPerf-fom.csv; cat RAJAPerf-fom.csv; rm RAJAPerf-fom.csv; echo RAJAPerf RAJAPerf-kernels.csv; cat RAJAPerf-kernels.csv; rm RAJAPerf-kernels.csv; echo RAJAPERF RAJAPerf-speedup-Average.csv; cat RAJAPerf-speedup-Average.csv; rm RAJAPerf-speedup-Average.csv; echo RAJAPerf RAJAPERF RAJAPerf-timing-Average.csv; cat RAJAPerf-timing-Average.csv; rm RAJAPerf-timing-Average.csv"

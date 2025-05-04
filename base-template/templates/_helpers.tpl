@@ -42,7 +42,8 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
          do
            echo "FLUX-RUN START $app-iter-\$i"
            flux run --setattr=user.study_id=$app-iter-\$i -N{{ if .Values.experiment.nodes }}{{ .Values.experiment.nodes }}{{ else }}1{{ end }} {{ if .Values.experiment.tasks }}-n {{ .Values.experiment.tasks }}{{ end }} {{ include "chart.fluxopts" . }} ${apprun} |& tee /tmp/${app}.out
-             echo "FLUX-RUN END $app-iter-\$i"
+           {{ if .Values.minicluster.commands_post_iteration }}{{ .Values.minicluster.commands_post_iteration }};{{ end }}
+            echo "FLUX-RUN END $app-iter-\$i"
          done
 {{- end }}
 
