@@ -19,8 +19,10 @@ env:
 likwid:
   # binary: likwid-topology
   # likwid-bench
-  binary: likwid-bench-all
-  args: S0:100MB
+  binary: likwid-bench
+  # suggested for t:  peakflops_sp_avx peakflops_avx clcopy stream_mem triad_sp triad_sse
+  test: peakflops_avx
+  workgroup: "S0:100MB"
 
 minicluster:
   # Container image

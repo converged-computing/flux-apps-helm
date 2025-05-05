@@ -34,7 +34,7 @@ minicluster:
   size: 1
   workdir: /coral2/NiO/dmc-a32-e384-batched_driver-DU32/
 
-  commands_init: ". /opt/spack-environment/spack/share/spack/setup-env.sh && spack env activate /opt/spack-environment; sed -i 's/total_walkers\">128/total_walkers\">352/g' /coral2/NiO/dmc-a32-e384-batched_driver-DU32/NiO-fcc-S8-dmc-strongscale.xml"
+  commands_init: ". /opt/spack-environment/spack/share/spack/setup-env.sh && spack env activate /opt/spack-environment; sed -i 's/total_walkers\">128/total_walkers\">5632/g' /coral2/NiO/dmc-a32-e384-batched_driver-DU32/NiO-fcc-S8-dmc-strongscale.xml"
   
   # Add flux on the fly (set to false if Flux is already in the container)
   addFlux: false
