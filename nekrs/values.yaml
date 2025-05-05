@@ -23,7 +23,7 @@ nekrs:
 
 minicluster:
   # Container image
-  image: "ghcr.io/converged-computing/metric-nek5000:cpu"
+  image: ghcr.io/converged-computing/nekrs:ubuntu2204
 
   # Interactive MiniCluster?
   interactive: false

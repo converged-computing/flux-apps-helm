@@ -22,7 +22,7 @@ osu:
 
 minicluster:
   # Container image
-  image: "ghcr.io/converged-computing/metric-osu-cpu:zen4"
+  image: ghcr.io/converged-computing/osu-benchmarks 
 
   # Interactive MiniCluster?
   interactive: false
