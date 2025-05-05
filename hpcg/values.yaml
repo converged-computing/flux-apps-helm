@@ -21,7 +21,7 @@ hpcg:
 
 minicluster:
   # Container image
-  image: ghcr.io/rse-ops/hpcg:flux
+  image: ghcr.io/converged-computing/hpcg:ubuntu2204
 
   # Interactive MiniCluster?
   interactive: false
