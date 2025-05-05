@@ -21,7 +21,7 @@ mtgemm:
 
 minicluster:
   # Container image
-  image: "ghcr.io/converged-computing/mt-gemm:cpu-zen4"
+  image: ghcr.io/converged-computing/mtgemm:ubuntu2204
 
   # Interactive MiniCluster?
   interactive: false
