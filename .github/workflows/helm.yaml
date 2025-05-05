@@ -13,7 +13,7 @@ jobs:
       fail-fast: false
       matrix:
         app: [amg2023, bdas, cfdscope, chatterbug, e3sm-kernels, fio, gamess-r1-mp2-miniapp, 
-              gpcnet, kripke, lammps-reax, laghos, minife, mixbench, 
+              gpcnet, gromacs, kripke, lammps-reax, laghos, minife, mixbench, 
               mt-gemm, osu-benchmarks, quicksilver, single-node, stream] 
     name: Prepare charts
     runs-on: ubuntu-latest
