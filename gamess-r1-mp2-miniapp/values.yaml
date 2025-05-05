@@ -23,7 +23,7 @@ gamess:
 
 minicluster:
   # Container image
-  image: "ghcr.io/converged-computing/gamess-ri-mp2-miniapp"
+  image: "ghcr.io/converged-computing/gamess-ri-mp2-miniapp:ubuntu2204"
 
   # Interactive MiniCluster?
   interactive: false
