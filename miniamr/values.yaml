@@ -37,7 +37,7 @@ minicluster:
   # Container image
   # Without flux
   # image: "ghcr.io/converged-computing/ecp-proxy-apps:latest"
-  image: ghcr.io/rse-ops/miniamr:flux
+  image: ghcr.io/converged-computing/miniamr:ubuntu2204
   
   # Interactive MiniCluster?
   interactive: false

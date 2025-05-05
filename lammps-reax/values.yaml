@@ -21,9 +21,12 @@ lammps:
   y: 2
   z: 2
   
+flux:
+  image: ghcr.io/converged-computing/flux-view-ubuntu:tag-jammy
+
 minicluster:
   # Container image
-  image: "ghcr.io/converged-computing/metric-lammps-cpu:zen4-reax"
+  image: "ghcr.io/converged-computing/lammps-reax:ubuntu2204"
 
   # Interactive MiniCluster?
   interactive: false
