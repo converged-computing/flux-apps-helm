@@ -22,7 +22,7 @@ mixbench:
 
 minicluster:
   # Container image
-  image: "ghcr.io/converged-computing/metric-mixbench:cpu"
+  image: ghcr.io/converged-computing/mixbench:ubuntu2204
 
   # Interactive MiniCluster?
   interactive: false
