@@ -19,6 +19,7 @@ experiment:
 laghos:
   binary: laghos
   mesh: /opt/laghos/data/cube_311_hex.mesh
+  fom: true
   # Set to -1 to disable
   max_steps: 500
   # p: 1
@@ -26,7 +27,6 @@ laghos:
   # rs: 3
   # tf: 0.8
   # pa: true
-  # fom: true
 
   # pt: 311
   # mesh: /opt/laghos/data/cube_311_hex.mesh
@@ -40,7 +40,7 @@ laghos:
       
 minicluster:
   # Container image
-  image: "ghcr.io/rse-ops/laghos:flux"
+  image: "ghcr.io/converged-computing/laghos:ubuntu2204"
 
   # Interactive MiniCluster?
   interactive: false
