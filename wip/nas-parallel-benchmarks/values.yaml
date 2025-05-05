@@ -1,0 +1,51 @@
+# Default values for experiment
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Logging (quiet will hide flux setup)
+logging:
+  quiet: true
+
+experiment:
+  iterations: 1
+  # num_threads: 3
+  # cores_per_task: 3
+  nodes: 1
+  # tasks: 2
+
+env:
+  app: "npb"
+
+# https://ntrs.nasa.gov/citations/19910071476
+npb:
+  # One of A, B, C, D, E, F, S, W
+  class: A
+  # one of bt, cg, ep, ft, is, lu, mg, sp
+  problem: bt
+
+# flux run -N2 is.C.x 
+# bt.A.x  bt.D.x  bt.S.x  cg.B.x  cg.E.x  cg.W.x  ep.C.x  ep.F.x  ft.A.x  ft.D.x  ft.S.x  is.B.x  is.E.x  lu.A.x  lu.D.x  lu.S.x  mg.B.x  mg.E.x  mg.W.x  sp.C.x  sp.F.x
+# bt.B.x  bt.E.x  bt.W.x  cg.C.x  cg.F.x  ep.A.x  ep.D.x  ep.S.x  ft.B.x  ft.E.x  ft.W.x  is.C.x  is.S.x  lu.B.x  lu.E.x  lu.W.x  mg.C.x  mg.F.x  sp.A.x  sp.D.x  sp.S.x
+# bt.C.x  bt.F.x  cg.A.x  cg.D.x  cg.S.x  ep.B.x  ep.E.x  ep.W.x  ft.C.x  ft.F.x  is.A.x  is.D.x  is.W.x  lu.C.x  lu.F.x  mg.A.x  mg.D.x  mg.S.x  sp.B.x  sp.E.x  sp.W.x
+
+minicluster:
+  # Container image without flux
+  # image: "ghcr.io/converged-computing/ecp-proxy-apps:latest"
+  # with Flux
+  image: ghcr.io/rse-ops/nas-parallel-benchmarks:flux
+
+  # Interactive MiniCluster?
+  interactive: false
+
+  # Number of NVIDIA gpus
+  gpus: 0
+  
+  # MiniCluster size
+  size: 1
+  
+  # Add flux on the fly (set to false if Flux is already in the container)
+  addFlux: false
+  
+  # Logic to source the spack environment (needed for the default container)
+  # commands_init: ". /opt/spack/share/spack/setup-env.sh && spack load npb"
+  commands_init: ". /opt/spack-environment/spack/share/spack/setup-env.sh && spack env activate /opt/spack-environment"

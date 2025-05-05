@@ -1,0 +1,39 @@
+# Default values for experiment
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Logging (quiet will hide flux setup)
+logging:
+  quiet: true
+
+experiment:
+  iterations: 1
+  # num_threads: 3
+  # cores_per_task: 3
+  nodes: 1
+  tasks: 2
+
+env:
+  app: "rajaperf"
+
+rajaperf:
+  binary: /opt/RAJAPerf/build/bin/raja-perf.exe 
+  # kernels:
+  # ./rajaperf --select-kernels STREAM_COPY DAXPY REDUCE_SUM DIFFUSION_3D
+  
+minicluster:
+  # Container image
+  image: ghcr.io/rse-ops/rajaperf:flux
+  
+  # Interactive MiniCluster?
+  interactive: false
+
+  # Number of NVIDIA gpus
+  gpus: 0
+  
+  # MiniCluster size
+  size: 1
+  
+  # Add flux on the fly (set to false if Flux is already in the container)
+  addFlux: false
+  commands_post_iteration: "echo RAJAPerf RAJAPerf-fom.csv; cat RAJAPerf-fom.csv; rm RAJAPerf-fom.csv; echo RAJAPerf RAJAPerf-kernels.csv; cat RAJAPerf-kernels.csv; rm RAJAPerf-kernels.csv; echo RAJAPERF RAJAPerf-speedup-Average.csv; cat RAJAPerf-speedup-Average.csv; rm RAJAPerf-speedup-Average.csv; echo RAJAPerf RAJAPERF RAJAPerf-timing-Average.csv; cat RAJAPerf-timing-Average.csv; rm RAJAPerf-timing-Average.csv"

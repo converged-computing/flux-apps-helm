@@ -1,0 +1,40 @@
+# Default values for experiment
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Logging (quiet will hide flux setup)
+logging:
+  quiet: true
+
+experiment:
+  iterations: 1
+  # num_threads: 3
+  # cores_per_task: 3
+  nodes: 1
+  tasks: 2
+
+env:
+  app: "e3sm-kernels"
+
+kernels:
+  binary: atm
+
+minicluster:
+  # Container image (no flux)
+  # image: "ghcr.io/converged-computing/e3sm-kernels:latest"
+  image: ghcr.io/rse-ops/e3sm-kernels:flux
+  
+  # Interactive MiniCluster?
+  interactive: false
+
+  # Number of NVIDIA gpus
+  gpus: 0
+  
+  # MiniCluster size
+  size: 1
+  
+  # Add flux on the fly (set to false if Flux is already in the container)
+  addFlux: false
+  
+  # Logic to source the spack environment (needed for the default container)
+  commands_init: ". /opt/spack-environment/spack/share/spack/setup-env.sh && spack env activate /opt/spack-environment/"

@@ -1,0 +1,6 @@
+dependencies:
+- name: kubeflow-template
+  repository: file://../kubeflow-template
+  version: 0.1.0
+digest: sha256:1bcffb55408f7ce4469cd4196eef02a495fed301d4f9c5d7cf507e09376d967d
+generated: "2025-05-01T23:23:03.1102248-06:00"

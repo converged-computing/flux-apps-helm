@@ -1,0 +1,40 @@
+# Default values for experiment
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Logging (quiet will hide flux setup)
+logging:
+  quiet: true
+
+experiment:
+  iterations: 1
+  # num_threads: 3
+  # cores_per_task: 3
+  nodes: 1
+  tasks: 2
+
+env:
+  app: "hpcg"
+
+hpcg:  
+  binary: xhpcg
+
+minicluster:
+  # Container image
+  image: ghcr.io/rse-ops/hpcg:flux
+
+  # Interactive MiniCluster?
+  interactive: false
+
+  # Number of NVIDIA gpus
+  gpus: 0
+  
+  # MiniCluster size
+  size: 1
+  workdir: /opt/software/linux-ubuntu22.04-zen4/gcc-11.4.0/hpcg-3.1-ocfaf2q2ingizt4mriyrb7g2q4czvxag/bin
+  
+  # Add flux on the fly (set to false if Flux is already in the container)
+  addFlux: false
+  commands_init: ". /opt/spack-environment/spack/share/spack/setup-env.sh && spack env activate /opt/spack-environment"  
+  # This is how we see the output in each iteration
+  commands_post_iteration: "cat *.txt; rm *.txt"

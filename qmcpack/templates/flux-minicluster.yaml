@@ -1,0 +1,4 @@
+{{ include "base-template.flux-minicluster" . }}
+    environment:	
+      apprun: '{{ default "qmcpack" .Values.qmcpack.binary }} {{ .Values.qmcpack.xml }}'
+      {{- include "base-template.environment" . }}

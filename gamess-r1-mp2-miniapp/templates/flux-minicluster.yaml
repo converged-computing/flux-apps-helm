@@ -1,0 +1,4 @@
+{{ include "base-template.flux-minicluster" . }}
+    environment:
+      apprun: '{{ .Values.gamess.binary }} {{ .Values.gamess.data }}'
+      {{- include "base-template.environment" . }}

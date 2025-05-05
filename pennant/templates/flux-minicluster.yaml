@@ -1,0 +1,4 @@
+{{ include "base-template.flux-minicluster" . }}
+    environment:	
+      apprun: '{{ default "pennant" .Values.pennant.binary }} {{ .Values.pennant.app }}'
+      {{- include "base-template.environment" . }}

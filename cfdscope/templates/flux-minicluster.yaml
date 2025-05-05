@@ -1,0 +1,4 @@
+{{ include "base-template.flux-minicluster" . }}
+    environment:
+      apprun: '{{ .Values.cfdscope.binary }} --domain-size {{ .Values.cfdscope.domain_size }} --cell-size {{ .Values.cfdscope.cell_size }} --end-time {{ .Values.cfdscope.end_time }} --lid-speed {{ .Values.cfdscope.lid_speed }} --step-size {{ .Values.cfdscope.step_size }} --output-prefix {{ .Values.cfdscope.output_prefix }} --output-format {{ .Values.cfdscope.output_format }} --preconditioner {{ .Values.cfdscope.preconditioner }}'
+      {{- include "base-template.environment" . }}

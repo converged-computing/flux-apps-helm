@@ -1,0 +1,4 @@
+{{ include "base-template.flux-minicluster" . }}
+    environment:
+      apprun: '{{ .Values.branson.binary }} {{ .Values.branson.input }}'
+      {{- include "base-template.environment" . }}      

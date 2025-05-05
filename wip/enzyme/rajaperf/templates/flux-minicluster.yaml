@@ -1,0 +1,4 @@
+{{ include "base-template.flux-minicluster" . }}
+    environment:
+      apprun: '{{ .Values.rajaperf.binary }}'
+      {{- include "base-template.environment" . }}      

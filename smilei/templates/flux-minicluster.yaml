@@ -1,0 +1,4 @@
+{{ include "base-template.flux-minicluster" . }}
+    environment:	
+      apprun: '{{ default "smilei" .Values.smilei.binary }} {{ .Values.smilei.example }} {{ if .Values.smilei.number_of_patches }}"Main.number_of_patches={{ .Values.smilei.number_of_patches }}"{{ end }} {{ if .Values.smilei.simulation_time }}"Main.simulation_time={{ .Values.smilei.simulation_time }}"{{ end }}'      
+      {{- include "base-template.environment" . }}

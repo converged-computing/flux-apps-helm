@@ -1,0 +1,4 @@
+{{ include "base-template.flux-minicluster" . }}
+    environment:	
+      apprun: '{{ default "likwid-bench" .Values.likwid.binary }} -t {{ .Values.likwid.test }} -w {{ .Values.likwid.workgroup }}'
+      {{- include "base-template.environment" . }}

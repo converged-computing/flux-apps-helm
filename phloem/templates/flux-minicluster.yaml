@@ -1,0 +1,4 @@
+{{ include "base-template.flux-minicluster" . }}
+    environment:	
+      apprun: '{{ .Values.phloem.binary }} -d {{ .Values.phloem.ndim }} -p {{ .Values.phloem.size }}'
+      {{- include "base-template.environment" . }}

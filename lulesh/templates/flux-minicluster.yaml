@@ -1,0 +1,4 @@
+{{ include "base-template.flux-minicluster" . }}
+    environment:
+      apprun: '{{ .Values.lulesh.binary }} -i {{ .Values.lulesh.iterations }} -s {{ .Values.lulesh.size }} -r {{ .Values.lulesh.regions }} -b {{ .Values.lulesh.balance }} -c {{ .Values.lulesh.cost }} {{ if .Values.lulesh.numfiles }}-f {{ .Values.lulesh.numfiles }}{{ end }} -p'
+      {{- include "base-template.environment" . }} 

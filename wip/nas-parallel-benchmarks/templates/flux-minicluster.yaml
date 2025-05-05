@@ -1,0 +1,4 @@
+{{ include "base-template.flux-minicluster" . }}
+    environment:
+      apprun: '{{ .Values.npb.problem }}.{{ .Values.npb.class }}.x'
+      {{- include "base-template.environment" . }}

@@ -42,7 +42,8 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
          do
            echo "FLUX-RUN START $app-iter-\$i"
            flux run --setattr=user.study_id=$app-iter-\$i -N{{ if .Values.experiment.nodes }}{{ .Values.experiment.nodes }}{{ else }}1{{ end }} {{ if .Values.experiment.tasks }}-n {{ .Values.experiment.tasks }}{{ end }} {{ include "chart.fluxopts" . }} ${apprun} |& tee /tmp/${app}.out
-             echo "FLUX-RUN END $app-iter-\$i"
+           {{ if .Values.minicluster.commands_post_iteration }}{{ .Values.minicluster.commands_post_iteration }};{{ end }}
+            echo "FLUX-RUN END $app-iter-\$i"
          done
 {{- end }}
 
@@ -63,7 +64,7 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 
 
 {{/* Flux Shared Options */}}
-{{- define "chart.fluxopts" -}}-o cpu-affinity={{ default "per-task" .Values.experiment.cpu_affinity }} -o gpu-affinity={{ default "off" .Values.experiment.gpu_affinity }} {{ if .Values.experiment.run_threads }}--env OMP_NUM_THREADS={{ .Values.experiment.run_threads }}{{ end }} {{ if .Values.experiment.cores_per_task }}--cores-per-task {{ .Values.experiment.cores_per_task }}{{ end }} {{ if .Values.experiment.exclusive }}--exclusive{{ end }}{{- end }}
+{{- define "chart.fluxopts" -}}-o cpu-affinity={{ default "per-task" .Values.experiment.cpu_affinity }} -o gpu-affinity={{ default "off" .Values.experiment.gpu_affinity }} {{ if .Values.experiment.run_threads }}--env OMP_NUM_THREADS={{ .Values.experiment.run_threads }}{{ end }} {{ if .Values.experiment.cores_per_task }}--cores-per-task {{ .Values.experiment.cores_per_task }}{{ end }} {{ if .Values.minicluster.gpus }} -g {{ .Values.minicluster.gpus }}{{ end }} {{ if .Values.experiment.exclusive }}--exclusive{{ end }}{{- end }}
 
 {{/* Flux Run with Pairs 
 Iterations is not relevant for this one
@@ -96,8 +97,14 @@ Iterations is not relevant for this one
 {{/* Flux GPUs */}}
 {{- define "chart.gpus" -}}
          {{ if .Values.minicluster.gpus }}procs=$(nproc); procs=$((procs - 1));   
-         gpus={{ .Values.minicluster.gpus }}; gpus=$((gpus - 1)); {{ $gpus := (.Values.minicluster.gpus | int) }}
-         {{ $gpus := (subf $gpus 1 | int) }}flux R encode --hosts=${hosts} --cores=0-${procs} --gpu=0-${gpus} > ${viewroot}/etc/flux/system/R
+         gpus={{ .Values.minicluster.gpus }}; 
+         if [[ "$gpus" == "1" ]]; then
+             gpus=0;
+         else
+             gpus=$((gpus - 1)); gpus=0-$gpus
+         fi
+         {{ $gpus := (.Values.minicluster.gpus | int) }}
+         flux R encode --hosts=${hosts} --cores=0-${procs} --gpu=${gpus} > ${viewroot}/etc/flux/system/R
          cat ${viewroot}/etc/flux/system/R || true
          export CUDA_VISIBLE_DEVICES=0{{ range untilStep 1 $gpus 1 }},{{ . }}{{ end }}{{ end }}
 {{- end }}

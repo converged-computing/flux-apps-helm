@@ -1,0 +1,4 @@
+{{ include "base-template.flux-minicluster" . }}
+    environment:	
+      apprun: '{{ .Values.mgm.binary }} -niter {{ .Values.mgm.niter }} -nx {{ .Values.mgm.nx }} -ny {{ .Values.mgm.ny }}'
+      {{- include "base-template.environment" . }}

@@ -1,0 +1,49 @@
+# Default values for experiment
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Logging (quiet will hide flux setup)
+logging:
+  quiet: true
+
+experiment:
+  iterations: 1
+  # num_threads: 3
+  # cores_per_task: 3
+  nodes: 1
+  tasks: 2
+
+env:
+  app: "nekbone"
+
+# Note this seems to have different binary per example, AND compiled for specific numbers of processes.
+# We will need to compile (again) at runtime.
+# /root/nekbone/test/example2/nekbone
+# /root/nekbone/test/nek_delay/nekbone
+# /root/nekbone/test/nek_comm/nekbone
+# /root/nekbone/test/example3/nekbone
+# /root/nekbone/test/nek_mgrid/nekbone
+
+nekbone:
+  binary: ./nekbone
+
+minicluster:
+  # Container image
+  # Examples updated to handle 10K sizes
+  image: "ghcr.io/rse-ops/nekbone:flux"
+
+  # Interactive MiniCluster?
+  interactive: false
+
+  # The working directory should be for the example we want to run
+  workdir: /opt/software/linux-ubuntu22.04-zen4/gcc-11.4.0/nekbone-17.0-mgukwyzaogvfm4ar6vumgw6oj6pomsny/bin/Nekbone/test/example3
+
+  # Number of NVIDIA gpus
+  gpus: 0
+
+  # MiniCluster size
+  size: 1
+    
+  # Add flux on the fly (set to false if Flux is already in the container)
+  addFlux: false
+  commands_init: ". /opt/spack-environment/spack/share/spack/setup-env.sh && spack env activate /opt/spack-environment"

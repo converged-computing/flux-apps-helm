@@ -1,0 +1,56 @@
+# Default values for experiment
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Logging (quiet will hide flux setup)
+logging:
+  quiet: true
+
+experiment:
+  iterations: 1
+  # num_threads: 3
+  # cores_per_task: 3
+  nodes: 1
+  tasks: 2
+
+env:
+  app: "miniamr"
+
+# More params can be exposed, see
+# https://github.com/Mantevo/miniAMR/blob/master/openmp/README
+miniamr:
+  binary: miniAMR.x
+  nx: 10
+  ny: 10
+  nz: 10
+# These control the number of cells in the blocks in the mesh.  All of
+# these need to be even and greater than zero.  The default is 10 for
+# each variable.
+  npx: 1
+  npy: 1
+  npz: 1
+# These control the number of processors is each direction.  The product
+# of these number has to equal the number of processors being used.  The
+# default is 1 processor in each direction.
+
+minicluster:
+  # Container image
+  # Without flux
+  # image: "ghcr.io/converged-computing/ecp-proxy-apps:latest"
+  image: ghcr.io/rse-ops/miniamr:flux
+  
+  # Interactive MiniCluster?
+  interactive: false
+
+  # Number of NVIDIA gpus
+  gpus: 0
+  
+  # MiniCluster size
+  size: 1
+  
+  # Add flux on the fly (set to false if Flux is already in the container)
+  addFlux: true
+  
+  # Logic to source the spack environment (needed for the default container)
+  # That was only for a spack install
+  # commands_init: ". /opt/spack/share/spack/setup-env.sh && spack load miniamr"

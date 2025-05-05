@@ -17,13 +17,16 @@ experiment:
   tasks: 2
   
 laghos:
-  binary: /opt/laghos/laghos
-  p: 1
-  dim: 2
-  rs: 3
-  tf: 0.8
-  pa: true
-  fom: true
+  binary: laghos
+  mesh: /opt/laghos/data/cube_311_hex.mesh
+  # Set to -1 to disable
+  max_steps: 500
+  # p: 1
+  # dim: 2
+  # rs: 3
+  # tf: 0.8
+  # pa: true
+  # fom: true
 
   # pt: 311
   # mesh: /opt/laghos/data/cube_311_hex.mesh
@@ -37,7 +40,7 @@ laghos:
       
 minicluster:
   # Container image
-  image: "ghcr.io/converged-computing/metric-laghos:cpu-zen4"
+  image: "ghcr.io/rse-ops/laghos:flux"
 
   # Interactive MiniCluster?
   interactive: false
@@ -50,3 +53,4 @@ minicluster:
 
   # Add flux on the fly (set to false if Flux is already in the container)
   addFlux: false
+  commands_init: ". /opt/spack-environment/spack/share/spack/setup-env.sh && spack env activate /opt/spack-environment"

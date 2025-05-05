@@ -1,0 +1,17 @@
+# Default values for experiment
+# This is a YAML-formatted file.
+master:
+  image: ghcr.io/converged-computing/pytorch-mnist:fashion-gke
+  restartPolicy: Never
+  imagePullPolicy: IfNotPresent
+  gpus: 1
+  replicas: 1
+  command: time python3 /opt/pytorch-mnist/mnist.py --epochs=8 --backend=nccl --batch-size=128
+  
+worker:
+  image: ghcr.io/converged-computing/pytorch-mnist:fashion-gke
+  restartPolicy: Never
+  imagePullPolicy: IfNotPresent
+  gpus: 1
+  replicas: 1
+  command: time python3 /opt/pytorch-mnist/mnist.py --epochs=8 --backend=nccl --batch-size=128
