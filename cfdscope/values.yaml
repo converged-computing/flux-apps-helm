@@ -2,6 +2,8 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
+# Warning: this is a learning application, and it just runs on one node.
+# see https://github.com/tudasc/cfdSCOPE/issues/1
 # Logging (quiet will hide flux setup)
 logging:
   quiet: true
@@ -41,7 +43,7 @@ cfdscope:
 
 minicluster:
   # Container image
-  image: "ghcr.io/rse-ops/cfdscope:flux"
+  image: ghcr.io/converged-computing/cfdscope:ubuntu2204
   
   # Interactive MiniCluster?
   interactive: false

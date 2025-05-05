@@ -12,8 +12,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        app: [amg2023, kripke, lammps-reax, laghos, minife, mixbench, 
-              mt-gemm, osu-benchmarks, quicksilver, single-node, stream]  
+        app: [amg2023, bdas, cfdscope, kripke, lammps-reax, laghos, minife, mixbench, 
+              mt-gemm, osu-benchmarks, quicksilver, single-node, stream] 
     name: Prepare charts
     runs-on: ubuntu-latest
     steps:
