@@ -28,7 +28,7 @@ minife:
 
 minicluster:
   # Container image
-  image: "ghcr.io/converged-computing/metric-minife:cpu-zen4"
+  image: ghcr.io/converged-computing/minife:ubuntu2204
 
   # Interactive MiniCluster?
   interactive: false
