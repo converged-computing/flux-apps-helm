@@ -13,8 +13,10 @@ jobs:
       fail-fast: false
       matrix:
         app: [amg2023, bdas, cfdscope, chatterbug, e3sm-kernels, fio, gamess-r1-mp2-miniapp, 
-              gpcnet, gromacs, kripke, lammps-reax, laghos, likwid, hpcg, hpl, lulesh, minife, mixbench, 
-              mt-gemm, nekrs, netmark, osu-benchmarks, pennant, quicksilver, single-node, stream] 
+              gpcnet, gromacs, hpcg, hpl, ior, kripke, lammps-reax, laghos, likwid, lulesh, minife, mixbench, 
+              multi-gpu-models, miniamr, mt-gemm, nekrs, netmark, osu-benchmarks, pennant, quicksilver, 
+              phloem, pytorch-mnist-fashion, rajaperf, remhos, single-node, smilei, nccl-tests, qmcpack, stream] 
+
     name: Prepare charts
     runs-on: ubuntu-latest
     steps:
@@ -48,25 +50,6 @@ jobs:
         echo $CHART_TAR_GZ >> chart-name.txt
         cat chart-name.txt
 
-    - name: Create Kind Cluster
-      if: (github.event_name == 'pull_request')
-      uses: helm/kind-action@v1.5.0
-      with:
-        cluster_name: kind
-        kubectl_version: v1.28.2
-        version: v0.20.0
-        config: ./kind-config.yaml
-
-    - name: Install Flux Operator
-      if: (github.event_name == 'pull_request')
-      run: kubectl apply -f https://raw.githubusercontent.com/flux-framework/flux-operator/refs/heads/main/examples/dist/flux-operator.yaml
-
-    - name: Deploy Helm
-      if: (github.event_name == 'pull_request')
-      env:
-        app: ${{ matrix.app }}
-      run: helm install app ./${app}
-
      # Some are too computationally intensive to test here
     - name: Determine Skip Test
       if: (github.event_name == 'pull_request')
@@ -88,6 +71,25 @@ jobs:
       run: |
         echo "Skipping test"
         echo "skip_test=yes" >> $GITHUB_ENV
+
+    - name: Create Kind Cluster
+      if: (github.event_name == 'pull_request' && env.skip_test == 'no')
+      uses: helm/kind-action@v1.5.0
+      with:
+        cluster_name: kind
+        kubectl_version: v1.28.2
+        version: v0.20.0
+        config: ./kind-config.yaml
+
+    - name: Install Flux Operator
+      if: (github.event_name == 'pull_request' && env.skip_test == 'no')
+      run: kubectl apply -f https://raw.githubusercontent.com/flux-framework/flux-operator/refs/heads/main/examples/dist/flux-operator.yaml
+
+    - name: Deploy Helm
+      if: (github.event_name == 'pull_request' && env.skip_test == 'no')
+      env:
+        app: ${{ matrix.app }}
+      run: helm install app ./${app}
 
     - name: Test Completion
       if: (env.skip_test == 'no')
