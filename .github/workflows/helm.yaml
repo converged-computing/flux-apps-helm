@@ -14,7 +14,7 @@ jobs:
       matrix:
         app: [amg2023, bdas, cfdscope, chatterbug, e3sm-kernels, fio, gamess-r1-mp2-miniapp, 
               gpcnet, gromacs, kripke, lammps-reax, laghos, likwid, hpcg, hpl, lulesh, minife, mixbench, 
-              mt-gemm, osu-benchmarks, quicksilver, single-node, stream] 
+              mt-gemm, nekrs, netmark, osu-benchmarks, pennant, quicksilver, single-node, stream] 
     name: Prepare charts
     runs-on: ubuntu-latest
     steps:

@@ -23,7 +23,7 @@ rajaperf:
   
 minicluster:
   # Container image
-  image: ghcr.io/rse-ops/rajaperf:flux
+  image: ghcr.io/converged-computing/rajaperf:ubuntu2204
   
   # Interactive MiniCluster?
   interactive: false

@@ -22,7 +22,7 @@ qmcpack:
 
 minicluster:
   # Container image
-  image: "ghcr.io/rse-ops/qmcpack:flux"
+  image: ghcr.io/converged-computing/qmcpack:ubuntu2204
 
   # Interactive MiniCluster?
   interactive: false

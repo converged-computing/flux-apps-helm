@@ -22,7 +22,7 @@ remhos:
 
 minicluster:
   # Container image
-  image: "ghcr.io/rse-ops/remhos:flux"
+  image: ghcr.io/converged-computing/remhos:ubuntu2204
 
   # Interactive MiniCluster?
   interactive: false

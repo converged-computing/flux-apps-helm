@@ -26,7 +26,7 @@ pennant:
 
 minicluster:
   # Container image
-  image: "ghcr.io/rse-ops/pennant:flux"
+  image: ghcr.io/converged-computing/pennant:ubuntu2204
 
   # Interactive MiniCluster?
   interactive: false

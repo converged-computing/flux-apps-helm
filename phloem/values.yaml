@@ -26,7 +26,7 @@ phloem:
 
 minicluster:
   # Container image
-  image: ghcr.io/rse-ops/phloem:flux
+  image: ghcr.io/converged-computing/phloem:ubuntu2204
 
   # Interactive MiniCluster?
   interactive: false
