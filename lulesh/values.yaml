@@ -29,7 +29,7 @@ lulesh:
 
 minicluster:
   # Container image
-  image: "ghcr.io/rse-ops/lulesh:flux"
+  image: "ghcr.io/converged-computing/lulesh:ubuntu2204"
 
   # Interactive MiniCluster?
   interactive: false

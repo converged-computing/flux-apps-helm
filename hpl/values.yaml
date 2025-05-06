@@ -21,7 +21,7 @@ hpl:
 
 minicluster:
   # Container image
-  image: "ghcr.io/rse-ops/hpl:flux"
+  image: "ghcr.io/converged-computing/hpl:ubuntu2204"
 
   # Interactive MiniCluster?
   interactive: false

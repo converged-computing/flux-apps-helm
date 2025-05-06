@@ -21,7 +21,7 @@ stream:
 
 minicluster:
   # Container image
-  image: "ghcr.io/converged-computing/metric-stream:cpu-zen4"
+  image: "ghcr.io/converged-computing/stream:ubuntu2204"
 
   # Interactive MiniCluster?
   interactive: false

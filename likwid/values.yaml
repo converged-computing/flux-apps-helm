@@ -26,7 +26,7 @@ likwid:
 
 minicluster:
   # Container image
-  image: ghcr.io/rse-ops/likwid:flux
+  image: ghcr.io/converged-computing/likwid:ubuntu2204
 
   # Interactive MiniCluster?
   interactive: false

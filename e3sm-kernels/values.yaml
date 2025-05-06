@@ -20,9 +20,8 @@ kernels:
   binary: atm
 
 minicluster:
-  # Container image (no flux)
-  # image: "ghcr.io/converged-computing/e3sm-kernels:latest"
-  image: ghcr.io/rse-ops/e3sm-kernels:flux
+  # Container image
+  image: ghcr.io/converged-computing/e3sm-kernels:ubuntu2204
   
   # Interactive MiniCluster?
   interactive: false

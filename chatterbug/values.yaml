@@ -46,7 +46,7 @@ flux:
 
 minicluster:
   # Container image
-  image: "ghcr.io/converged-computing/metric-chatterbug:latest"
+  image: "ghcr.io/converged-computing/chatterbug:ubuntu2004-efa"
 
   # Interactive MiniCluster?
   interactive: false

@@ -23,7 +23,7 @@ gromacs:
 
 minicluster:
   # Container image
-  image: ghcr.io/rse-ops/gromacs:flux
+  image: ghcr.io/converged-computing/gromacs:ubuntu2204
   
   # Interactive MiniCluster?
   interactive: false

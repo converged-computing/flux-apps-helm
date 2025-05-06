@@ -18,7 +18,7 @@ env:
 
 minicluster:
   # Container image
-  image: "ghcr.io/converged-computing/metric-single-node:cpu-zen4"
+  image: "ghcr.io/converged-computing/single-node-benchmarks:ubuntu2204"
 
   # This needs priviledged
   privileged: true

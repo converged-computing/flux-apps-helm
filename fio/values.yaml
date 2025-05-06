@@ -33,7 +33,7 @@ fio:
 
 minicluster:
   # Container image
-  image: "ghcr.io/converged-computing/metric-fio:latest"
+  image: ghcr.io/converged-computing/fio:ubuntu2204
 
   # Interactive MiniCluster?
   interactive: false

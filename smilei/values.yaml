@@ -23,7 +23,7 @@ smilei:
 
 minicluster:
   # Container image
-  image: "ghcr.io/converged-computing/smilei"
+  image: "ghcr.io/converged-computing/smilei:ubuntu2404"
 
   # Interactive MiniCluster?
   interactive: false

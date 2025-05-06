@@ -24,7 +24,7 @@ amg:
 
 minicluster:
   # Container image
-  image: "ghcr.io/converged-computing/metric-amg2023:spack-slim-cpu-int64-zen3"
+  image: "ghcr.io/converged-computing/amg2023:ubuntu2204"
 
   # Interactive MiniCluster?
   interactive: false

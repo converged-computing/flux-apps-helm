@@ -9,6 +9,8 @@ master:
   command: time python3 /opt/pytorch-mnist/mnist.py --epochs=8 --backend=nccl --batch-size=128
   
 worker:
+  # This is docker.io/kubeflowkatib/pytorch-mnist:v1beta1-45c5727, but with data 
+  # pre-downloaded and added to the container.
   image: ghcr.io/converged-computing/pytorch-mnist:fashion-gke
   restartPolicy: Never
   imagePullPolicy: IfNotPresent

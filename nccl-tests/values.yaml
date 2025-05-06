@@ -31,7 +31,7 @@ nccl:
 
 minicluster:
   # Container image
-  image: "ghcr.io/converged-computing/metric-nccl-tests:flux-gpu-12.4.1"
+  image: ghcr.io/converged-computing/nccl-tests:ubuntu2404
 
   # Interactive MiniCluster?
   interactive: false

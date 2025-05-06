@@ -25,7 +25,7 @@ mgm:
 
 minicluster:
   # Container image
-  image: "ghcr.io/converged-computing/multi-gpu-models:flux-gpu"
+  image: "ghcr.io/converged-computing/multi-gpu-models:ubuntu2204"
 
   # Interactive MiniCluster?
   interactive: false
