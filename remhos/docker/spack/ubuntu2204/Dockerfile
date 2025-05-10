@@ -3,8 +3,6 @@ FROM ubuntu:22.04 AS builder
 ENV DEBIAN_FRONTEND=noninteractive
 COPY --from=base /NiO-fcc-supertwist111-supershift000-S8.h5 /NiO-fcc-supertwist111-supershift000-S8.h5
 
-# docker build -f Dockerfile.spack -t ghcr.io/rse-ops/qmcpack:flux .
-
 RUN apt-get update
 RUN DEBIAN_FRONTEND="noninteractive" apt-get -y install \
     autotools-dev \
@@ -34,7 +32,7 @@ RUN mkdir /opt/spack-environment \
     &&   echo "  - flux-core" \
     &&   echo "  - pmix@4.2.2" \
     &&   echo "  - flux-pmix" \
-    &&   echo "  - qmcpack" \
+    &&   echo "  - remhos" \
     &&   echo "  concretizer:" \
     &&	 echo "    unify: true" \
     &&   echo "  config:" \

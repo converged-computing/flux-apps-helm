@@ -1,0 +1,45 @@
+# Default values for experiment
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Logging (quiet will hide flux setup)
+logging:
+  quiet: true
+
+experiment:
+  iterations: 1
+  gpu_affinity: per-task
+  # num_threads: 3
+  # cores_per_task: 3
+  nodes: 1
+  tasks: 2
+
+env:
+  app: "lammps-gpu"
+
+flux:
+  image: ghcr.io/converged-computing/flux-view-ubuntu:tag-jammy
+
+lammps:
+  binary: lmp
+  input: in.reaxff.hns
+  x: 2
+  y: 2
+  z: 2
+  
+
+minicluster:
+  # Container image
+  image: ghcr.io/converged-computing/lammps-reax-gpu:ubuntu2404
+
+  # Interactive MiniCluster?
+  interactive: false
+
+  # Number of NVIDIA gpus
+  gpus: 1
+  
+  # MiniCluster size
+  size: 1
+  
+  # Add flux on the fly (set to false if Flux is already in the container)
+  addFlux: false

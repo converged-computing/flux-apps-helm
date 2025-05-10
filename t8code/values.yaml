@@ -1,0 +1,99 @@
+# Default values for lammps experiment
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Logging (quiet will hide flux setup)
+logging:
+  quiet: true
+
+experiment:
+  iterations: 1
+  nodes: 1
+  tasks: 2
+
+env:
+  app: t8code
+
+t8code:
+  binary: t8_advection
+  flow: 3
+  level: 2
+  rlevel: 2
+  elements: 8
+  cfl: 0.7
+#  no_vtk: true
+
+# I think './t8_advection --flow 3 --level 3 --rlevel 3 -e8 --CFL 0.7 --no-vtk' could be a good start. It is a hybrid cube (tetrahedra, hexahedra and prisms) with a turbulent flow. You can also play around with the parameters l & r, to vary the initial refinement and the maximum refinement level to adapt the load to your system. To see what is happening you can drop the '-o' and use -v to set the frequency of the vtk-output. For performance measurements it is better to not use this option.  
+
+# [libsc] This is libsc 2.8.6.999
+# [t8] This is t8 4.0.0
+# [t8] This program solves the advection equation on a given geometry.
+
+# [t8] Usage: t8_advection <OPTIONS>
+# [t8] Options:
+# [t8]    -h | --help                  Display a short help message.
+# [t8]    -u | --flow      <INT>       Choose the flow field u.
+# 		1 - Constant 1 in x-direction.
+# 		2 - Constant 1 in x,y, and z.
+# 		3 - A turbulent flow in a cube with zero outflow.
+# 			It reverses direction at t = 0.5.
+# 		4 - 2D rotation around (0.5,0.5).
+# 		5 - 2D flow around circle at (0.5,0.5)with radius 0.15.
+# 		6 - A solution to the stokes equation on a spherical shell.
+# 		7 - Flow past a rotating cylinder of radius of 0.5 around the z-axis. This flow is defined for a specific mesh, which can be generated with Gmsh and the .geo files 't8_advection_generate_channel.geo' and 't8_advection_generate_channel_2d.geo'. These meshes can also be used with the curved geometry.
+
+# [t8]    -l | --level     <INT>       The minimum refinement level of the mesh.
+# [t8]    -r | --rlevel    <INT>       The number of adaptive refinement levels.
+# [t8]    -e | --elements  <INT>       If specified the coarse mesh is a hypercube
+# 				     consisting of the following elements:
+# 		1 - line
+# 		2 - quad
+# 		3 - triangle
+# 		4 - hexahedron
+# 		5 - tetrahedron
+# 		6 - prism
+# 		7 - triangle/quad (hybrid 2d).
+# 		8 - tet/hex/prism (hybrid 3d).
+# 		9 - pyramid.
+
+# [t8]    -f | --mshfile   <STRING>    If specified, the cmesh is constructed from a .msh file with the given prefix.
+# 				     The files must end in .msh and be in ASCII format version 2. -d must be specified.
+# [t8]    -d | --dim       <INT>       In combination with -f: The dimension of the mesh. 1 <= d <= 3.
+# [t8]    -c | --cad                   In combination with -f: Use the cad geometry, only viable if a .brep file of the same name is present.
+# [t8]    -T | --end-time  <REAL>      The duration of the simulation. Default: 1
+# [t8]    -C | --CFL       <REAL>      The cfl number to use. Default: 1
+# [t8]    -b | --band-width <REAL>     Control the width of the refinement band around
+# 				     the zero level-set. Default 1.
+# [t8]    -a | --adapt-freq <INT>      Controls how often the mesh is readapted. A value of i means, every i-th time step.
+# [t8]    -v | --vtk-freq  <INT>       How often the vtk output is produced 
+# 				     (after how many time steps). A value of 0 is equivalent to using -o.
+# [t8]    -o | --no-vtk                Suppress vtk output. Overwrites any -v setting.
+# [t8]    -s | --simulate              Simulate more load per element. In each iteration, useless dummy operations
+#  				     are performed per element. Decreases the performance!
+# [t8]    -X | --Xcoord    <REAL>      The X-Coordinate of the middlepointof the sphere. Default is 0.6.
+# [t8]    -Y | --Ycoord    <REAL>      The Y-Coordinate of the middlepointof the sphere. Default is 0.6.
+# [t8]    -Z | --Zcoord    <REAL>      The Z-Coordinate of the middlepointof the sphere. Default is 0.6.
+# [t8]    -R | --Radius    <REAL>      The radius of the Sphere.Default is 0.25.
+# [t8]    -V | --volume-refine <INT>   Refine elements close to the 0 level-set only if their volume is smaller than the l+V-times refined
+# 				     smallest element int the mesh.
+
+
+flux:
+  image: ghcr.io/converged-computing/flux-view-ubuntu:tag-jammy
+
+minicluster:
+  # Container image
+  image: ghcr.io/converged-computing/t8code:ubuntu2204
+
+  # Interactive MiniCluster?
+  interactive: false
+  
+  # MiniCluster size
+  size: 1
+  workdir: /opt/t8code/build/example/advect
+
+  # Number of NVIDIA gpus
+  gpus: 0
+
+  # Add flux on the fly (set to false if Flux is already in the container)
+  addFlux: false

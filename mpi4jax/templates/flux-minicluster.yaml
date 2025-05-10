@@ -1,0 +1,4 @@
+{{ include "base-template.flux-minicluster" . }}
+    environment:
+      apprun: '{{ .Values.mpi4jax.binary }} {{ .Values.mpi4jax.input }} --save-animation'
+      {{- include "base-template.environment" . }}
