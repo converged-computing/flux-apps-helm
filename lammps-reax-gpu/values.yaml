@@ -21,8 +21,9 @@ flux:
   image: ghcr.io/converged-computing/flux-view-ubuntu:tag-jammy
 
 lammps:
-  binary: lmp
+  binary: lmp_gpu
   input: in.reaxff.hns
+  kokkos: false
   x: 2
   y: 2
   z: 2
@@ -30,13 +31,14 @@ lammps:
 
 minicluster:
   # Container image
-  image: ghcr.io/converged-computing/lammps-reax-gpu:ubuntu2404
+  image: ghcr.io/converged-computing/lammps-reax-gpu:ubuntu2204
 
   # Interactive MiniCluster?
   interactive: false
 
   # Number of NVIDIA gpus
   gpus: 1
+  workdir: /opt/lammps/examples/reaxff/HNS/ 
   
   # MiniCluster size
   size: 1

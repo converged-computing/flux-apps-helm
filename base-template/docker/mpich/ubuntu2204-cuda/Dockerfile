@@ -172,10 +172,20 @@ RUN apt-get update && \
     apt-get install -y fftw3-dev fftw3 pdsh libfabric-dev libfabric1 \
         openssh-client openssh-server \
         dnsutils telnet strace git g++ \
-        unzip bzip2
+        unzip bzip2 gfortran
 
 WORKDIR /opt
-RUN apt-get update && apt-get install -y mpich libmpich-dev
+ENV CUDA_HOME=/usr/local/cuda
+ENV CUDA_PATH=/usr/local/cuda
+
+RUN export MPICH_VERSION=4.2.2 && \
+    wget https://www.mpich.org/static/downloads/${MPICH_VERSION}/mpich-${MPICH_VERSION}.tar.gz && \
+    tar -xzf mpich-${MPICH_VERSION}.tar.gz && \
+    cd mpich-${MPICH_VERSION} && \
+    ./configure --with-cuda=$CUDA_HOME --with-device=ch3:sock && \
+    make -j 4 && make install && cd - && \
+    rm -rf mpich-${MPICH_VERSION} mpich-${MPICH_VERSION}.tar.gz && \
+    ldconfig
 
 ENV PATH=/usr/local/nvidia/bin:/usr/local/cuda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 ENV LD_LIBRARY_PATH=/opt/miniconda/lib:/usr/local/nvidia/lib:/usr/local/nvidia/lib64
