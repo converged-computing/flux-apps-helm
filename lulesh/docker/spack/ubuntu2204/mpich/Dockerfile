@@ -1,7 +1,5 @@
-FROM ghcr.io/flux-framework/flux-k8s-nio-data as base   
 FROM ubuntu:22.04 AS builder
 ENV DEBIAN_FRONTEND=noninteractive
-COPY --from=base /NiO-fcc-supertwist111-supershift000-S8.h5 /NiO-fcc-supertwist111-supershift000-S8.h5
 
 RUN apt-get update
 RUN DEBIAN_FRONTEND="noninteractive" apt-get -y install \
@@ -28,11 +26,12 @@ RUN DEBIAN_FRONTEND="noninteractive" apt-get -y install \
 RUN mkdir /opt/spack-environment \
     &&  (echo "spack:" \
     &&   echo "  specs:" \
+    &&   echo "  - mpich" \
     &&   echo "  - flux-sched" \
     &&   echo "  - flux-core" \
     &&   echo "  - pmix@4.2.2" \
     &&   echo "  - flux-pmix" \
-    &&   echo "  - remhos" \
+    &&   echo "  - lulesh" \
     &&   echo "  concretizer:" \
     &&	 echo "    unify: true" \
     &&   echo "  config:" \
@@ -57,7 +56,7 @@ WORKDIR /opt
 EXPOSE 22
 
 FROM ubuntu:22.04
-COPY --from=base /NiO-fcc-supertwist111-supershift000-S8.h5 /NiO-fcc-supertwist111-supershift000-S8.h5
+
 COPY --from=builder /opt/spack-environment /opt/spack-environment
 COPY --from=builder /opt/software /opt/software
 COPY --from=builder /opt/view /opt/view
@@ -85,7 +84,3 @@ RUN export VERSION="1.2.0" && \
     tar -zxf oras_${VERSION}_*.tar.gz -C oras-install/ && \
     mv oras-install/oras /usr/local/bin/ && \
     rm -rf oras_${VERSION}_*.tar.gz oras-install/
-
-COPY ./NiO/nio_data.tgz /coral2/NiO/nio_data.tgz
-RUN cd /coral2/NiO/ && tar -xzvf nio_data.tgz && \
-   mv /NiO-fcc-supertwist111-supershift000-S8.h5 /coral2/NiO/

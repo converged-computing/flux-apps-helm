@@ -1,4 +1,4 @@
-IMAGE_NAME ?= ghcr.io/converged-computing/cfdscope
+IMAGE_NAME ?= ghcr.io/converged-computing/mfem-benchmarks
 IMAGE_TAG ?= ubuntu2204
 FULL_IMAGE_NAME = $(IMAGE_NAME):$(IMAGE_TAG)
 DOCKERFILE_PATH = Dockerfile

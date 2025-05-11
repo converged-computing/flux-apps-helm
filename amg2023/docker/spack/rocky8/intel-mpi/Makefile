@@ -1,5 +1,5 @@
-IMAGE_NAME ?= ghcr.io/converged-computing/cfdscope
-IMAGE_TAG ?= ubuntu2204
+IMAGE_NAME ?= ghcr.io/converged-computing/amg2023
+IMAGE_TAG ?= rocky8-intel-mpi
 FULL_IMAGE_NAME = $(IMAGE_NAME):$(IMAGE_TAG)
 DOCKERFILE_PATH = Dockerfile
 BUILD_CONTEXT = .

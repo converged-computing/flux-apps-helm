@@ -1,10 +1,25 @@
-FROM nvidia/cuda:12.8.0-cudnn-devel-ubuntu24.04
+FROM intel/oneapi-hpckit:2025.1.1-0-devel-ubuntu22.04 AS builder
 ENV DEBIAN_FRONTEND=noninteractive
 
-# flux submit --watch -N1 --gpus-per-node 4 /opt/multi-gpu-programming-models/multi_threaded_copy/jacobi -niter 5000
-# mpirun -np 4 --allow-run-as-root /opt/multi-gpu-programming-models/mpi/jacobi -niter 5000
-# flux run -N1 -n 4 -g 1 /opt/multi-gpu-programming-models/mpi/jacobi -niter 5000
-# flux run -N2 -n 8 -g 1 /opt/multi-gpu-programming-models/mpi/jacobi -niter 5000
+RUN apt-get update && apt-get install -y build-essential \
+    tar \
+    autoconf \
+    automake \
+    make \
+    wget \
+    git \
+    gcc \
+    g++ \
+    zip \
+    libblas-dev \
+    liblapack-dev \
+    fftw3-dev fftw3 \
+    libxml2 \
+    libxml2-dev \
+    hdf5-tools \
+    libhdf5-dev \
+    libboost-all-dev \
+    && apt-get clean
 
 # Utilities
 RUN apt-get update && \
@@ -37,7 +52,7 @@ RUN apt-get update && \
         pkg-config \
         autotools-dev \
         libtool \
-        libffi-dev \
+	libffi-dev \
         autoconf \
         automake \
         make \
@@ -49,7 +64,7 @@ RUN apt-get update && \
 
 # Python - instead of a system python we install anaconda
 # https://docs.conda.io/en/latest/miniconda.html#linux-installers
-RUN pip install --upgrade --ignore-installed --break-system-packages \
+RUN pip install --upgrade --ignore-installed \
         "markupsafe==2.0.0" \
         coverage cffi ply six pyyaml "jsonschema>=2.6,<4.0" \
         sphinx sphinx-rtd-theme sphinxcontrib-spelling 
@@ -110,7 +125,6 @@ RUN git clone https://github.com/openpmix/openpmix.git && \
     rm -rf prrte
 
 ENV LANG=C.UTF-8
-
 ARG FLUX_SECURITY_VERSION=0.11.0
 
 WORKDIR /opt
@@ -126,7 +140,6 @@ RUN CCACHE_DISABLE=1 && \
     make install && \
     cd .. && \
     rm -rf flux-security-*
-
 
 # Setup MUNGE directories & key
 RUN mkdir -p /var/run/munge && \
@@ -144,17 +157,17 @@ RUN wget https://github.com/flux-framework/flux-core/releases/download/v0.61.2/f
 
 RUN sudo apt-get update
 RUN sudo apt-get -qq install -y --no-install-recommends \
-        libboost-graph-dev \
-        libboost-system-dev \
-        libboost-filesystem-dev \
-        libboost-regex-dev \
-        libyaml-cpp-dev \
-        libedit-dev \
+	libboost-graph-dev \
+	libboost-system-dev \
+	libboost-filesystem-dev \
+	libboost-regex-dev \
+	libyaml-cpp-dev \
+	libedit-dev \
         libboost-dev \
         libyaml-cpp-dev \
-        curl
+	curl
 
-ENV LD_LIBRARY_PATH=/opt/miniconda/lib:$LD_LIBRARY_PATH
+ENV LD_LIBRARY_PATH=/opt/miniconda/lib
 
 ENV CMAKE=3.23.1
 RUN curl -s -L https://github.com/Kitware/CMake/releases/download/v$CMAKE/cmake-$CMAKE-linux-x86_64.sh > cmake.sh && \
@@ -169,24 +182,29 @@ RUN wget https://github.com/flux-framework/flux-sched/releases/download/v0.33.1/
     ldconfig
 
 RUN apt-get update && \
-    apt-get install -y pdsh libfabric-dev libfabric1 \
+    apt-get install -y fftw3-dev fftw3 pdsh libfabric-dev libfabric1 \
         openssh-client openssh-server \
         dnsutils telnet strace git g++ \
         unzip bzip2
 
-# install openmpi with cuda
+# install openmpi without cuda
 WORKDIR /opt
 RUN mkdir -p /usr/local/pancakes && \
     wget https://download.open-mpi.org/release/open-mpi/v4.1/openmpi-4.1.2.tar.gz && \
     tar -xzvf openmpi-4.1.2.tar.gz && \
     cd openmpi-4.1.2 && \
-    ./configure --with-cuda --prefix=/usr/local/pancakes && \
+    ./configure && \
     make && make install
 
-ENV PATH=/usr/local/nvidia/bin:/usr/local/cuda/bin:/usr/local/pancakes/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-ENV LD_LIBRARY_PATH=/usr/local/pancakes/lib:/opt/miniconda/lib:/usr/local/nvidia/lib:/usr/local/nvidia/lib64
+RUN apt-get update && \
+    apt-get install -y fftw3-dev fftw3 pdsh libfabric-dev libfabric1 \
+        openssh-client openssh-server \
+        dnsutils telnet strace cmake git g++ \
+        unzip bzip2
 
-# Finally, install oras for saving artifacts
+WORKDIR /opt
+
+# Install oras for saving artifacts
 RUN export VERSION="1.2.0" && \
     curl -LO "https://github.com/oras-project/oras/releases/download/v${VERSION}/oras_${VERSION}_linux_amd64.tar.gz" && \
     mkdir -p oras-install/ && \

@@ -1,0 +1,5 @@
+{{ include "base-template.flux-minicluster" . }}
+    environment:
+      apprun: '{{ default "/usr/bin/lmp" .Values.lammps.binary }} {{ if .Values.lammps.kokkos }}-k on g {{ .Values.minicluster.gpus }} -sf kk -pk kokkos cuda/aware off newton on neigh half{{ end }} -v x {{ default 2 .Values.lammps.x }} -v y {{ default 2 .Values.lammps.y }} -v z {{ default 2 .Values.lammps.z }} -in {{ default "in.reaxff.hns" .Values.lammps.input }} {{ default "-nocite" .Values.lammps.flags }}'    
+      {{- include "base-template.environment" . }}
+# lmp -k on g 8 -sf kk -pk kokkos cuda/aware off newton on neigh half -in in.reaxff.hns -v x 64 -v y 32 -v z 32 -in in.reaxff.hns -nocite

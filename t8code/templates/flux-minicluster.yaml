@@ -1,0 +1,4 @@
+{{ include "base-template.flux-minicluster" . }}
+    environment:
+      apprun: '{{ .Values.t8code.binary }} --flow {{ .Values.t8code.flow }} --level {{ .Values.t8code.level }} --rlevel {{ .Values.t8code.rlevel }} --elements {{ .Values.t8code.elements }} --CFL {{ .Values.t8code.cfl }} {{ if .Values.t8code.no_vtk }}--no-vtk{{ end }}'
+      {{- include "base-template.environment" . }}

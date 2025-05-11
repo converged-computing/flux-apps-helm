@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.8.0-cudnn-devel-ubuntu24.04
+FROM nvidia/cuda:12.4.1-cudnn-devel-ubuntu22.04
 ENV DEBIAN_FRONTEND=noninteractive
 
 # flux submit --watch -N1 --gpus-per-node 4 /opt/multi-gpu-programming-models/multi_threaded_copy/jacobi -niter 5000
@@ -49,7 +49,7 @@ RUN apt-get update && \
 
 # Python - instead of a system python we install anaconda
 # https://docs.conda.io/en/latest/miniconda.html#linux-installers
-RUN pip install --upgrade --ignore-installed --break-system-packages \
+RUN pip install --upgrade --ignore-installed \
         "markupsafe==2.0.0" \
         coverage cffi ply six pyyaml "jsonschema>=2.6,<4.0" \
         sphinx sphinx-rtd-theme sphinxcontrib-spelling 
@@ -169,22 +169,26 @@ RUN wget https://github.com/flux-framework/flux-sched/releases/download/v0.33.1/
     ldconfig
 
 RUN apt-get update && \
-    apt-get install -y pdsh libfabric-dev libfabric1 \
+    apt-get install -y fftw3-dev fftw3 pdsh libfabric-dev libfabric1 \
         openssh-client openssh-server \
         dnsutils telnet strace git g++ \
-        unzip bzip2
+        unzip bzip2 gfortran
 
-# install openmpi with cuda
 WORKDIR /opt
-RUN mkdir -p /usr/local/pancakes && \
-    wget https://download.open-mpi.org/release/open-mpi/v4.1/openmpi-4.1.2.tar.gz && \
-    tar -xzvf openmpi-4.1.2.tar.gz && \
-    cd openmpi-4.1.2 && \
-    ./configure --with-cuda --prefix=/usr/local/pancakes && \
-    make && make install
+ENV CUDA_HOME=/usr/local/cuda
+ENV CUDA_PATH=/usr/local/cuda
 
-ENV PATH=/usr/local/nvidia/bin:/usr/local/cuda/bin:/usr/local/pancakes/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-ENV LD_LIBRARY_PATH=/usr/local/pancakes/lib:/opt/miniconda/lib:/usr/local/nvidia/lib:/usr/local/nvidia/lib64
+RUN export MPICH_VERSION=4.2.2 && \
+    wget https://www.mpich.org/static/downloads/${MPICH_VERSION}/mpich-${MPICH_VERSION}.tar.gz && \
+    tar -xzf mpich-${MPICH_VERSION}.tar.gz && \
+    cd mpich-${MPICH_VERSION} && \
+    ./configure --with-cuda=$CUDA_HOME --with-device=ch3:sock && \
+    make -j 4 && make install && cd - && \
+    rm -rf mpich-${MPICH_VERSION} mpich-${MPICH_VERSION}.tar.gz && \
+    ldconfig
+
+ENV PATH=/usr/local/nvidia/bin:/usr/local/cuda/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ENV LD_LIBRARY_PATH=/opt/miniconda/lib:/usr/local/nvidia/lib:/usr/local/nvidia/lib64
 
 # Finally, install oras for saving artifacts
 RUN export VERSION="1.2.0" && \

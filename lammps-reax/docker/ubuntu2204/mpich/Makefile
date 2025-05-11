@@ -1,5 +1,5 @@
-IMAGE_NAME ?= ghcr.io/converged-computing/flux-openmpi
-IMAGE_TAG ?= ubuntu2204
+IMAGE_NAME ?= ghcr.io/converged-computing/lammps-reax
+IMAGE_TAG ?= ubuntu2204-mpich
 FULL_IMAGE_NAME = $(IMAGE_NAME):$(IMAGE_TAG)
 DOCKERFILE_PATH = Dockerfile
 BUILD_CONTEXT = .
