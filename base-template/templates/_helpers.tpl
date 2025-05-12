@@ -41,7 +41,7 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
          for i in {1..{{ default 1 .Values.experiment.iterations}}}
          do
            echo "FLUX-RUN START $app-iter-\$i"
-           flux run --setattr=user.study_id=$app-iter-\$i -N{{ if .Values.experiment.nodes }}{{ .Values.experiment.nodes }}{{ else }}1{{ end }} {{ if .Values.experiment.tasks }}-n {{ .Values.experiment.tasks }}{{ end }} {{ include "chart.fluxopts" . }} ${apprun} |& tee /tmp/${app}.out
+           flux run --setattr=user.study_id=$app-iter-\$i -N{{ if .Values.experiment.nodes }}{{ .Values.experiment.nodes }}{{ else }}1{{ end }} {{ if .Values.experiment.tasks }}-n {{ .Values.experiment.tasks }}{{ end }} {{ include "chart.fluxopts" . }} {{ include "chart.record" . }} ${apprun}
            {{ if .Values.minicluster.commands_post_iteration }}{{ .Values.minicluster.commands_post_iteration }};{{ end }}
             echo "FLUX-RUN END $app-iter-\$i"
          done
@@ -55,13 +55,12 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
          do
            echo "FLUX-RUN START $app-iter-\$i"
            for node in \$(seq 0 {{ default 1 $node_max }}); do
-               flux submit --flags waitable --requires="hosts:$app-\$node" -N 1 --setattr=user.study_id=$app-iter-\$i-node-\$node {{ if .Values.experiment.tasks }}-n {{ .Values.experiment.tasks }}{{ end }} {{ include "chart.fluxopts" . }} ${apprun}               
+               flux submit --flags waitable --requires="hosts:$app-\$node" -N 1 --setattr=user.study_id=$app-iter-\$i-node-\$node {{ if .Values.experiment.tasks }}-n {{ .Values.experiment.tasks }}{{ end }} {{ include "chart.fluxopts" . }}  ${apprun}               
            done 
            echo "FLUX-RUN END $app-iter-\$i"
          done
          flux job wait --all
 {{- end }}
-
 
 {{/* Flux Shared Options */}}
 {{- define "chart.fluxopts" -}}-o cpu-affinity={{ default "per-task" .Values.experiment.cpu_affinity }} -o gpu-affinity={{ default "off" .Values.experiment.gpu_affinity }} {{ if .Values.experiment.run_threads }}--env OMP_NUM_THREADS={{ .Values.experiment.run_threads }}{{ end }} {{ if .Values.experiment.cores_per_task }}--cores-per-task {{ .Values.experiment.cores_per_task }}{{ end }} {{ if .Values.minicluster.gpus }} -g {{ .Values.minicluster.gpus }}{{ end }} {{ if .Values.experiment.exclusive }}--exclusive{{ end }}{{- end }}
@@ -82,17 +81,59 @@ Iterations is not relevant for this one
            dequeue_from_list \$list
            for j in \$list; do
              echo "FLUX-RUN START $app-iter-\${i}-\${j}"
-             flux run -N 2 {{ if .Values.experiment.tasks }}-n {{ .Values.experiment.tasks }}{{ end }}  \
+              {{ include "chart.record" . }} flux run -N 2 {{ if .Values.experiment.tasks }}-n {{ .Values.experiment.tasks }}{{ end }}  \
                --setattr=user.study_id=$app-iter-\$i-\${j} \
                --requires="hosts:\${i},\${j}" \
                {{ include "chart.fluxopts" . }} \
-               ${apprun}
+                ${apprun}
              iter=\$((iter+1))
              echo "FLUX-RUN END $app-iter-\${i}-\${j}"
          done
          done                  
 {{- end }}
 
+
+{{ define "chart.monitor" }}
+  {{ if .Values.experiment.monitor }}- image: "ghcr.io/converged-computing/bcc-sidecar:ubuntu2204"
+    name: bcc-monitor
+    runFlux: false
+    volumes:
+      modules:
+        hostPath: /lib/modules
+        path: /lib/modules
+      debug:
+        hostPath: /sys/kernel/debug
+        path: /sys/kernel/debug
+    # If you want the sidecar to run a specific command on start:
+    # command: "/usr/sbin/opensnoop-bpfcc -T"
+    command: "tail -f /dev/null"
+
+    # Run with timestamps and time HH:MM:SS
+    # command: "/usr/sbin/tcplife-bpfcc -T -t"
+    # New process executions with timestamps
+    # command: /usr/sbin/execsnoop-bpfcc -T
+    # Opens with timestamps
+    # command: /usr/sbin/opensnoop-bpfcc -T{{ end }}
+{{- end }}
+
+{{/* Recording of application libraries 
+Currently only supported for single nodes and debian, requires proot.
+*/}}
+{{- define "chart.record_setup" -}}
+         wget https://github.com/compspec/compat-lib/releases/download/2025-05-12/fs-record {{ if .Values.logging.quiet }}> /dev/null 2>&1{{ end }}
+         chmod +x fs-record && mv fs-record /usr/bin/fs-record
+         apt-get install -y fuse libfuse-dev proot {{ if .Values.logging.quiet }}> /dev/null 2>&1{{ end }} || yum install -y fuse fuse-devel {{ if .Values.logging.quiet }}> /dev/null 2>&1{{ end }}
+{{- end }}
+
+{{- define "chart.record_finish" -}}
+         echo "RECORD-START"
+         cat {{ include "chart.record_file" . }}
+         echo "RECORD-FINISH"
+{{- end }}
+
+{{- define "chart.record" -}}{{ if .Values.experiment.record }}fs-record --out {{ include "chart.record_file" . }} --mpi{{ end }} {{- end }}
+
+{{- define "chart.record_file" -}}{{ if .Values.experiment.record_out }} {{ .Values.experiment.record_out }}{{ else }}/tmp/recording.out{{ end }}{{- end }}
 
 {{/* Flux GPUs */}}
 {{- define "chart.gpus" -}}
@@ -127,7 +168,7 @@ Iterations is not relevant for this one
 {{- define "chart.savelogs" -}}
          {{- if .Values.minicluster.save_logs }}
          output=./results/\${app}
-         (apt-get update && apt-get install -y jq) || (yum update -y && yum install -y jq)
+         (apt-get update {{ if .Values.logging.quiet }}> /dev/null 2>&1{{ end }} && apt-get install -y jq {{ if .Values.logging.quiet }}> /dev/null 2>&1{{ end }}) || (yum update -y {{ if .Values.logging.quiet }}> /dev/null 2>&1{{ end }} && yum install -y jq {{ if .Values.logging.quiet }}> /dev/null 2>&1{{ end }})
          mkdir -p \$output
          for jobid in \$(flux jobs -a --json | jq -r .jobs[].id); do
              echo

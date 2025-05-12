@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+set -o errexit
+set -o pipefail
+set -o nounset
+
+set -x
+
+if [[ -z "${1}" ]]; then
+    echo "Must provide a non-empty action as first argument"
+    exit 1
+fi
+
+ACTION_FILE="/tmp/actions/${1}"
+
+if [[ ! -f "$ACTION_FILE" ]]; then
+    echo "Expected to find action file '$ACTION_FILE', but did not exist"
+    exit 1
+fi
+
+echo "Executing nsenter"
+
+nsenter -t 1 -m bash "${ACTION_FILE}"
+RESULT="${PIPESTATUS[0]}"
+
+if [ $RESULT -eq 0 ]; then
+    echo "Completed successfully"
+    sleep infinity
+else
+    echo "Failed during nsenter command execution"
+    exit 1
+fi
