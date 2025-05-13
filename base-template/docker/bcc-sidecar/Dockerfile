@@ -1,5 +1,4 @@
-FROM ubuntu:22.04
-
+FROM ubuntu:24.04
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && \
@@ -11,11 +10,8 @@ RUN apt-get update && \
         cmake \
         flex \
         libedit-dev \
-        libllvm15 \
-        llvm-15-dev \
-        llvm-15-tools \
-        libclang-15-dev \
-        clang-15 \
+        libllvm-18-ocaml-dev libpolly-18-dev libllvm18 llvm-18-dev llvm-18-tools \
+        libclang-18-dev clang-18 \        
         zlib1g-dev \
         libelf-dev \
         libfl-dev \
@@ -23,7 +19,6 @@ RUN apt-get update && \
         python3 \
         python3-pip \
         python3-setuptools \
-        python3-distutils \
         netcat-openbsd \
         iperf3 \
         netperf \

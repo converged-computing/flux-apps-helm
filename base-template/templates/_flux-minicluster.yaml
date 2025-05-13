@@ -1,4 +1,44 @@
 {{- define "base-template.flux-minicluster" -}}
+{{- if .Values.minicluster.monitor -}}apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: &name install-headers
+  labels:
+    app: *name
+spec:
+  selector:
+    matchLabels:
+      app: *name
+  template:
+    metadata:
+      labels:
+        app: *name
+    spec:
+      hostNetwork: true
+      hostPID: true
+      containers:
+      - image: ghcr.io/converged-computing/kernel-header-installer:ubuntu2204
+        name: header-installer
+        imagePullPolicy: Always
+        command: ["/bin/bash", "/entrypoint.sh"]
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: modules
+          mountPath: /lib/modules
+        - name: shared
+          mountPath: /opt/shared
+      volumes:
+      - name: modules
+        hostPath:
+          path: /lib/modules
+      - name: shared
+        hostPath:
+          path: /opt/shared
+          type: DirectoryOrCreate
+{{ end }}
+---
+{{- $privileged := .Values.minicluster.privileged -}}{{ if eq .Values.experiment.monitor true }}{{- $privileged = true -}}{{ end }}{{ if eq .Values.experiment.record true }}{{- $privileged = true -}}{{ end }}
 apiVersion: flux-framework.org/v1alpha2
 kind: MiniCluster
 metadata:
@@ -8,7 +48,7 @@ metadata:
 spec:
   size: {{ default 1 .Values.minicluster.size }}
   {{ if .Values.minicluster.interactive }}interactive: true {{ end }}
-  {{ if .Values.experiment.record }}shareProcessNamespace: true{{ end }}
+  {{ if or (.Values.experiment.record) (.Values.experiment.monitor) }}shareProcessNamespace: true{{ end }}
   logging:
     quiet: {{ if .Values.logging.quiet }}true{{ else }}false{{ end }}
 
@@ -35,8 +75,8 @@ spec:
     launcher: true
     runFlux: true
     securityContext:
-      privileged: {{ if or (.Values.minicluster.privileged) (.Values.experiment.record) (.Values.experiment.monitor) }}true{{ else }}false{{ end }}
-      addCapabilities: [ {{ if .Values.experiment.record }}SYS_ADMIN{{ end }}{{ if .Values.minicluster.addCapabilities }}{{ .Values.minicluster.addCapabilities }}{{ end }}]
+      privileged: {{ if $privileged }}true{{ else }}false{{ end }}
+      addCapabilities: [{{ if or (.Values.experiment.record) (.Values.experiment.monitor) }}SYS_ADMIN{{ end }}{{ if .Values.minicluster.addCapabilities }}{{ .Values.minicluster.addCapabilities }}{{ end }}]
     resources:
       limits:
         nvidia.com/gpu: "{{ default 0  .Values.minicluster.gpus }}"

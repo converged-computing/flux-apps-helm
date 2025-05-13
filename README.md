@@ -44,10 +44,32 @@ This example will walk through running lammps. Other example runs are [also prov
 
 ### 1. Setup the Cluster
 
+For simple local development:
+
 ```bash
 # Create the cluster
 kind create cluster --config ./kind-config.yaml
+```
 
+For ebpf (that requires mounting the host) I recommend a cloud:
+
+```bash
+NODES=2
+GOOGLE_PROJECT=myproject
+INSTANCE=h3-standard-88
+
+time gcloud container clusters create test-cluster  \
+   --threads-per-core=1  \   
+   --num-nodes=$NODES  \   
+   --machine-type=$INSTANCE  \
+   --placement-type=COMPACT  \   
+   --image-type=UBUNTU_CONTAINERD \
+   --region=us-central1-a     --project=${GOOGLE_PROJECT}
+```
+
+Finally, install the Flux Operator
+
+```bash
 # Install the Flux Operator
 kubectl apply -f https://raw.githubusercontent.com/flux-framework/flux-operator/refs/heads/main/examples/dist/flux-operator.yaml
 ```
@@ -115,9 +137,10 @@ helm install lammps lammps-reax/ --debug --dry-run
 Then install the chart. This will deploy the Flux MiniCluster and run lammps for some number of iterations. All variables are technically defined so you don't need any `--set`.
 
 ```bash
+container=$(ocifit ghcr.io/converged-computing/lammps-reax --instance)
 helm install \
   --set minicluster.size=1 \
-  --set minicluster.image=ghcr.io/converged-computing/metric-lammps-cpu:zen4-reax \
+  --set minicluster.image= \
   --set minicluster.addFlux=true \
   lammps ./lammps-reax
 ```
@@ -534,6 +557,21 @@ helm install \
   lammps ./lammps-reax
 ```
 
+You'll need to look at the logs to see the sidecar vs. lammps.
+
+```bash
+kubeclt lo
+```
+
+Try changing the command:
+
+```bash
+helm install \
+  --set experiment.monitor=true \
+  --set minicluster.save_logs=true \
+  --set minicluster.monitor_command="tcplife-bpfcc -stT" \
+  lammps ./lammps-reax
+```
 
 ##### 4. Recording
 

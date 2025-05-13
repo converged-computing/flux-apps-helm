@@ -5,20 +5,24 @@ set -o nounset
 
 set -x
 
-if [[ -z "${1}" ]]; then
-    echo "Must provide a non-empty action as first argument"
-    exit 1
-fi
+# We have to clean up or else there are dangling symlinks
+rm -rf /opt/shared/*
 
-ACTION_FILE="/tmp/actions/${1}"
+# Copy our install script into the shared volume with the host
+ls /opt/actions
+cp /opt/actions/install.sh /opt/shared/install.sh
+ls /opt/shared
 
+ACTION_FILE="/opt/shared/install.sh"
 if [[ ! -f "$ACTION_FILE" ]]; then
     echo "Expected to find action file '$ACTION_FILE', but did not exist"
     exit 1
 fi
 
-echo "Executing nsenter"
+cat ${ACTION_FILE}
 
+# Run the update commands on the host directly
+echo "Executing nsenter"
 nsenter -t 1 -m bash "${ACTION_FILE}"
 RESULT="${PIPESTATUS[0]}"
 

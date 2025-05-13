@@ -92,28 +92,33 @@ Iterations is not relevant for this one
          done                  
 {{- end }}
 
-
 {{ define "chart.monitor" }}
   {{ if .Values.experiment.monitor }}- image: "ghcr.io/converged-computing/bcc-sidecar:ubuntu2204"
     name: bcc-monitor
     runFlux: false
+    securityContext:
+      addCapabilities: [SYS_ADMIN]
+      privileged: true
     volumes:
       modules:
         hostPath: /lib/modules
         path: /lib/modules
+      buildsrc:
+        hostPath: /usr/src
+        path: /usr/src
       debug:
         hostPath: /sys/kernel/debug
         path: /sys/kernel/debug
     # If you want the sidecar to run a specific command on start:
-    # command: "/usr/sbin/opensnoop-bpfcc -T"
-    command: "tail -f /dev/null"
-
+    # command: "opensnoop-bpfcc -T"
+    # command: "tcplife-bpfcc -stT"
+    command: "{{ if .Values.experiment.monitor_command }}{{ .Values.experiment.monitor_command }}{{ else }}execsnoop-bpfcc -T{{ end }}"
     # Run with timestamps and time HH:MM:SS
-    # command: "/usr/sbin/tcplife-bpfcc -T -t"
+    # command: "tcplife-bpfcc -T -t"
     # New process executions with timestamps
-    # command: /usr/sbin/execsnoop-bpfcc -T
+    # command: execsnoop-bpfcc -T
     # Opens with timestamps
-    # command: /usr/sbin/opensnoop-bpfcc -T{{ end }}
+    # command: opensnoop-bpfcc -TU{{ end }}
 {{- end }}
 
 {{/* Recording of application libraries 
