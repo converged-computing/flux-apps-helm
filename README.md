@@ -54,23 +54,15 @@ kind create cluster --config ./kind-config.yaml
 For ebpf (that requires mounting the host) I recommend a cloud:
 
 ```bash
-NODES=2
-GOOGLE_PROJECT=myproject
+NODES=1
+GOOGLE_PROJECT=llnl-flux
 INSTANCE=h3-standard-88
-
-time gcloud container clusters create test-cluster  \
-   --threads-per-core=1  \   
-   --num-nodes=$NODES  \   
-   --machine-type=$INSTANCE  \
-   --placement-type=COMPACT  \   
-   --image-type=UBUNTU_CONTAINERD \
-   --region=us-central1-a     --project=${GOOGLE_PROJECT}
+time gcloud container clusters create test-cluster  --threads-per-core=1  --num-nodes=$NODES --machine-type=$INSTANCE  --placement-type=COMPACT --image-type=UBUNTU_CONTAINERD --region=us-central1-a --project=${GOOGLE_PROJECT}
 ```
 
 Finally, install the Flux Operator
 
 ```bash
-# Install the Flux Operator
 kubectl apply -f https://raw.githubusercontent.com/flux-framework/flux-operator/refs/heads/main/examples/dist/flux-operator.yaml
 ```
 

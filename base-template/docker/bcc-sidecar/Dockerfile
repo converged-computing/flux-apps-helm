@@ -48,6 +48,7 @@ RUN git clone -b v0.34.0 https://github.com/iovisor/bcc /usr/src/bcc && \
 
 # Set up environment for Python BCC tools (if needed)
 ENV PYTHONPATH=/usr/lib/python3/dist-packages
+COPY ./programs /opt/programs
 
 # Command to keep the container running
 CMD ["tail", "-f", "/dev/null"]

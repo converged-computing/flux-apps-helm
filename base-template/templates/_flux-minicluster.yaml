@@ -84,6 +84,7 @@ spec:
       {{ if .Values.minicluster.commands_broker_pre }}brokerPre: {{ .Values.minicluster.commands_broker_pre }}{{ end }}
       {{ if .Values.minicluster.commands_init }}init: {{ .Values.minicluster.commands_init }}{{ end }}
       post: |
+         {{ if .Values.experiment.monitor }}{{ include "chart.monitor_finish" . }}{{ end }}
          {{ include "chart.fluxfinish" . }}
          {{ if .Values.experiment.record }}{{ include "chart.record_finish" . }}{{ end }}
       pre: |
@@ -93,6 +94,7 @@ spec:
          set -euo pipefail
          mkdir -p /tmp/output
          flux resource list
+         {{ if .Values.experiment.monitor }}{{ include "chart.monitor_start" . }}{{ end }}
          {{ if .Values.experiment.pairs }}{{ include "chart.fluxpairs" . }}
          {{ else if .Values.experiment.foreach }}{{ include "chart.foreach" . }}
          {{ else }}{{ include "chart.fluxrun" . }}{{ end }}

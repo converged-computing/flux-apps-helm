@@ -2,16 +2,26 @@
 
 from bcc import BPF, libbcc
 import ctypes as ct
-import time
+import re
 import os
+import json
 import signal
 import argparse
+import time
 import sys
 
 # Global indicator to set to stop running
 running = True
+as_table = True
+include_patterns = None
+exclude_patterns = None
+cgroup_indicator_file = None
+cgroup_id = None
 
-filename = "ebpf-collect.c"
+# Ensure we get the c program alongside
+here = os.path.dirname(os.path.abspath(__file__))
+filename = os.path.join(here, "ebpf-collect.c")
+print(f"Looking for {filename}")
 if not os.path.exists(filename):
     sys.exit(f"Missing c code {filename}")
 
@@ -37,6 +47,8 @@ class EventData(ct.Structure):
     _fields_ = [
         ("timestamp_ns", ct.c_ulonglong),
         ("pid", ct.c_uint),
+        ("ppid", ct.c_uint),
+        ("cgroup_id", ct.c_ulonglong),
         ("comm", ct.c_char * TASK_COMM_LEN_PY),
         ("type", ct.c_int),
         ("filename", ct.c_char * MAX_FILENAME_LEN_PY),
@@ -59,86 +71,146 @@ DBG_OPEN_ENTRY_READ_DONE = 101
 DBG_OPEN_RETURN_START = 200
 DBG_OPEN_RETURN_LOOKUP_DONE = 201
 
+DBG_CLOSE_ENTRY_START = 300
+DBG_CLOSE_ENTRY_SUBMITTING = 301
+DBG_CLOSE_RETURN_DONE = 302
+
 
 def print_event_ringbuf_cb(ctx, data, size):
+    """
+    Print output from the ring buffer, either as a table or json
+    """
+    global as_table
+    global include_patterns
+    global exclude_patterns
+    global cgroup_indicator_file
+    global cgroup_id
+
+    # Do we have a cgroup indicator file written?
+    if cgroup_indicator_file is not None and cgroup_id is None:
+        if os.path.exists(cgroup_indicator_file):
+            cgroup_id = read_file(cgroup_indicator_file).strip()
+            print(f"Scoping to cgroup {cgroup_id}")
+
     event = ct.cast(data, ct.POINTER(EventData)).contents
-    ts_sec = event.timestamp_ns / 1e9
-    pid = event.pid
+    epatterns = "(%s)" % "|".join(exclude_patterns or [])
+    ipatterns = "(%s)" % "|".join(include_patterns or [])
+
+    # Convert to seconds from nanoseconds
+    timestamp = event.timestamp_ns / 1e9
+
+    # Get the command, in the event it is called "comm"
     try:
         comm = event.comm.decode("utf-8", "replace").rstrip("\x00")
     except:
         comm = "<comm_err>"
-    event_type_str = f"TYPE({event.type})"
-    details_str = f"FD:{event.fd:<3}"
+    if include_patterns and not re.search(ipatterns, comm):
+        return
+    if exclude_patterns and re.search(epatterns, comm):
+        return
+
+    # Cut out early if not the right cgroup
+    if cgroup_id is not None and str(event.cgroup_id) != cgroup_id:
+        return
+
+    # Event type (open or close) and filename
+    # Let's just keep the opens for now, we aren't timing anything
+    filename = ""
     if event.type == EVENT_OPEN_PY:
-        event_type_str = "OPEN"
-        filename_str = ""
+        event_type = "OPEN"
         try:
-            filename_str = event.filename.decode("utf-8", "replace").rstrip("\x00")
-            if len(filename_str) > FILENAME_DISPLAY_WIDTH:
-                filename_str = filename_str[: FILENAME_DISPLAY_WIDTH - 3] + "..."
+            filename = event.filename.decode("utf-8", "replace").rstrip("\x00")
         except:
-            filename_str = "<file_err>"
-        details_str += f' RET:{event.ret_val:<3} FILE: "{filename_str}"'
+            filename = "<error>"
     elif event.type == EVENT_CLOSE_PY:
-        event_type_str = "CLOSE"
+        event_type = "CLOSE"
+    else:
+        raise ValueError("EVENT TYPE NOT KNOWN {event.type}")
+
+    # Don't bother if no filename - we aren't timing things for now
+    if not filename:
+        return
+    if as_table:
+        print_table(event, comm, event_type, filename, timestamp)
+    else:
+        print_json(event, comm, event_type, filename, timestamp)
+
+
+def print_json(event, comm, event_type, filename, timestamp):
+    """
+    Print the event as json
+    """
+    body = {
+        "event": event_type,
+        "filename": filename,
+        "command": comm,
+        "retval": event.ret_val,
+        "ts_sec": timestamp,
+        "pid": event.pid,
+        "ppid": event.ppid,
+        "cgroup_id": event.cgroup_id,
+    }
+    print(json.dumps(body))
+
+
+def print_table(event, comm, event_type, filename, timestamp):
+    """
+    Print the event as a table
+    """
+    # Ensure we don't go over the terminal width
+    if len(filename) > FILENAME_DISPLAY_WIDTH:
+        filename = filename[: FILENAME_DISPLAY_WIDTH - 3] + "..."
+    event_type_field = f"TYPE({event_type})"
+    details = f' RET:{event.ret_val:<3} FILE: "{filename}"'
     print(
-        f"EVENT: {ts_sec:<18.6f} {pid:<7} {comm:<{TASK_COMM_LEN_PY}} {event_type_str:<6} {details_str}"
+        f"EVENT: {timestamp:<18.6f} {event.pid:<7} {comm:<{TASK_COMM_LEN_PY}} {event_type_field:<6} {details}"
     )
 
 
 def print_debug_event_cb(ctx, data, size):
+    """
+    Print debug info. This is important because I stopped seeing opens, and it was
+    because I was getting a -14 response, meaning the open failed.
+    """
     event = ct.cast(data, ct.POINTER(DebugEventData)).contents
-    stage_str = "UNKNOWN_DBG"
+    stage = "UNKNOWN_DBG"
     pid_tgid = event.id
     val1 = event.val1
     val2 = event.val2
+
     if event.stage == DBG_OPEN_ENTRY_START:
-        stage_str = "OPEN_ENTRY_START"
+        stage = "OPEN_ENTRY_START"
     elif event.stage == DBG_OPEN_ENTRY_READ_DONE:
-        stage_str = "OPEN_ENTRY_READ_DONE"
+        stage = "OPEN_ENTRY_READ_DONE"
     elif event.stage == DBG_OPEN_RETURN_START:
-        stage_str = "OPEN_RETURN_START"
+        stage = "OPEN_RETURN_START"
     elif event.stage == DBG_OPEN_RETURN_LOOKUP_DONE:
-        stage_str = "OPEN_RETURN_LOOKUP_DONE"
-    print(
-        f"DEBUG: ID:{pid_tgid:<12} STAGE: {stage_str:<25} VAL1:{val1:<7} VAL2:{val2:<7}"
-    )
+        stage = "OPEN_RETURN_LOOKUP_DONE"
+    elif event.stage == DBG_CLOSE_ENTRY_START:
+        stage = "CLOSE_ENTRY_START"
+    elif event.stage == DBG_CLOSE_ENTRY_SUBMITTING:
+        stage = "CLOSE_ENTRY_SUBMITTING"
+    elif event.stage == DBG_CLOSE_RETURN_DONE:
+        stage = "CLOSE_RETURN_DONE"
+    print(f"DEBUG: ID:{pid_tgid:<12} STAGE: {stage:<25} VAL1:{val1:<7} VAL2:{val2:<7}")
 
 
 def signal_stop_handler(signum, frame):
+    """
+    Set running to False if we get a signal to do so.
+
+    This would trigger if we had a success completion policy on the Flux
+    Operator, but instead we are just looking for a file indicator.
+    """
     global running
     print("\nSignal received, stopping...", file=sys.stderr)
     running = False
 
 
-def collect_trace(indicator_file):
-    global running
-    signal.signal(signal.SIGINT, signal_stop_handler)
-    signal.signal(signal.SIGTERM, signal_stop_handler)
-    print(
-        f"Starting eBPF (Tracepoint for open entry). Indicator: '{indicator_file}'",
-        file=sys.stderr,
-    )
-    bpf_instance = None
-    try:
-        bpf_instance = BPF(text=bpf_text)
-
-        # Attach the TRACEPOINT_PROBE: BPF C code for TRACEPOINT_PROBE(syscalls, sys_enter_openat)
-        # For the kretprobe, we still need the syscall function name.
-        openat_syscall_fn_name = bpf_instance.get_syscall_fnname("openat")
-        close_syscall_fn_name = bpf_instance.get_syscall_fnname("close")
-        bpf_instance.attach_kretprobe(
-            event=openat_syscall_fn_name, fn_name="trace_openat_return_kretprobe"
-        )
-        bpf_instance.attach_kprobe(
-            event=close_syscall_fn_name, fn_name="trace_close_entry_kprobe"
-        )
-
-    except Exception as e:
-        print(f"Error initializing/attaching BPF: {e}", file=sys.stderr)
-        sys.exit(1)
-
+def print_table_header():
+    """
+    Print a header for the table (human friendly variant to json)
+    """
     print(
         f"{'TYPE':<6} {'TIMESTAMP':<18} {'PID':<7} {'COMMAND':<{TASK_COMM_LEN_PY}} {'EVENT':<6} {'DETAILS'}"
     )
@@ -146,56 +218,176 @@ def collect_trace(indicator_file):
         6 + 19 + 8 + TASK_COMM_LEN_PY + 7 + 6 + FILENAME_DISPLAY_WIDTH + 25
     )
     print("-" * header_line_len)
+
+
+def log(message, prefix="", exit=False, debug=False):
+    """
+    Simple function to print log with prefix.
+    """
+    if prefix:
+        prefix = f"{prefix} "
+    print(f"{prefix}{message}", file=sys.stderr)
+    if exit:
+        sys.exit(1)
+
+
+def collect_trace(
+    start_indicator_file=None, stop_indicator_file=None, table=True, debug=False
+):
+    """
+    Collect a trace until we receive a signal from the global indicator.
+    """
+    global running
+
+    # Are we printing as a table, or json?
+    global as_table
+    as_table = table
+
+    # Setup signal handlers
+    signal.signal(signal.SIGINT, signal_stop_handler)
+    signal.signal(signal.SIGTERM, signal_stop_handler)
+
+    log("Starting eBPF (Tracepoint for open entry).")
+    try:
+        # Create the bpf program (I think this compiles)
+        bpf_instance = BPF(text=bpf_text)
+
+        # These are kprobes for opens and closes
+        bpf_instance.attach_kretprobe(
+            event=bpf_instance.get_syscall_fnname("openat"),
+            fn_name="trace_openat_return_kretprobe",
+        )
+        bpf_instance.attach_kprobe(
+            event=bpf_instance.get_syscall_fnname("close"),
+            fn_name="trace_close_entry_kprobe",
+        )
+
+    except Exception as e:
+        log(f"Error initializing/attaching BPF: {e}", exit=True)
+
+    # Only print a header if it's a table...
+    if table:
+        print_table_header()
+
+    # Are we filtering to a cgroup?
+    if cgroup_indicator_file is not None:
+        log(f"\nCgroup Indicator file defined '{cgroup_indicator_file}'.")
+
+    # Wait to start, if applicable
+    if start_indicator_file is not None:
+        log(f"\nStart Indicator file defined '{start_indicator_file}'. Waiting.")
+        while not os.path.exists(start_indicator_file):
+            time.sleep(1)
+
+    # We are going to open ring buffers
     try:
         bpf_instance["events"].open_ring_buffer(print_event_ringbuf_cb, ctx=None)
-        # Disable debug printing for now
-        # bpf_instance["debug_events_rb"].open_ring_buffer(print_debug_event_cb, ctx=None)
+        # Debug printing, if needed
+        if debug:
+            bpf_instance["debug_events_rb"].open_ring_buffer(
+                print_debug_event_cb, ctx=None
+            )
+
     except Exception as e:
-        print(f"Failed to open ring buffer(s): {e}", file=sys.stderr)
+        log(f"Failed to open ring buffer(s): {e}")
         if bpf_instance:
             bpf_instance.cleanup()
             sys.exit(1)
+
+    # As this is running, poll the ring buffer to get output
     try:
         while running:
             bpf_instance.ring_buffer_poll(timeout=100)
-            if indicator_file and os.path.exists(indicator_file):
-                print(
-                    f"\nIndicator file '{indicator_file}' found. Stopping.",
-                    file=sys.stderr,
-                )
+
+            # If the indicator file is present, we are done.
+            # The Flux Operator has finished running the app and generated it.
+            if stop_indicator_file is not None and os.path.exists(stop_indicator_file):
+                log(f"\nIndicator file '{stop_indicator_file}' found. Stopping.")
                 running = False
-    except KeyboardInterrupt:
-        print("\nKeyboardInterrupt, stopping...", file=sys.stderr)
-        running = False
+
+    # Stop due to exception or other
     except Exception as e:
-        print(f"\nError during polling: {e}", file=sys.stderr)
+        log(f"\nError during polling: {e}")
         running = False
     finally:
-        print("Cleaning up BPF resources...", file=sys.stderr)
+        log("Cleaning up BPF resources...")
         if bpf_instance:
             bpf_instance.cleanup()
-        print("Script finished.", file=sys.stderr)
 
 
 def get_parser():
+    """
+    Get the argument parser.
+    """
     parser = argparse.ArgumentParser(
         description="DEBUG eBPF file open/close with Tracepoint."
     )
     parser.add_argument(
-        "-i",
-        "--indicator-file",
-        default="/tmp/stop_ebpf_collection",
-        help="Indicator file path.",
+        "--cgroup-indicator-file",
+        help="Filename with a cgroup to filter to",
+    )
+    parser.add_argument(
+        "--stop-indicator-file",
+        help="Indicator file path to stop",
+    )
+    parser.add_argument(
+        "--start-indicator-file",
+        help="Indicator file path to start",
+    )
+    parser.add_argument(
+        "--include-pattern",
+        default=None,
+        action="append",
+        help="Include these patterns only",
+    )
+    parser.add_argument(
+        "--exclude-pattern",
+        default=None,
+        action="append",
+        help="Exclude these patterns in commands",
+    )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        default=False,
+        help="Print debug calls for open",
+    )
+    parser.add_argument(
+        "-j",
+        "--json",
+        action="store_true",
+        default=False,
+        help="Print records as json instead of in table",
     )
     return parser
 
 
 def main():
+    """
+    Main execution to run trace.
+    """
+    global include_patterns
+    global exclude_patterns
+    global cgroup_indicator_file
+
     if os.geteuid() != 0:
         sys.exit("This script must be run as root.")
     parser = get_parser()
     args, extra = parser.parse_known_args()
-    collect_trace(args.indicator_file)
+
+    # If debug is set, we print a table
+    if args.debug:
+        args.json = False
+
+    include_patterns = args.include_pattern
+    exclude_patterns = args.exclude_pattern
+    cgroup_indicator_file = args.cgroup_indicator_file
+    collect_trace(
+        args.start_indicator_file,
+        args.stop_indicator_file,
+        not args.json,
+        args.debug,
+    )
 
 
 if __name__ == "__main__":

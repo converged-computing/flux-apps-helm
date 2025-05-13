@@ -7,9 +7,15 @@
 enum event_type { EVENT_OPEN = 0, EVENT_CLOSE = 1 };
 
 struct data_t {
-    u64 timestamp_ns; u32 pid; char comm[TASK_COMM_LEN_EBPF];
-    enum event_type type; char filename[MAX_FILENAME_LEN_EBPF];
-    int fd; int ret_val;
+    u64 timestamp_ns; 
+    u32 pid; 
+    u32 ppid;      
+    u64 cgroup_id;
+    char comm[TASK_COMM_LEN_EBPF];
+    enum event_type type; 
+    char filename[MAX_FILENAME_LEN_EBPF];
+    int fd; 
+    int ret_val;
 };
 BPF_RINGBUF_OUTPUT(events, 8);
 
@@ -89,12 +95,12 @@ int trace_openat_return_kretprobe(struct pt_regs *ctx) {
     event_data_ptr->timestamp_ns = bpf_ktime_get_ns();
     event_data_ptr->pid = id >> 32;
     bpf_get_current_comm(&event_data_ptr->comm, sizeof(event_data_ptr->comm));
-    event_data_ptr->comm[TASK_COMM_LEN_EBPF - 1] = '\0'; // CORRECTED
+    event_data_ptr->comm[TASK_COMM_LEN_EBPF - 1] = '\0';
     event_data_ptr->type = EVENT_OPEN;
     event_data_ptr->fd = ret_fd;
     event_data_ptr->ret_val = ret_fd;
     __builtin_memcpy(event_data_ptr->filename, temp_fn_ptr->fname, MAX_FILENAME_LEN_EBPF);
-    event_data_ptr->filename[MAX_FILENAME_LEN_EBPF - 1] = '\0'; // CORRECTED
+    event_data_ptr->filename[MAX_FILENAME_LEN_EBPF - 1] = '\0';
     events.ringbuf_submit(event_data_ptr, 0);
     open_filenames_map.delete(&id);
     return 0;
@@ -106,12 +112,25 @@ int trace_close_entry_kprobe(struct pt_regs *ctx, int fd_to_close) {
     if (!event_data_ptr) { return 0; }
     event_data_ptr->timestamp_ns = bpf_ktime_get_ns();
     event_data_ptr->pid = id >> 32;
+
+    // Read parent's TGID carefully
+    u64 cgroup_id = bpf_get_current_cgroup_id();
+    struct task_struct *real_parent_task = NULL;
+    struct task_struct *current_task = (struct task_struct *)bpf_get_current_task();    
+    int res = bpf_probe_read_kernel(&real_parent_task, sizeof(real_parent_task), &current_task->real_parent);
+    if (res == 0 && real_parent_task != NULL) { 
+        bpf_probe_read_kernel(&event_data_ptr->ppid, sizeof(event_data_ptr->ppid), &real_parent_task->tgid);
+    } else {
+        // Error or no parent found this way
+        event_data_ptr->ppid = 0; 
+    }
     bpf_get_current_comm(&event_data_ptr->comm, sizeof(event_data_ptr->comm));
-    event_data_ptr->comm[TASK_COMM_LEN_EBPF - 1] = '\0'; // CORRECTED
+    event_data_ptr->comm[TASK_COMM_LEN_EBPF - 1] = '\0';
     event_data_ptr->type = EVENT_CLOSE;
     event_data_ptr->fd = fd_to_close;
-    event_data_ptr->filename[0] = '\0'; // CORRECTED
+    event_data_ptr->filename[0] = '\0';
     event_data_ptr->ret_val = 0;
+    event_data_ptr->cgroup_id = cgroup_id;
     events.ringbuf_submit(event_data_ptr, 0);
     return 0;
 }

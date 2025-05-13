@@ -96,6 +96,7 @@ Iterations is not relevant for this one
   {{ if .Values.experiment.monitor }}- image: "ghcr.io/converged-computing/bcc-sidecar:ubuntu2204"
     name: bcc-monitor
     runFlux: false
+    pullAlways: true 
     securityContext:
       addCapabilities: [SYS_ADMIN]
       privileged: true
@@ -112,7 +113,8 @@ Iterations is not relevant for this one
     # If you want the sidecar to run a specific command on start:
     # command: "opensnoop-bpfcc -T"
     # command: "tcplife-bpfcc -stT"
-    command: "{{ if .Values.experiment.monitor_command }}{{ .Values.experiment.monitor_command }}{{ else }}execsnoop-bpfcc -T{{ end }}"
+    # command: "execsnoop-bpfcc -T"
+    command: "{{ if .Values.experiment.monitor_command }}{{ .Values.experiment.monitor_command }}{{ else }}python3 /opt/programs/open-close/run-ebpf-collect.py --start-indicator-file=/mnt/flux/start_ebpf_collection {{ if .Values.experiment.monitor_debug }}--debug{{ end }} --json --cgroup-indicator-file=/mnt/flux/cgroup-id.txt {{ if .Values.experiment.monitor_target }}--include-pattern={{ .Values.experiment.monitor_target }}{{ end }} --stop-indicator-file=/mnt/flux/stop_ebpf_collection{{ end }}"
     # Run with timestamps and time HH:MM:SS
     # command: "tcplife-bpfcc -T -t"
     # New process executions with timestamps
@@ -134,6 +136,24 @@ Currently only supported for single nodes and debian, requires proot.
          echo "RECORD-START"
          cat {{ include "chart.record_file" . }}
          echo "RECORD-FINISH"
+{{- end }}
+
+{{- define "chart.monitor_finish" -}}
+         touch /mnt/flux/stop_ebpf_collection
+{{- end }}
+
+{{- define "chart.monitor_start" -}}
+         echo "The parent process ID is: \$PPID"          
+         echo "The execution parent process ID is: \$\$"         
+         CGROUP_PATH_LINE=\$(cat "/proc/\$\$/cgroup")
+         echo $CGROUP_PATH_LINE
+         CGROUP_V2_PATH=\${CGROUP_PATH_LINE:3}
+         ACTUAL_CGROUP_DIR="/sys/fs/cgroup\${CGROUP_V2_PATH}"
+         TARGET_CGROUP_ID=\$(stat -c '%i' \$ACTUAL_CGROUP_DIR)
+         echo "The cgroup id is \$TARGET_CGROUP_ID"
+         echo -n \$TARGET_CGROUP_ID > /mnt/flux/cgroup-id.txt
+         sleep 10
+         touch /mnt/flux/start_ebpf_collection
 {{- end }}
 
 {{- define "chart.record" -}}{{ if .Values.experiment.record }}fs-record --out {{ include "chart.record_file" . }} --mpi{{ end }} {{- end }}
