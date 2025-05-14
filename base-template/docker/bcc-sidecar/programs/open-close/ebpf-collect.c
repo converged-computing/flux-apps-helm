@@ -8,8 +8,9 @@ enum event_type { EVENT_OPEN = 0, EVENT_CLOSE = 1 };
 
 struct data_t {
     u64 timestamp_ns; 
-    u32 pid; 
     u32 ppid;      
+    u32 tgid; // 'pid' is actually 'tgid' for clarity (Thread Group ID / Process ID)
+    u32 tid;  // Thread ID (kernel's PID)
     u64 cgroup_id;
     char comm[TASK_COMM_LEN_EBPF];
     enum event_type type; 
@@ -58,8 +59,11 @@ TRACEPOINT_PROBE(syscalls, sys_enter_openat) {
 }
 
 int trace_openat_return_kretprobe(struct pt_regs *ctx) {
-    u64 id = bpf_get_current_pid_tgid();
+    u64 id = bpf_get_current_pid_tgid(); // full 64-bit ID
+    u32 tgid = id >> 32;                 // upper 32 bits is TGID
+    u32 tid = (u32)id;                   // lower 32 bits is TID (kernel's PID)
     int ret_fd = PT_REGS_RC(ctx);
+
     struct temp_filename_t *temp_fn_ptr = NULL;
     long lookup_success = 0;
 
@@ -93,7 +97,8 @@ int trace_openat_return_kretprobe(struct pt_regs *ctx) {
         return 0;
     }
     event_data_ptr->timestamp_ns = bpf_ktime_get_ns();
-    event_data_ptr->pid = id >> 32;
+    event_data_ptr->tgid = tgid; 
+    event_data_ptr->tid  = tid; 
     bpf_get_current_comm(&event_data_ptr->comm, sizeof(event_data_ptr->comm));
     event_data_ptr->comm[TASK_COMM_LEN_EBPF - 1] = '\0';
     event_data_ptr->type = EVENT_OPEN;
@@ -102,16 +107,20 @@ int trace_openat_return_kretprobe(struct pt_regs *ctx) {
     __builtin_memcpy(event_data_ptr->filename, temp_fn_ptr->fname, MAX_FILENAME_LEN_EBPF);
     event_data_ptr->filename[MAX_FILENAME_LEN_EBPF - 1] = '\0';
     events.ringbuf_submit(event_data_ptr, 0);
-    open_filenames_map.delete(&id);
+    //open_filenames_map.delete(&id);
     return 0;
 }
 
 int trace_close_entry_kprobe(struct pt_regs *ctx, int fd_to_close) {
     u64 id = bpf_get_current_pid_tgid();
+    u32 tgid = id >> 32;                 
+    u32 tid = (u32)id;                  
+    
     struct data_t *event_data_ptr = events.ringbuf_reserve(sizeof(struct data_t));
     if (!event_data_ptr) { return 0; }
     event_data_ptr->timestamp_ns = bpf_ktime_get_ns();
-    event_data_ptr->pid = id >> 32;
+    event_data_ptr->tgid = tgid; 
+    event_data_ptr->tid  = tid; 
 
     // Read parent's TGID carefully
     u64 cgroup_id = bpf_get_current_cgroup_id();
@@ -124,13 +133,24 @@ int trace_close_entry_kprobe(struct pt_regs *ctx, int fd_to_close) {
         // Error or no parent found this way
         event_data_ptr->ppid = 0; 
     }
+
+    struct temp_filename_t *temp_fn_ptr = NULL;
+    temp_fn_ptr = open_filenames_map.lookup(&id);
+    if (!temp_fn_ptr) { 
+        events.ringbuf_discard(event_data_ptr, 0);
+        return 0; 
+    }
+
     bpf_get_current_comm(&event_data_ptr->comm, sizeof(event_data_ptr->comm));
     event_data_ptr->comm[TASK_COMM_LEN_EBPF - 1] = '\0';
     event_data_ptr->type = EVENT_CLOSE;
     event_data_ptr->fd = fd_to_close;
-    event_data_ptr->filename[0] = '\0';
+    //event_data_ptr->filename[0] = '\0';
+    __builtin_memcpy(event_data_ptr->filename, temp_fn_ptr->fname, MAX_FILENAME_LEN_EBPF);
+    event_data_ptr->filename[MAX_FILENAME_LEN_EBPF - 1] = '\0';    
     event_data_ptr->ret_val = 0;
     event_data_ptr->cgroup_id = cgroup_id;
     events.ringbuf_submit(event_data_ptr, 0);
+    open_filenames_map.delete(&id);
     return 0;
 }

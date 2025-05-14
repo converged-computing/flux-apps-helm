@@ -540,22 +540,80 @@ For this setup, you'll see `flux submit` so the jobs will run at the same time o
 
 ##### 3. Monitor with BCC
 
-This setup will deploy a sidecar and monitor different interacts with bcc.
+This setup will deploy a sidecar and monitor different interacts with bcc. We have several programs that help to understand tcp, file open/closes, or futex wait times. Although you can filter to a cgroup or command, for the default we allow all containers in the pod to be seen. It generates a lot more data, but is interesting. This might need to be tweaked for actual experiments if the data is too big. The default is file open/close (you could leave out `monitor_program`) below:
 
 ```bash
 helm install \
+  --set experiment.monitor_program=open-close \
   --set experiment.monitor=true \
   --set minicluster.save_logs=true \
   lammps ./lammps-reax
 ```
 
-You'll need to look at the logs to see the sidecar vs. lammps.
+<details>
 
-```bash
-kubeclt lo
+```console
+Looking for /opt/programs/open-close/ebpf-collect.c
+Starting eBPF (Tracepoint for open entry).
+
+Start Indicator file defined '/mnt/flux/start_ebpf_collection'. Waiting.
+{"event": "OPEN", "command": "python3", "retval": 12, "ts_sec": 779.540036095, "tgid": 0, "tid": 14554, "ppid": 14554, "cgroup_id": 0, "filename": "/sys/bus/event_source/devices/kprobe/type"}
+{"event": "OPEN", "command": "python3", "retval": 12, "ts_sec": 779.540051234, "tgid": 0, "tid": 14554, "ppid": 14554, "cgroup_id": 0, "filename": "/sys/bus/event_source/devices/kprobe/format/retprobe"}
+{"event": "OPEN", "command": "containerd", "retval": 193, "ts_sec": 779.629315113, "tgid": 0, "tid": 3600, "ppid": 3618, "cgroup_id": 0, "filename": "/var/lib/containerd/io.containerd.snapshotter.v1.overlayfs/snapshots/204/fs"}
+{"event": "CLOSE", "command": "containerd", "retval": 0, "ts_sec": 779.629342785, "tgid": 1, "tid": 3600, "ppid": 3618, "cgroup_id": 6520}
+...
+{"event": "OPEN", "command": "touch", "retval": 3, "ts_sec": 803.043308743, "tgid": 0, "tid": 14883, "ppid": 14883, "cgroup_id": 3257288213055174703, "filename": "/usr/lib/locale/C.utf8/LC_NUMERIC"}
+{"event": "CLOSE", "command": "touch", "retval": 0, "ts_sec": 803.043310733, "tgid": 14414, "tid": 14883, "ppid": 14883, "cgroup_id": 13176}
+{"event": "OPEN", "command": "touch", "retval": 3, "ts_sec": 803.043316595, "tgid": 0, "tid": 14883, "ppid": 14883, "cgroup_id": 3257288213055174703, "filename": "/usr/lib/locale/C.utf8/LC_CTYPE"}
+{"event": "CLOSE", "command": "touch", "retval": 0, "ts_sec": 803.043318514, "tgid": 14414, "tid": 14883, "ppid": 14883, "cgroup_id": 13176}
+{"event": "OPEN", "command": "touch", "retval": 3, "ts_sec": 803.043359627, "tgid": 0, "tid": 14883, "ppid": 14883, "cgroup_id": 3257288213055174703, "filename": "/mnt/flux/stop_ebpf_collection"}
+{"event": "CLOSE", "command": "touch", "retval": 0, "ts_sec": 803.043360931, "tgid": 14414, "tid": 14883, "ppid": 14883, "cgroup_id": 13176}
+
+Indicator file '/mnt/flux/stop_ebpf_collection' found. Stopping.
+Cleaning up BPF resources...
 ```
 
-Try changing the command:
+</details>
+
+Here is how to see futex wait times.
+
+```bash
+helm install \
+  --set experiment.monitor_program=futex \
+  --set experiment.monitor=true \
+  --set minicluster.save_logs=true \
+  lammps ./lammps-reax
+```
+
+This likely needs to be consolidated (it's a lot of data). Here is an example.
+
+```bash
+{"event_type": "FUTEX_WAIT_END", "timestamp_sec": 3891.635076022, "tgid": 34931, "tid": 35146, "comm": "containerd-shim", "cgroup_id": 6520, "futex_op_full": 128, "futex_op_str": "FUTEX_WAIT_PRIVATE", "wait_duration_ns": 21462, "wait_duration_human": "21.46us"}
+{"event_type": "FUTEX_WAIT_END", "timestamp_sec": 3891.635086712, "tgid": 34931, "tid": 35388, "comm": "containerd-shim", "cgroup_id": 6520, "futex_op_full": 128, "futex_op_str": "FUTEX_WAIT_PRIVATE", "wait_duration_ns": 42892, "wait_duration_human": "42.89us"}
+{"event_type": "FUTEX_WAIT_END", "timestamp_sec": 3891.635102633, "tgid": 3600, "tid": 3602, "comm": "containerd", "cgroup_id": 6520, "futex_op_full": 128, "futex_op_str": "FUTEX_WAIT_PRIVATE", "wait_duration_ns": 16693, "wait_duration_human": "16.69us"}
+{"event_type": "FUTEX_WAIT_END", "timestamp_sec": 3891.635107428, "tgid": 3600, "tid": 6823, "comm": "containerd", "cgroup_id": 6520, "futex_op_full": 128, "futex_op_str": "FUTEX_WAIT_PRIVATE", "wait_duration_ns": 34781, "wait_duration_human": "34.78us"}
+```
+
+Finally, here is tcp
+
+```bash
+helm install \
+  --set experiment.monitor_program=tcp \
+  --set experiment.monitor=true \
+  --set minicluster.save_logs=true \
+  lammps ./lammps-reax
+```
+
+Here is example data:
+
+```bash
+{"event_type": "RECV", "timestamp_sec": 3978.855691216, "tgid": 36693, "tid": 36693, "comm": "lmp", "cgroup_id": 19947, "fd": 11, "bytes": 20, "bytes_human": "20", "duration_ns": 13430, "duration_human": "13.43us"}
+{"event_type": "RECV", "timestamp_sec": 3978.855698151, "tgid": 36693, "tid": 36693, "comm": "lmp", "cgroup_id": 19947, "fd": 11, "bytes": 20, "bytes_human": "20", "duration_ns": 1920, "duration_human": "1.92us"}
+{"event_type": "RECV", "timestamp_sec": 3978.855731232, "tgid": 36693, "tid": 36693, "comm": "lmp", "cgroup_id": 19947, "fd": 11, "bytes": 20, "bytes_human": "20", "duration_ns": 12363, "duration_human": "12.36us"}
+{"event_type": "RECV", "timestamp_sec": 3978.855737251, "tgid": 36693, "tid": 36693, "comm": "lmp", "cgroup_id":
+```
+
+Also try changing the command entirely.
 
 ```bash
 helm install \

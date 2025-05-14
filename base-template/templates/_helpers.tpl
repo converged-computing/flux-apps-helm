@@ -114,13 +114,7 @@ Iterations is not relevant for this one
     # command: "opensnoop-bpfcc -T"
     # command: "tcplife-bpfcc -stT"
     # command: "execsnoop-bpfcc -T"
-    command: "{{ if .Values.experiment.monitor_command }}{{ .Values.experiment.monitor_command }}{{ else }}python3 /opt/programs/open-close/run-ebpf-collect.py --start-indicator-file=/mnt/flux/start_ebpf_collection {{ if .Values.experiment.monitor_debug }}--debug{{ end }} --json --cgroup-indicator-file=/mnt/flux/cgroup-id.txt {{ if .Values.experiment.monitor_target }}--include-pattern={{ .Values.experiment.monitor_target }}{{ end }} --stop-indicator-file=/mnt/flux/stop_ebpf_collection{{ end }}"
-    # Run with timestamps and time HH:MM:SS
-    # command: "tcplife-bpfcc -T -t"
-    # New process executions with timestamps
-    # command: execsnoop-bpfcc -T
-    # Opens with timestamps
-    # command: opensnoop-bpfcc -TU{{ end }}
+    command: "{{ if .Values.experiment.monitor_command }}{{ .Values.experiment.monitor_command }}{{ else }}python3 /opt/programs/{{ default "open-close" .Values.experiment.monitor_program }}/run-ebpf-collect.py --start-indicator-file=/mnt/flux/start_ebpf_collection {{ if .Values.experiment.monitor_debug }}--debug{{ end }} --json {{ if .Values.experiment.monitor_target }}--include-pattern={{ .Values.experiment.monitor_target }}{{ end }} --stop-indicator-file=/mnt/flux/stop_ebpf_collection{{ end }}"{{ end }}
 {{- end }}
 
 {{/* Recording of application libraries 

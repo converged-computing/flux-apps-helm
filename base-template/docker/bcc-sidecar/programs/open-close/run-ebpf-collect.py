@@ -46,7 +46,8 @@ EVENT_CLOSE_PY = 1
 class EventData(ct.Structure):
     _fields_ = [
         ("timestamp_ns", ct.c_ulonglong),
-        ("pid", ct.c_uint),
+        ("tgid", ct.c_uint),
+        ("tid", ct.c_uint),
         ("ppid", ct.c_uint),
         ("cgroup_id", ct.c_ulonglong),
         ("comm", ct.c_char * TASK_COMM_LEN_PY),
@@ -128,8 +129,6 @@ def print_event_ringbuf_cb(ctx, data, size):
         raise ValueError("EVENT TYPE NOT KNOWN {event.type}")
 
     # Don't bother if no filename - we aren't timing things for now
-    if not filename:
-        return
     if as_table:
         print_table(event, comm, event_type, filename, timestamp)
     else:
@@ -142,14 +141,20 @@ def print_json(event, comm, event_type, filename, timestamp):
     """
     body = {
         "event": event_type,
-        "filename": filename,
         "command": comm,
         "retval": event.ret_val,
         "ts_sec": timestamp,
-        "pid": event.pid,
+        "tgid": event.tgid,
+        "tid": event.tid,
         "ppid": event.ppid,
         "cgroup_id": event.cgroup_id,
     }
+    # I can't get close to have them
+    if filename:
+        body["filename"] = filename
+    # I don't think we can get cgroups for things in proc
+    if "/proc" in filename:
+        del body["cgroup_id"]
     print(json.dumps(body))
 
 
@@ -163,7 +168,7 @@ def print_table(event, comm, event_type, filename, timestamp):
     event_type_field = f"TYPE({event_type})"
     details = f' RET:{event.ret_val:<3} FILE: "{filename}"'
     print(
-        f"EVENT: {timestamp:<18.6f} {event.pid:<7} {comm:<{TASK_COMM_LEN_PY}} {event_type_field:<6} {details}"
+        f"EVENT: {timestamp:<18.6f} {event.tgid:<7} {comm:<{TASK_COMM_LEN_PY}} {event_type_field:<6} {details}"
     )
 
 
@@ -212,7 +217,7 @@ def print_table_header():
     Print a header for the table (human friendly variant to json)
     """
     print(
-        f"{'TYPE':<6} {'TIMESTAMP':<18} {'PID':<7} {'COMMAND':<{TASK_COMM_LEN_PY}} {'EVENT':<6} {'DETAILS'}"
+        f"{'TYPE':<6} {'TIMESTAMP':<18} {'TGID':<7} {'COMMAND':<{TASK_COMM_LEN_PY}} {'EVENT':<6} {'DETAILS'}"
     )
     header_line_len = (
         6 + 19 + 8 + TASK_COMM_LEN_PY + 7 + 6 + FILENAME_DISPLAY_WIDTH + 25
