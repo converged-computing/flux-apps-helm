@@ -1,29 +1,11 @@
 #!/usr/bin/python3
 
-"""
-Use eBPF (Extended Berkeley Packet Filter) to measure the duration of time threads spend waiting on futexes via FUTEX_WAIT operations.
-- Use eBPF tracepoints (sys_enter_futex and sys_exit_futex) to understand thread contention. A Futex is "a Linux synchronization primitive used for implementing locks, semaphores, condition variables, etc., in userspace, allowing threads to wait for a condition to become true or for a resource to become available."
-- This script should allow us to see how long threads are stalled waiting on futexes, which gives insight to performance bottlenecks, debugging, and monitoring.
-- When a thread calls futex() with a FUTEX_WAIT command, it intends to sleep until another thread wakes it up using a corresponding FUTEX_WAKE on the same futex address.
-- The time (in some unit) is the total time waiting.
-
-I always get these confused, so here is what we are collecting. We collect this in the eBPF program (running in the kernel) and send to user space:
-timestamp_ns: The nanosecond timestamp when the futex wait ended.
-- tgid: The Thread Group ID (Process ID) of the waiting thread.
-- tid: The Thread ID (kernel's internal PID) of the waiting thread.
-- cgroup_id: The cgroup v2 ID of the cgroup the task belongs to (note really large values are likely erroneous)
-- comm: The command name (executable name) of the waiting thread.
-- futex_op_full: The precise integer value of the futex operation that was initiated (e.g., FUTEX_WAIT, FUTEX_WAIT_PRIVATE).
-- wait_duration_ns: The measured duration of the wait in nanoseconds.
-"""
-
 from bcc import BPF
 import ctypes as ct
 import re
 import os
 import json
 import signal
-import argparse
 import time
 import sys
 
@@ -35,22 +17,12 @@ exclude_patterns = None
 cgroup_indicator_file = None
 cgroup_id_filter = None
 
-# Ensure we get the c program alongside
 here = os.path.dirname(os.path.abspath(__file__))
-filename = os.path.join(here, "ebpf-collect.c")
-print(f"Looking for {filename}")
-if not os.path.exists(filename):
-    sys.exit(f"Missing c code {filename}")
+root = os.path.dirname(here)
+sys.path.insert(0, root)
+import bcchelper as helpers
 
-
-def read_file(filename):
-    with open(filename, "r") as fd:
-        content = fd.read()
-    return content
-
-
-# Define the C code for the eBPF program
-bpf_text = read_file(filename)
+bpf_text = helpers.read_bpf_text(os.path.abspath(__file__))
 
 # Python constants
 TASK_COMM_LEN_PY = 16
@@ -112,9 +84,6 @@ def get_futex_operation(op_full):
     s = ""
     if op_cmd == FUTEX_WAIT_PY:
         s = "FUTEX_WAIT"
-    # We can add other commands here to trace, but I think it's too much already
-    # elif op_cmd == FUTEX_WAKE_PY:
-    #     s = "FUTEX_WAKE"
     else:
         s = f"OP_{op_cmd}"
 
@@ -138,28 +107,6 @@ def format_duration(ns):
         return f"{ns/1000000000.0:.2f}s"
 
 
-def get_cgroup_filter(cgroup_indicator_file):
-    """
-    Filtering to a cgroup id can scope the results to one container.
-    """
-    try:
-        with open(cgroup_indicator_file, "r") as f:
-            cgroup_id_filter = f.read().strip()
-            if cgroup_id_filter:
-                log(f"Scoping to cgroup {cgroup_id_filter}")
-            else:
-                log(
-                    f"Warning: Cgroup indicator file '{cgroup_indicator_file}' is empty."
-                )
-                cgroup_id_filter = None
-    except Exception as e:
-        log(
-            f"Warning: Could not read cgroup indicator file '{cgroup_indicator_file}': {e}"
-        )
-        cgroup_id_filter = None  # Treat as no filter
-    return cgroup_id_filter
-
-
 def print_event_ringbuf(ctx, data, size):
     global as_table
     global include_patterns
@@ -170,7 +117,7 @@ def print_event_ringbuf(ctx, data, size):
     # if a cgroup filter is set
     if cgroup_indicator_file is not None and cgroup_id_filter is None:
         if os.path.exists(cgroup_indicator_file):
-            cgroup_id_filter = get_cgroup_filter(cgroup_indicator_file)
+            cgroup_id_filter = helpers.get_cgroup_filter(cgroup_indicator_file)
 
     event = ct.cast(data, ct.POINTER(FutexEventData)).contents
 
@@ -282,17 +229,6 @@ def print_futex_table_header():
     print("-" * header_len)
 
 
-def log(message, prefix="", exit_flag=False):
-    """
-    Helper logging function
-    """
-    if prefix:
-        prefix = f"{prefix} "
-    print(f"{prefix}{message}", file=sys.stderr)
-    if exit_flag:
-        sys.exit(1)
-
-
 def collect_trace(
     start_indicator_file=None, stop_indicator_file=None, table=True, debug=False
 ):
@@ -304,21 +240,23 @@ def collect_trace(
     signal.signal(signal.SIGINT, signal_stop_handler)
     signal.signal(signal.SIGTERM, signal_stop_handler)
 
-    log("Starting eBPF (Tracepoints for futex syscalls).")
+    helpers.log("Starting eBPF (Tracepoints for futex syscalls).")
     bpf_instance = None
     try:
         bpf_instance = BPF(text=bpf_text, debug=0)
-        log("BPF program loaded and tracepoints automatically attached.")
+        helpers.log("BPF program loaded and tracepoints automatically attached.")
     except Exception as e:
-        log(f"Error initializing/attaching BPF: {e}", exit_flag=True)
+        helpers.log(f"Error initializing/attaching BPF: {e}", exit_flag=True)
         return
 
     # Wait to start until the application is going to run
     if start_indicator_file is not None:
-        log(f"\nStart Indicator file defined '{start_indicator_file}'. Waiting.")
+        helpers.log(
+            f"\nStart Indicator file defined '{start_indicator_file}'. Waiting."
+        )
         while not os.path.exists(start_indicator_file):
             time.sleep(0.5)
-        log("Start indicator found. Proceeding.")
+        helpers.log("Start indicator found. Proceeding.")
 
     # Print header table to describe fields
     if table:
@@ -330,9 +268,9 @@ def collect_trace(
             bpf_instance["debug_events_rb"].open_ring_buffer(
                 print_debug_event, ctx=None
             )
-        log("Ring buffers opened. Polling for events...")
+        helpers.log("Ring buffers opened. Polling for events...")
     except Exception as e:
-        log(f"Failed to open ring buffer(s): {e}")
+        helpers.log(f"Failed to open ring buffer(s): {e}")
         if bpf_instance:
             bpf_instance.cleanup()
         sys.exit(1)
@@ -343,52 +281,20 @@ def collect_trace(
 
             # Does the user want to stop?
             if stop_indicator_file is not None and os.path.exists(stop_indicator_file):
-                log(f"\nIndicator file '{stop_indicator_file}' found. Stopping.")
+                helpers.log(
+                    f"\nIndicator file '{stop_indicator_file}' found. Stopping."
+                )
                 running = False
 
+            if not running:
+                break
     except Exception as e:
-        log(f"\nError or interrupt during polling: {e}")
+        helpers.log(f"\nError or interrupt during polling: {e}")
         running = False
     finally:
-        log("Cleaning up BPF resources...")
+        helpers.log("Cleaning up BPF resources...")
         if bpf_instance:
             bpf_instance.cleanup()
-
-
-def get_parser():
-    parser = argparse.ArgumentParser(description="eBPF Futex Wait Time Analyzer.")
-    parser.add_argument(
-        "--cgroup-indicator-file", help="Filename with a cgroup ID to filter to"
-    )
-    parser.add_argument(
-        "--stop-indicator-file", help="Indicator file path to stop tracing"
-    )
-    parser.add_argument(
-        "--start-indicator-file", help="Indicator file path to start tracing"
-    )
-    parser.add_argument(
-        "--include-pattern",
-        default=None,
-        action="append",
-        help="Include comm patterns only",
-    )
-    parser.add_argument(
-        "--exclude-pattern", default=None, action="append", help="Exclude comm patterns"
-    )
-    parser.add_argument(
-        "--debug",
-        action="store_true",
-        default=False,
-        help="Print BPF debug events via ring buffer",
-    )
-    parser.add_argument(
-        "-j",
-        "--json",
-        action="store_true",
-        default=False,
-        help="Print records as JSON instead of table",
-    )
-    return parser
 
 
 def main():
@@ -399,11 +305,11 @@ def main():
     if os.geteuid() != 0:
         sys.exit("This script must be run as root.")
 
-    parser = get_parser()
-    args = parser.parse_args()
+    parser = helpers.get_parser("eBPF Futex Wait Time Analyzer.")
+    args, _ = parser.parse_known_args()
 
     if args.debug and args.json:
-        log(
+        helpers.log(
             "Warning: Debug output is formatted as table, not JSON. Forcing table output for debug."
         )
         args.json = False

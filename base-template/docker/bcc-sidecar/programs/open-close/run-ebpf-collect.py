@@ -1,12 +1,11 @@
 #!/usr/bin/python3
 
-from bcc import BPF, libbcc
+from bcc import BPF
 import ctypes as ct
 import re
 import os
 import json
 import signal
-import argparse
 import time
 import sys
 
@@ -18,22 +17,12 @@ exclude_patterns = None
 cgroup_indicator_file = None
 cgroup_id = None
 
-# Ensure we get the c program alongside
 here = os.path.dirname(os.path.abspath(__file__))
-filename = os.path.join(here, "ebpf-collect.c")
-print(f"Looking for {filename}")
-if not os.path.exists(filename):
-    sys.exit(f"Missing c code {filename}")
+root = os.path.dirname(here)
+sys.path.insert(0, root)
+import bcchelper as helpers
 
-
-def read_file(filename):
-    with open(filename, "r") as fd:
-        content = fd.read()
-    return content
-
-
-# Define the C code for the eBPF program
-bpf_text = read_file(filename)
+bpf_text = helpers.read_bpf_text(os.path.abspath(__file__))
 
 # Python constants and ctypes (same as before)
 MAX_FILENAME_LEN_PY = 256
@@ -90,7 +79,7 @@ def print_event_ringbuf_cb(ctx, data, size):
     # Do we have a cgroup indicator file written?
     if cgroup_indicator_file is not None and cgroup_id is None:
         if os.path.exists(cgroup_indicator_file):
-            cgroup_id = read_file(cgroup_indicator_file).strip()
+            cgroup_id = helpers.read_file(cgroup_indicator_file).strip()
             print(f"Scoping to cgroup {cgroup_id}")
 
     event = ct.cast(data, ct.POINTER(EventData)).contents
@@ -225,17 +214,6 @@ def print_table_header():
     print("-" * header_line_len)
 
 
-def log(message, prefix="", exit=False, debug=False):
-    """
-    Simple function to print log with prefix.
-    """
-    if prefix:
-        prefix = f"{prefix} "
-    print(f"{prefix}{message}", file=sys.stderr)
-    if exit:
-        sys.exit(1)
-
-
 def collect_trace(
     start_indicator_file=None, stop_indicator_file=None, table=True, debug=False
 ):
@@ -252,7 +230,7 @@ def collect_trace(
     signal.signal(signal.SIGINT, signal_stop_handler)
     signal.signal(signal.SIGTERM, signal_stop_handler)
 
-    log("Starting eBPF (Tracepoint for open entry).")
+    helpers.log("Starting eBPF (Tracepoint for open entry).")
     try:
         # Create the bpf program (I think this compiles)
         bpf_instance = BPF(text=bpf_text)
@@ -268,7 +246,7 @@ def collect_trace(
         )
 
     except Exception as e:
-        log(f"Error initializing/attaching BPF: {e}", exit=True)
+        helpers.log(f"Error initializing/attaching BPF: {e}", exit=True)
 
     # Only print a header if it's a table...
     if table:
@@ -276,11 +254,13 @@ def collect_trace(
 
     # Are we filtering to a cgroup?
     if cgroup_indicator_file is not None:
-        log(f"\nCgroup Indicator file defined '{cgroup_indicator_file}'.")
+        helpers.log(f"\nCgroup Indicator file defined '{cgroup_indicator_file}'.")
 
     # Wait to start, if applicable
     if start_indicator_file is not None:
-        log(f"\nStart Indicator file defined '{start_indicator_file}'. Waiting.")
+        helpers.log(
+            f"\nStart Indicator file defined '{start_indicator_file}'. Waiting."
+        )
         while not os.path.exists(start_indicator_file):
             time.sleep(1)
 
@@ -294,7 +274,7 @@ def collect_trace(
             )
 
     except Exception as e:
-        log(f"Failed to open ring buffer(s): {e}")
+        helpers.log(f"Failed to open ring buffer(s): {e}")
         if bpf_instance:
             bpf_instance.cleanup()
             sys.exit(1)
@@ -307,64 +287,19 @@ def collect_trace(
             # If the indicator file is present, we are done.
             # The Flux Operator has finished running the app and generated it.
             if stop_indicator_file is not None and os.path.exists(stop_indicator_file):
-                log(f"\nIndicator file '{stop_indicator_file}' found. Stopping.")
+                helpers.log(
+                    f"\nIndicator file '{stop_indicator_file}' found. Stopping."
+                )
                 running = False
 
     # Stop due to exception or other
     except Exception as e:
-        log(f"\nError during polling: {e}")
+        helpers.log(f"\nError during polling: {e}")
         running = False
     finally:
-        log("Cleaning up BPF resources...")
+        helpers.log("Cleaning up BPF resources...")
         if bpf_instance:
             bpf_instance.cleanup()
-
-
-def get_parser():
-    """
-    Get the argument parser.
-    """
-    parser = argparse.ArgumentParser(
-        description="DEBUG eBPF file open/close with Tracepoint."
-    )
-    parser.add_argument(
-        "--cgroup-indicator-file",
-        help="Filename with a cgroup to filter to",
-    )
-    parser.add_argument(
-        "--stop-indicator-file",
-        help="Indicator file path to stop",
-    )
-    parser.add_argument(
-        "--start-indicator-file",
-        help="Indicator file path to start",
-    )
-    parser.add_argument(
-        "--include-pattern",
-        default=None,
-        action="append",
-        help="Include these patterns only",
-    )
-    parser.add_argument(
-        "--exclude-pattern",
-        default=None,
-        action="append",
-        help="Exclude these patterns in commands",
-    )
-    parser.add_argument(
-        "--debug",
-        action="store_true",
-        default=False,
-        help="Print debug calls for open",
-    )
-    parser.add_argument(
-        "-j",
-        "--json",
-        action="store_true",
-        default=False,
-        help="Print records as json instead of in table",
-    )
-    return parser
 
 
 def main():
@@ -377,8 +312,9 @@ def main():
 
     if os.geteuid() != 0:
         sys.exit("This script must be run as root.")
-    parser = get_parser()
-    args, extra = parser.parse_known_args()
+
+    parser = helpers.get_parser("File Open/Close Analyzer.")
+    args, _ = parser.parse_known_args()
 
     # If debug is set, we print a table
     if args.debug:

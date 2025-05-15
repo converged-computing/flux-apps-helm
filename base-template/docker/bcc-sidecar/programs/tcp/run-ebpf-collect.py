@@ -6,7 +6,6 @@ import re
 import os
 import json
 import signal
-import argparse
 import time
 import sys
 
@@ -18,22 +17,12 @@ exclude_patterns = None
 cgroup_indicator_file = None
 cgroup_id_filter = None
 
-# Ensure we get the c program alongside
 here = os.path.dirname(os.path.abspath(__file__))
-filename = os.path.join(here, "ebpf-collect.c")
-print(f"Looking for {filename}")
-if not os.path.exists(filename):
-    sys.exit(f"Missing c code {filename}")
+root = os.path.dirname(here)
+sys.path.insert(0, root)
+import bcchelper as helpers
 
-
-def read_file(filename):
-    with open(filename, "r") as fd:
-        content = fd.read()
-    return content
-
-
-# Define the C code for the eBPF program
-bpf_text = read_file(filename)
+bpf_text = helpers.read_bpf_text(os.path.abspath(__file__))
 
 # Python constants
 TASK_COMM_LEN_PY = 16
@@ -106,14 +95,14 @@ def get_cgroup_filter(cgroup_indicator_file):
         with open(cgroup_indicator_file, "r") as f:
             cgroup_id_filter = f.read().strip()
             if cgroup_id_filter:
-                log(f"Scoping to cgroup {cgroup_id_filter}")
+                helpers.log(f"Scoping to cgroup {cgroup_id_filter}")
             else:
-                log(
+                helpers.log(
                     f"Warning: Cgroup indicator file '{cgroup_indicator_file}' is empty."
                 )
                 cgroup_id_filter = None
     except Exception as e:
-        log(
+        helpers.log(
             f"Warning: Could not read cgroup indicator file '{cgroup_indicator_file}': {e}"
         )
         cgroup_id_filter = None  # Treat as no filter
@@ -245,14 +234,6 @@ def print_net_table_header():
     print("-" * header_len)
 
 
-def log(message, prefix="", exit_flag=False):
-    if prefix:
-        prefix = f"{prefix} "
-    print(f"{prefix}{message}", file=sys.stderr)
-    if exit_flag:
-        sys.exit(1)
-
-
 def collect_trace(
     start_indicator_file=None, stop_indicator_file=None, table=True, debug_flag=False
 ):
@@ -264,26 +245,28 @@ def collect_trace(
     signal.signal(signal.SIGINT, signal_stop_handler)
     signal.signal(signal.SIGTERM, signal_stop_handler)
 
-    log("Starting eBPF (Tracepoints for sendto/recvfrom syscalls).")
+    helpers.log("Starting eBPF (Tracepoints for sendto/recvfrom syscalls).")
     bpf_instance = None
     try:
         bpf_instance = BPF(text=bpf_text, debug=0)
-        log("BPF program loaded and tracepoints automatically attached.")
+        helpers.log("BPF program loaded and tracepoints automatically attached.")
     except Exception as e:
-        log(f"Error initializing/attaching BPF: {e}", exit_flag=True)
+        helpers.log(f"Error initializing/attaching BPF: {e}", exit_flag=True)
         return
 
     if table:
         print_net_table_header()
     if cgroup_indicator_file is not None:
-        log(f"\nCgroup Indicator file defined '{cgroup_indicator_file}'.")
+        helpers.log(f"\nCgroup Indicator file defined '{cgroup_indicator_file}'.")
 
     # Wait for the start indicator file to be present
     if start_indicator_file is not None:
-        log(f"\nStart Indicator file defined '{start_indicator_file}'. Waiting.")
+        helpers.log(
+            f"\nStart Indicator file defined '{start_indicator_file}'. Waiting."
+        )
         while not os.path.exists(start_indicator_file):
             time.sleep(0.5)
-        log("Start indicator found. Proceeding.")
+        helpers.log("Start indicator found. Proceeding.")
 
     try:
         bpf_instance["events"].open_ring_buffer(print_event_ringbuf_cb, ctx=None)
@@ -291,9 +274,9 @@ def collect_trace(
             bpf_instance["debug_events_rb"].open_ring_buffer(
                 print_debug_event_cb, ctx=None
             )
-        log("Ring buffers opened. Polling for events...")
+        helpers.log("Ring buffers opened. Polling for events...")
     except Exception as e:
-        log(f"Failed to open ring buffer(s): {e}")
+        helpers.log(f"Failed to open ring buffer(s): {e}")
         if bpf_instance:
             bpf_instance.cleanup()
         sys.exit(1)
@@ -302,38 +285,18 @@ def collect_trace(
         while running:
             bpf_instance.ring_buffer_poll(timeout=100)
             if stop_indicator_file is not None and os.path.exists(stop_indicator_file):
-                log(f"\nIndicator file '{stop_indicator_file}' found. Stopping.")
+                helpers.log(
+                    f"\nIndicator file '{stop_indicator_file}' found. Stopping."
+                )
                 running = False
 
     except Exception as e:
-        log(f"\nError or interruption during polling: {e}")
+        helpers.log(f"\nError or interruption during polling: {e}")
         running = False
     finally:
-        log("Cleaning up BPF resources...")
+        helpers.log("Cleaning up BPF resources...")
         if bpf_instance:
             bpf_instance.cleanup()
-
-
-def get_parser():
-    parser = argparse.ArgumentParser(description="eBPF TCP Send/Receive Time Analyzer.")
-    parser.add_argument(
-        "--cgroup-indicator-file", help="Filename with cgroup ID to filter"
-    )
-    parser.add_argument("--stop-indicator-file", help="Indicator file path to stop")
-    parser.add_argument("--start-indicator-file", help="Indicator file path to start")
-    parser.add_argument(
-        "--include-pattern", default=None, action="append", help="Include comm patterns"
-    )
-    parser.add_argument(
-        "--exclude-pattern", default=None, action="append", help="Exclude comm patterns"
-    )
-    parser.add_argument(
-        "--debug", action="store_true", default=False, help="Print BPF debug events"
-    )
-    parser.add_argument(
-        "-j", "--json", action="store_true", default=False, help="Print as JSON"
-    )
-    return parser
 
 
 def main():
@@ -343,11 +306,12 @@ def main():
 
     if os.geteuid() != 0:
         sys.exit("This script must be run as root.")
-    parser = get_parser()
-    args = parser.parse_args()
+
+    parser = helpers.get_parser("eBPF TCP Analyzer.")
+    args, _ = parser.parse_known_args()
 
     if args.debug and args.json:
-        log("Warning: Debug output is table. Forcing table output.")
+        helpers.log("Warning: Debug output is table. Forcing table output.")
         args.json = False
 
     include_patterns = args.include_pattern

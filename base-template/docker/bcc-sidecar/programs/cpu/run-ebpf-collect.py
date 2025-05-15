@@ -1,6 +1,5 @@
 from bcc import BPF
 import ctypes as ct
-import argparse
 import time
 import os
 import re
@@ -24,10 +23,6 @@ import signal
 #   high runq_latency_ns values from the CPU scheduler script can be a strong symptom of CPU throttling,
 #   especially if caused by cgroup CPU quotas. It can also indicate general CPU contention due to system overload.
 
-# memory pressure
-
-# if a process is trying to access shared memory and the shared memory is insufficient, too small for what needed, so it required access to another tier because of it. Access to cache. Where we place the pocesses and threads in terms of numa node and bind to shared cache can have a profound impact on certain application performance. NUMA node binding vs access time. How does memory access calls
-
 # Global state
 running = True
 as_table = True
@@ -36,44 +31,13 @@ exclude_patterns = None
 cgroup_indicator_file = None
 cgroup_id_filter = None
 
-# Ensure we get the c program alongside
 here = os.path.dirname(os.path.abspath(__file__))
-filename = os.path.join(here, "ebpf-collect.c")
-print(f"Looking for {filename}")
-if not os.path.exists(filename):
-    sys.exit(f"Missing c code {filename}")
+root = os.path.dirname(here)
+sys.path.insert(0, root)
+import bcchelper as helpers
 
+bpf_text = helpers.read_bpf_text(os.path.abspath(__file__))
 
-def get_cgroup_filter(cgroup_indicator_file):
-    """
-    Filtering to a cgroup id can scope the results to one container.
-    """
-    try:
-        with open(cgroup_indicator_file, "r") as f:
-            cgroup_id_filter = f.read().strip()
-            if cgroup_id_filter:
-                log(f"Scoping to cgroup {cgroup_id_filter}")
-            else:
-                log(
-                    f"Warning: Cgroup indicator file '{cgroup_indicator_file}' is empty."
-                )
-                cgroup_id_filter = None
-    except Exception as e:
-        log(
-            f"Warning: Could not read cgroup indicator file '{cgroup_indicator_file}': {e}"
-        )
-        cgroup_id_filter = None  # Treat as no filter
-    return cgroup_id_filter
-
-
-def read_file(filename):
-    with open(filename, "r") as fd:
-        content = fd.read()
-    return content
-
-
-# BPF C code as a multi-line string
-bpf_c_text = read_file(filename)
 
 # Define the sched_event_data structure for Python
 TASK_COMM_LEN = 16
@@ -105,7 +69,7 @@ def print_event(cpu, data, size):
     # if a cgroup filter is set
     if cgroup_indicator_file is not None and cgroup_id_filter is None:
         if os.path.exists(cgroup_indicator_file):
-            cgroup_id_filter = get_cgroup_filter(cgroup_indicator_file)
+            cgroup_id_filter = helpers.get_cgroup_filter(cgroup_indicator_file)
 
     event = ct.cast(data, ct.POINTER(SchedEventData)).contents
     on_cpu_ms = 0.0
@@ -153,40 +117,10 @@ def print_event(cpu, data, size):
         print(json.dumps(body))
 
 
-def get_parser():
-    parser = argparse.ArgumentParser(description="eBPF TCP Send/Receive Time Analyzer.")
-    parser.add_argument(
-        "--cgroup-indicator-file", help="Filename with cgroup ID to filter"
-    )
-    parser.add_argument("--stop-indicator-file", help="Indicator file path to stop")
-    parser.add_argument("--start-indicator-file", help="Indicator file path to start")
-    parser.add_argument(
-        "--include-pattern", default=None, action="append", help="Include comm patterns"
-    )
-    parser.add_argument(
-        "--exclude-pattern", default=None, action="append", help="Exclude comm patterns"
-    )
-    parser.add_argument(
-        "--debug", action="store_true", default=False, help="Print BPF debug events"
-    )
-    parser.add_argument(
-        "-j", "--json", action="store_true", default=False, help="Print as JSON"
-    )
-    return parser
-
-
 def signal_stop_handler(signum, frame):
     global running
     print("\nSignal received, stopping...", file=sys.stderr)
     running = False
-
-
-def log(message, prefix="", exit_flag=False):
-    if prefix:
-        prefix = f"{prefix} "
-    print(f"{prefix}{message}", file=sys.stderr)
-    if exit_flag:
-        sys.exit(1)
 
 
 def collect_trace(
@@ -201,18 +135,20 @@ def collect_trace(
     signal.signal(signal.SIGTERM, signal_stop_handler)
 
     if cgroup_indicator_file is not None:
-        log(f"\nCgroup Indicator file defined '{cgroup_indicator_file}'.")
+        helpers.log(f"\nCgroup Indicator file defined '{cgroup_indicator_file}'.")
 
     # Wait for the start indicator file to be present
     if start_indicator_file is not None:
-        log(f"\nStart Indicator file defined '{start_indicator_file}'. Waiting.")
+        helpers.log(
+            f"\nStart Indicator file defined '{start_indicator_file}'. Waiting."
+        )
         while not os.path.exists(start_indicator_file):
             time.sleep(0.5)
-        log("Start indicator found. Proceeding.")
+        helpers.log("Start indicator found. Proceeding.")
 
     try:
         print("Initializing eBPF for CPU Scheduling monitoring...")
-        b = BPF(text=bpf_c_text)
+        b = BPF(text=bpf_text)
         print("BPF C code compiled and loaded.")
 
         # Explicitly attach tracepoints
@@ -238,7 +174,9 @@ def collect_trace(
                 if stop_indicator_file is not None and os.path.exists(
                     stop_indicator_file
                 ):
-                    log(f"\nIndicator file '{stop_indicator_file}' found. Stopping.")
+                    helpers.log(
+                        f"\nIndicator file '{stop_indicator_file}' found. Stopping."
+                    )
                     running = False
 
             except KeyboardInterrupt:
@@ -258,11 +196,12 @@ def main():
 
     if os.geteuid() != 0:
         sys.exit("This script must be run as root.")
-    parser = get_parser()
-    args = parser.parse_args()
+
+    parser = helpers.get_parser("eBPF CPU Scheduling Time Analyzer.")
+    args, _ = parser.parse_known_args()
 
     if args.debug and args.json:
-        log("Warning: Debug output is table. Forcing table output.")
+        helpers.log("Warning: Debug output is table. Forcing table output.")
         args.json = False
 
     include_patterns = args.include_pattern
