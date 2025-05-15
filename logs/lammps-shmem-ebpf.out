@@ -1,0 +1,87 @@
+Looking for /opt/programs/shmem/ebpf-collect.c
+Initializing eBPF for Shared Memory monitoring...
+BPF C code compiled and loaded.
+[21:45:48] 
+Start Indicator file defined '/mnt/flux/start_ebpf_collection'. Waiting.
+[21:45:53] Start indicator found. Proceeding.
+Attaching tracepoints...
+  Kprobes for shm_open/shm_unlink should auto-attach if symbols exist.
+Finished attaching probes.
+
+--- Shared Memory Stats Summary at 21:45:58 ---
+{"tgid": 41158, "comm": "lmp", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 2, "munmap": 38, "mmap_sh_mb": 8.000015258789062}
+{"tgid": 41157, "comm": "lmp", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 2, "munmap": 37, "mmap_sh_mb": 8.000015258789062}
+{"tgid": 41154, "comm": "python3", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 0, "munmap": 1, "mmap_sh_mb": 0.0}
+{"tgid": 41171, "comm": "runc:[2:INIT]", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 0, "munmap": 4, "mmap_sh_mb": 0.0}
+{"tgid": 41161, "comm": "runc", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 0, "munmap": 7, "mmap_sh_mb": 0.0}
+{"tgid": 41169, "comm": "6", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 0, "munmap": 1, "mmap_sh_mb": 0.0}
+
+--- Shared Memory Stats Summary at 21:46:03 ---
+{"tgid": 41158, "comm": "lmp", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 2, "munmap": 38, "mmap_sh_mb": 8.000015258789062}
+{"tgid": 41157, "comm": "lmp", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 2, "munmap": 37, "mmap_sh_mb": 8.000015258789062}
+{"tgid": 41236, "comm": "python3", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 1, "munmap": 4, "mmap_sh_mb": 0.025775909423828125}
+{"tgid": 41187, "comm": "lsblk", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 1, "munmap": 1, "mmap_sh_mb": 0.025775909423828125}
+{"tgid": 41209, "comm": "python3", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 1, "munmap": 4, "mmap_sh_mb": 0.025775909423828125}
+{"tgid": 41219, "comm": "log-counter", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 1, "munmap": 14, "mmap_sh_mb": 8.0}
+{"tgid": 41237, "comm": "grep", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 1, "munmap": 3, "mmap_sh_mb": 0.025775909423828125}
+{"tgid": 41210, "comm": "grep", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 1, "munmap": 3, "mmap_sh_mb": 0.025775909423828125}
+{"tgid": 41246, "comm": "log-counter", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 1, "munmap": 15, "mmap_sh_mb": 8.0}
+{"tgid": 41185, "comm": "log-counter", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 1, "munmap": 9, "mmap_sh_mb": 8.0}
+{"tgid": 41239, "comm": "log-counter", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 1, "munmap": 9, "mmap_sh_mb": 8.0}
+{"tgid": 41238, "comm": "findmnt", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 1, "munmap": 1, "mmap_sh_mb": 0.025775909423828125}
+{"tgid": 41211, "comm": "findmnt", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 1, "munmap": 1, "mmap_sh_mb": 0.025775909423828125}
+{"tgid": 41184, "comm": "log-counter", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 1, "munmap": 13, "mmap_sh_mb": 8.0}
+{"tgid": 41212, "comm": "log-counter", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 1, "munmap": 9, "mmap_sh_mb": 8.0}
+{"tgid": 41186, "comm": "python3", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 1, "munmap": 4, "mmap_sh_mb": 0.025775909423828125}
+{"tgid": 41154, "comm": "python3", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 0, "munmap": 1, "mmap_sh_mb": 0.0}
+{"tgid": 41171, "comm": "runc:[2:INIT]", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 0, "munmap": 4, "mmap_sh_mb": 0.0}
+{"tgid": 41161, "comm": "runc", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 0, "munmap": 7, "mmap_sh_mb": 0.0}
+{"tgid": 41169, "comm": "6", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 0, "munmap": 1, "mmap_sh_mb": 0.0}
+
+--- Shared Memory Stats Summary at 21:46:08 ---
+{"tgid": 41158, "comm": "lmp", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 2, "munmap": 148, "mmap_sh_mb": 8.000015258789062}
+{"tgid": 41157, "comm": "lmp", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 2, "munmap": 147, "mmap_sh_mb": 8.000015258789062}
+{"tgid": 41286, "comm": "apt-get", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 1, "munmap": 6, "mmap_sh_mb": 0.025751113891601562}
+{"tgid": 41289, "comm": "http", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 1, "munmap": 3, "mmap_sh_mb": 0.025751113891601562}
+{"tgid": 41236, "comm": "python3", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 1, "munmap": 4, "mmap_sh_mb": 0.025775909423828125}
+{"tgid": 41187, "comm": "lsblk", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 1, "munmap": 1, "mmap_sh_mb": 0.025775909423828125}
+{"tgid": 41505, "comm": "dpkg", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 1, "munmap": 1, "mmap_sh_mb": 0.025751113891601562}
+{"tgid": 41287, "comm": "dpkg", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 1, "munmap": 1, "mmap_sh_mb": 0.025751113891601562}
+{"tgid": 41209, "comm": "python3", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 1, "munmap": 4, "mmap_sh_mb": 0.025775909423828125}
+{"tgid": 41219, "comm": "log-counter", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 1, "munmap": 14, "mmap_sh_mb": 8.0}
+{"tgid": 41504, "comm": "apt-get", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 1, "munmap": 5, "mmap_sh_mb": 0.025751113891601562}
+{"tgid": 41292, "comm": "gpgv", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 1, "munmap": 1, "mmap_sh_mb": 0.025751113891601562}
+{"tgid": 41237, "comm": "grep", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 1, "munmap": 3, "mmap_sh_mb": 0.025775909423828125}
+{"tgid": 41503, "comm": "dpkg", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 1, "munmap": 1, "mmap_sh_mb": 0.025751113891601562}
+{"tgid": 41210, "comm": "grep", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 1, "munmap": 3, "mmap_sh_mb": 0.025775909423828125}
+{"tgid": 41246, "comm": "log-counter", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 1, "munmap": 15, "mmap_sh_mb": 8.0}
+{"tgid": 41185, "comm": "log-counter", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 1, "munmap": 9, "mmap_sh_mb": 8.0}
+{"tgid": 41239, "comm": "log-counter", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 1, "munmap": 9, "mmap_sh_mb": 8.0}
+{"tgid": 41238, "comm": "findmnt", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 1, "munmap": 1, "mmap_sh_mb": 0.025775909423828125}
+{"tgid": 41290, "comm": "http", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 1, "munmap": 3, "mmap_sh_mb": 0.025751113891601562}
+
+--- Shared Memory Stats Summary at 21:46:13 ---
+{"tgid": 41525, "comm": "bash", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 2, "munmap": 10, "mmap_sh_mb": 0.051502227783203125}
+{"tgid": 41524, "comm": "bash", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 2, "munmap": 11, "mmap_sh_mb": 0.051502227783203125}
+{"tgid": 41158, "comm": "lmp", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 2, "munmap": 148, "mmap_sh_mb": 8.000015258789062}
+{"tgid": 41157, "comm": "lmp", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 2, "munmap": 147, "mmap_sh_mb": 8.000015258789062}
+{"tgid": 41523, "comm": "bash", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 2, "munmap": 10, "mmap_sh_mb": 0.051502227783203125}
+{"tgid": 41286, "comm": "apt-get", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 1, "munmap": 6, "mmap_sh_mb": 0.025751113891601562}
+{"tgid": 41289, "comm": "http", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 1, "munmap": 3, "mmap_sh_mb": 0.025751113891601562}
+{"tgid": 41520, "comm": "flux", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 1, "munmap": 2, "mmap_sh_mb": 0.025751113891601562}
+{"tgid": 41560, "comm": "touch", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 1, "munmap": 1, "mmap_sh_mb": 0.025751113891601562}
+{"tgid": 41236, "comm": "python3", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 1, "munmap": 4, "mmap_sh_mb": 0.025775909423828125}
+{"tgid": 41521, "comm": "bash", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 1, "munmap": 1, "mmap_sh_mb": 0.025751113891601562}
+{"tgid": 41187, "comm": "lsblk", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 1, "munmap": 1, "mmap_sh_mb": 0.025775909423828125}
+{"tgid": 41505, "comm": "dpkg", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 1, "munmap": 1, "mmap_sh_mb": 0.025751113891601562}
+{"tgid": 41522, "comm": "flux", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 1, "munmap": 9, "mmap_sh_mb": 0.025751113891601562}
+{"tgid": 41287, "comm": "dpkg", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 1, "munmap": 1, "mmap_sh_mb": 0.025751113891601562}
+{"tgid": 41512, "comm": "flux", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 1, "munmap": 10, "mmap_sh_mb": 0.025751113891601562}
+{"tgid": 41209, "comm": "python3", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 1, "munmap": 4, "mmap_sh_mb": 0.025775909423828125}
+{"tgid": 41219, "comm": "log-counter", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 1, "munmap": 14, "mmap_sh_mb": 8.0}
+{"tgid": 41504, "comm": "apt-get", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 1, "munmap": 6, "mmap_sh_mb": 0.025751113891601562}
+{"tgid": 41292, "comm": "gpgv", "shmget": 0, "shmat": 0, "shmdt": 0, "rmid": 0, "get_mb": 0.0, "shmopen": 0, "unlink": 0, "mmap_sh": 1, "munmap": 1, "mmap_sh_mb": 0.025751113891601562}
+[21:46:13] 
+Indicator file '/mnt/flux/stop_ebpf_collection' found. Stopping.
+Cleaning up BPF resources...
+Cleanup complete.
