@@ -148,7 +148,7 @@ def print_event_ringbuf_cb(ctx, data, size):
 
     timestamp_sec = event.timestamp_ns / 1e9
     type_str = "SEND" if event.type == NetEventType.EVENT_TCP_SEND else "RECV"
-    duration_str = format_duration(event.duration_ns)
+    duration = format_duration(event.duration_ns)
     bytes_str = (
         str(event.bytes_count)
         if event.bytes_count >= 0
@@ -157,13 +157,13 @@ def print_event_ringbuf_cb(ctx, data, size):
 
     if as_table:
         print_net_table_row(
-            event, comm, type_str, duration_str, bytes_str, timestamp_sec
+            event, comm, type_str, duration, bytes_str, timestamp_sec
         )
     else:
-        print_net_json(event, comm, type_str, duration_str, bytes_str, timestamp_sec)
+        print_net_json(event, comm, type_str, duration, bytes_str, timestamp_sec)
 
 
-def print_net_json(event, comm, type_str, duration_str, bytes_str, timestamp_sec):
+def print_net_json(event, comm, type_str, duration, bytes_str, timestamp_sec):
     body = {
         "event_type": type_str,
         "timestamp_sec": timestamp_sec,
@@ -175,7 +175,7 @@ def print_net_json(event, comm, type_str, duration_str, bytes_str, timestamp_sec
         "bytes": event.bytes_count,  # Raw byte count
         "bytes_human": bytes_str,  # Human-readable (includes error indication)
         "duration_ns": event.duration_ns,
-        "duration_human": duration_str,
+        "duration_human": duration,
     }
     print(json.dumps(body))
 
