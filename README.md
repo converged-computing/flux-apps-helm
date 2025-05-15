@@ -58,6 +58,9 @@ NODES=1
 GOOGLE_PROJECT=llnl-flux
 INSTANCE=h3-standard-88
 time gcloud container clusters create test-cluster  --threads-per-core=1  --num-nodes=$NODES --machine-type=$INSTANCE  --placement-type=COMPACT --image-type=UBUNTU_CONTAINERD --region=us-central1-a --project=${GOOGLE_PROJECT}
+
+# When time to delete
+gcloud container clusters delete test-cluster --region=us-central1-a
 ```
 
 Finally, install the Flux Operator
@@ -579,22 +582,13 @@ Here is how to see futex wait times.
 
 ```bash
 helm install \
-  --set experiment.monitor_program=futex \
+  --set experiment.monitor_program=futex-model \
   --set experiment.monitor=true \
   --set minicluster.save_logs=true \
   lammps ./lammps-reax
 ```
 
-This likely needs to be consolidated (it's a lot of data). Here is an example.
-
-```bash
-{"event_type": "FUTEX_WAIT_END", "timestamp_sec": 3891.635076022, "tgid": 34931, "tid": 35146, "comm": "containerd-shim", "cgroup_id": 6520, "futex_op_full": 128, "futex_op_str": "FUTEX_WAIT_PRIVATE", "wait_duration_ns": 21462, "wait_duration_human": "21.46us"}
-{"event_type": "FUTEX_WAIT_END", "timestamp_sec": 3891.635086712, "tgid": 34931, "tid": 35388, "comm": "containerd-shim", "cgroup_id": 6520, "futex_op_full": 128, "futex_op_str": "FUTEX_WAIT_PRIVATE", "wait_duration_ns": 42892, "wait_duration_human": "42.89us"}
-{"event_type": "FUTEX_WAIT_END", "timestamp_sec": 3891.635102633, "tgid": 3600, "tid": 3602, "comm": "containerd", "cgroup_id": 6520, "futex_op_full": 128, "futex_op_str": "FUTEX_WAIT_PRIVATE", "wait_duration_ns": 16693, "wait_duration_human": "16.69us"}
-{"event_type": "FUTEX_WAIT_END", "timestamp_sec": 3891.635107428, "tgid": 3600, "tid": 6823, "comm": "containerd", "cgroup_id": 6520, "futex_op_full": 128, "futex_op_str": "FUTEX_WAIT_PRIVATE", "wait_duration_ns": 34781, "wait_duration_human": "34.78us"}
-```
-
-Finally, here is tcp
+The `futex-model` is going to print river models grouped by tgid and comm. Here is tcp
 
 ```bash
 helm install \
@@ -612,6 +606,27 @@ Here is example data:
 {"event_type": "RECV", "timestamp_sec": 3978.855731232, "tgid": 36693, "tid": 36693, "comm": "lmp", "cgroup_id": 19947, "fd": 11, "bytes": 20, "bytes_human": "20", "duration_ns": 12363, "duration_human": "12.36us"}
 {"event_type": "RECV", "timestamp_sec": 3978.855737251, "tgid": 36693, "tid": 36693, "comm": "lmp", "cgroup_id":
 ```
+
+Try shared memory:
+
+```bash
+helm install \
+  --set experiment.monitor_program=shmem \
+  --set experiment.monitor=true \
+  --set minicluster.save_logs=true \
+  lammps ./lammps-reax
+```
+
+And cpu (using river ML for summary models):
+
+```bash
+helm install \
+  --set experiment.monitor_program=cpu-models \
+  --set experiment.monitor=true \
+  --set minicluster.save_logs=true \
+  lammps ./lammps-reax
+```
+
 
 Also try changing the command entirely.
 
