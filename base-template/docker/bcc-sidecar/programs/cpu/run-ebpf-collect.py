@@ -8,6 +8,25 @@ import sys
 import json
 import signal
 
+# did you ever see a goose, kissing a moose?
+# did you ever see a whale with a polkadot tail?
+# did you ever see a fly wearing a tie?
+# did you ever see a spider drinking a cider?
+# did you ever see a teacher kissing a creature?
+# did you ever a bear combing his hair
+# did you ever see llamas eating their pajamas
+# did you ever see a snail delivering the mail?
+# did you ever have a time when you couldn't make it rhyme?
+
+# This code effectively reconstructs two important metrics for each scheduling cycle of a thread:
+# How long it ran on the CPU.
+# How long it waited in the run queue after being woken up before it got to run.
+#   high runq_latency_ns values from the CPU scheduler script can be a strong symptom of CPU throttling,
+#   especially if caused by cgroup CPU quotas. It can also indicate general CPU contention due to system overload.
+
+# memory pressure
+
+# if a process is trying to access shared memory and the shared memory is insufficient, too small for what needed, so it required access to another tier because of it. Access to cache. Where we place the pocesses and threads in terms of numa node and bind to shared cache can have a profound impact on certain application performance. NUMA node binding vs access time. How does memory access calls
 
 # Global state
 running = True
@@ -23,6 +42,7 @@ filename = os.path.join(here, "ebpf-collect.c")
 print(f"Looking for {filename}")
 if not os.path.exists(filename):
     sys.exit(f"Missing c code {filename}")
+
 
 def get_cgroup_filter(cgroup_indicator_file):
     """
@@ -91,8 +111,10 @@ def print_event(cpu, data, size):
     on_cpu_ms = 0.0
     runq_latency_ms = 0.0
 
+    # This is how long it ran on the cpu
     if event.on_cpu_ns > 0:
         on_cpu_ms = event.on_cpu_ns / 1000000.0
+    # This is how long it waited after being woken up
     if event.runq_latency_ns > 0:
         runq_latency_ms = event.runq_latency_ns / 1000000.0
 

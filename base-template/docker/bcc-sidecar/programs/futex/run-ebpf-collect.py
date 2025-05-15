@@ -107,7 +107,7 @@ def get_futex_operation(op_full):
     """
     # Basic command part (ignoring FUTEX_CLOCK_REALTIME for this simple string conversion)
     # 256 is FUTEX_CLOCK_REALTIME
-    op_cmd = op_full & ~(FUTEX_PRIVATE_FLAG_PY | 256) 
+    op_cmd = op_full & ~(FUTEX_PRIVATE_FLAG_PY | 256)
 
     s = ""
     if op_cmd == FUTEX_WAIT_PY:

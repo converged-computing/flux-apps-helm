@@ -118,6 +118,9 @@ int tp_sched_switch(struct trace_event_raw_sched_switch *ctx) {
 
     wakeup_ts_ptr = task_wakeup_ts.lookup(&next_tid);
     if (wakeup_ts_ptr) {
+
+        // This means it's ready and wants to use the CPU) 
+        // but was waiting for a CPU core to become available.
         u64 runq_latency = current_ts - *wakeup_ts_ptr;
         task_wakeup_ts.delete(&next_tid);
         

@@ -156,9 +156,7 @@ def print_event_ringbuf_cb(ctx, data, size):
     )
 
     if as_table:
-        print_net_table_row(
-            event, comm, type_str, duration, bytes_str, timestamp_sec
-        )
+        print_net_table_row(event, comm, type_str, duration, bytes_str, timestamp_sec)
     else:
         print_net_json(event, comm, type_str, duration, bytes_str, timestamp_sec)
 
@@ -319,40 +317,21 @@ def collect_trace(
 def get_parser():
     parser = argparse.ArgumentParser(description="eBPF TCP Send/Receive Time Analyzer.")
     parser.add_argument(
-        "--cgroup-indicator-file", 
-        help="Filename with cgroup ID to filter"
+        "--cgroup-indicator-file", help="Filename with cgroup ID to filter"
+    )
+    parser.add_argument("--stop-indicator-file", help="Indicator file path to stop")
+    parser.add_argument("--start-indicator-file", help="Indicator file path to start")
+    parser.add_argument(
+        "--include-pattern", default=None, action="append", help="Include comm patterns"
     )
     parser.add_argument(
-        "--stop-indicator-file", 
-        help="Indicator file path to stop"
+        "--exclude-pattern", default=None, action="append", help="Exclude comm patterns"
     )
     parser.add_argument(
-        "--start-indicator-file", 
-        help="Indicator file path to start"
+        "--debug", action="store_true", default=False, help="Print BPF debug events"
     )
     parser.add_argument(
-        "--include-pattern", 
-        default=None, 
-        action="append", 
-        help="Include comm patterns"
-    )
-    parser.add_argument(
-        "--exclude-pattern", 
-        default=None, 
-        action="append", 
-        help="Exclude comm patterns"
-    )
-    parser.add_argument(
-        "--debug", 
-        action="store_true", 
-        default=False, 
-        help="Print BPF debug events"
-    )
-    parser.add_argument(
-        "-j", "--json", 
-        action="store_true", 
-        default=False, 
-        help="Print as JSON"
+        "-j", "--json", action="store_true", default=False, help="Print as JSON"
     )
     return parser
 
@@ -366,7 +345,7 @@ def main():
         sys.exit("This script must be run as root.")
     parser = get_parser()
     args = parser.parse_args()
-    
+
     if args.debug and args.json:
         log("Warning: Debug output is table. Forcing table output.")
         args.json = False
@@ -374,11 +353,9 @@ def main():
     include_patterns = args.include_pattern
     exclude_patterns = args.exclude_pattern
     cgroup_indicator_file = args.cgroup_indicator_file
-    
+
     collect_trace(
-        args.start_indicator_file, 
-        args.stop_indicator_file, 
-        not args.json, args.debug
+        args.start_indicator_file, args.stop_indicator_file, not args.json, args.debug
     )
 
 
