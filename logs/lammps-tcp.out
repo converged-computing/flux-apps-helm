@@ -1,0 +1,157 @@
+#!/bin/bash
+set -euo pipefail
+mkdir -p /tmp/output
+flux resource list
+echo "The parent process ID is: $PPID"          
+echo "The execution parent process ID is: $$"         
+CGROUP_PATH_LINE=$(cat "/proc/$$/cgroup")
+echo 
+CGROUP_V2_PATH=${CGROUP_PATH_LINE:3}
+ACTUAL_CGROUP_DIR="/sys/fs/cgroup${CGROUP_V2_PATH}"
+TARGET_CGROUP_ID=$(stat -c '%i' $ACTUAL_CGROUP_DIR)
+echo "The cgroup id is $TARGET_CGROUP_ID"
+echo -n $TARGET_CGROUP_ID > /mnt/flux/cgroup-id.txt
+sleep 10
+touch /mnt/flux/start_ebpf_collection
+for i in {1..1}
+do
+  echo "FLUX-RUN START lammps-iter-$i"
+  flux run --setattr=user.study_id=lammps-iter-$i -N1 -n 2 -o cpu-affinity=per-task -o gpu-affinity=off      /usr/bin/lmp -v x 2 -v y 2 -v z 2 -in in.reaxff.hns -nocite
+  
+   echo "FLUX-RUN END lammps-iter-$i"
+done
+
+
+output=./results/${app}
+(apt-get update > /dev/null 2>&1 && apt-get install -y jq > /dev/null 2>&1) || (yum update -y > /dev/null 2>&1 && yum install -y jq > /dev/null 2>&1)
+mkdir -p $output
+for jobid in $(flux jobs -a --json | jq -r .jobs[].id); do
+    echo
+    study_id=$(flux job info $jobid jobspec | jq -r ".attributes.user.study_id")
+    echo "FLUX-JOB START ${jobid} ${study_id}"
+    echo "FLUX-JOB-JOBSPEC START"
+    flux job info $jobid jobspec
+    echo "FLUX-JOB-JOBSPEC END" 
+    
+    echo "FLUX-JOB-RESOURCES START"
+    flux job info ${jobid} R
+    echo "FLUX-JOB-RESOURCES END"
+    echo "FLUX-JOB-EVENTLOG START" 
+    flux job info $jobid guest.exec.eventlog
+    echo "FLUX-JOB-EVENTLOG END" 
+    echo "FLUX-JOB END ${jobid} ${study_id}"
+done
+echo "FLUX JOB STATS"
+flux job stats         
+
+     STATE NNODES   NCORES    NGPUS NODELIST
+      free      1       88        0 lammps-0
+ allocated      0        0        0 
+      down      0        0        0 
+The parent process ID is: 82
+The execution parent process ID is: 140
+
+The cgroup id is 15972
+FLUX-RUN START lammps-iter-1
+LAMMPS (17 Apr 2024 - Development - a8687b5)
+OMP_NUM_THREADS environment is not set. Defaulting to 1 thread. (src/comm.cpp:98)
+  using 1 OpenMP thread(s) per MPI task
+Reading data file ...
+  triclinic box = (0 0 0) to (22.326 11.1412 13.778966) with tilt (0 -5.02603 0)
+  2 by 1 by 1 MPI processor grid
+  reading atoms ...
+  304 atoms
+  reading velocities ...
+  304 velocities
+  read_data CPU = 0.002 seconds
+Replication is creating a 2x2x2 = 8 times larger system...
+  triclinic box = (0 0 0) to (44.652 22.2824 27.557932) with tilt (0 -10.05206 0)
+  2 by 1 by 1 MPI processor grid
+  bounding box image = (0 -1 -1) to (0 1 1)
+  bounding box extra memory = 0.03 MB
+  average # of replicas added to proc = 5.00 out of 8 (62.50%)
+  2432 atoms
+  replicate CPU = 0.000 seconds
+Neighbor list info ...
+  update: every = 20 steps, delay = 0 steps, check = no
+  max neighbors/atom: 2000, page size: 100000
+  master list distance cutoff = 11
+  ghost atom cutoff = 11
+  binsize = 5.5, bins = 10 5 6
+  2 neighbor lists, perpetual/occasional/extra = 2 0 0
+  (1) pair reaxff, perpetual
+      attributes: half, newton off, ghost
+      pair build: half/bin/ghost/newtoff
+      stencil: full/ghost/bin/3d
+      bin: standard
+  (2) fix qeq/reax, perpetual, copy from (1)
+      attributes: half, newton off
+      pair build: copy
+      stencil: none
+      bin: none
+Setting up Verlet run ...
+  Unit style    : real
+  Current step  : 0
+  Time step     : 0.1
+Per MPI rank memory allocation (min/avg/max) = 143.9 | 143.9 | 143.9 Mbytes
+   Step          Temp          PotEng         Press          E_vdwl         E_coul         Volume    
+         0   300           -113.27833      437.52134     -111.57687     -1.7014647      27418.867    
+        10   299.38517     -113.27631      1439.2511     -111.57492     -1.7013814      27418.867    
+        20   300.27107     -113.27884      3764.3921     -111.57762     -1.7012246      27418.867    
+        30   302.21063     -113.28428      7007.6315     -111.58335     -1.7009364      27418.867    
+        40   303.52265     -113.28799      9844.7899     -111.58747     -1.7005187      27418.867    
+        50   301.87059     -113.28324      9663.0837     -111.58318     -1.7000523      27418.867    
+        60   296.67807     -113.26777      7273.8688     -111.56815     -1.6996136      27418.867    
+        70   292.2         -113.25435      5533.5999     -111.55514     -1.6992157      27418.867    
+        80   293.58679     -113.25831      5993.3978     -111.55946     -1.6988534      27418.867    
+        90   300.62637     -113.27925      7202.8885     -111.58069     -1.6985591      27418.867    
+       100   305.38276     -113.29357      10085.741     -111.59518     -1.6983875      27418.867    
+Loop time of 10.0969 on 2 procs for 100 steps with 2432 atoms
+
+Performance: 0.086 ns/day, 280.469 hours/ns, 9.904 timesteps/s, 24.087 katom-step/s
+99.3% CPU use with 2 MPI tasks x 1 OpenMP threads
+
+MPI task timing breakdown:
+Section |  min time  |  avg time  |  max time  |%varavg| %total
+---------------------------------------------------------------
+Pair    | 6.9553     | 7.1961     | 7.4369     |   9.0 | 71.27
+Neigh   | 0.17825    | 0.17841    | 0.17857    |   0.0 |  1.77
+Comm    | 0.0091851  | 0.24999    | 0.49079    |  48.2 |  2.48
+Output  | 0.00034401 | 0.00035592 | 0.00036782 |   0.0 |  0.00
+Modify  | 2.471      | 2.4712     | 2.4714     |   0.0 | 24.47
+Other   |            | 0.0008263  |            |       |  0.01
+
+Nlocal:           1216 ave        1216 max        1216 min
+Histogram: 2 0 0 0 0 0 0 0 0 0
+Nghost:         7591.5 ave        7597 max        7586 min
+Histogram: 1 0 0 0 0 0 0 0 0 1
+Neighs:         432912 ave      432942 max      432882 min
+Histogram: 1 0 0 0 0 0 0 0 0 1
+
+Total # of neighbors = 865824
+Ave neighs/atom = 356.01316
+Neighbor list builds = 5
+Dangerous builds not checked
+Total wall time: 0:00:10
+FLUX-RUN END lammps-iter-1
+
+FLUX-JOB START 175724560384 lammps-iter-1
+FLUX-JOB-JOBSPEC START
+{"resources": [{"type": "node", "count": 1, "with": [{"type": "slot", "count": 2, "with": [{"type": "core", "count": 1}], "label": "task"}]}], "tasks": [{"command": ["/usr/bin/lmp", "-v", "x", "2", "-v", "y", "2", "-v", "z", "2", "-in", "in.reaxff.hns", "-nocite"], "slot": "task", "count": {"per_slot": 1}}], "attributes": {"system": {"duration": 0, "cwd": "/opt/lammps/examples/reaxff/HNS", "shell": {"options": {"rlimit": {"cpu": -1, "fsize": -1, "data": -1, "stack": 8388608, "core": -1, "nofile": 1048576, "as": -1, "rss": -1, "nproc": -1}, "cpu-affinity": "per-task", "gpu-affinity": "off"}}}, "user": {"study_id": "lammps-iter-1"}}, "version": 1}
+FLUX-JOB-JOBSPEC END
+FLUX-JOB-RESOURCES START
+{"version": 1, "execution": {"R_lite": [{"rank": "0", "children": {"core": "86-87"}}], "nodelist": ["lammps-0"], "starttime": 1747342945, "expiration": 4900942934}}
+FLUX-JOB-RESOURCES END
+FLUX-JOB-EVENTLOG START
+{"timestamp":1747342945.1510596,"name":"init"}
+{"timestamp":1747342945.1593823,"name":"shell.init","context":{"service":"0-shell-f5cjBJej","leader-rank":0,"size":1}}
+{"timestamp":1747342945.1514866,"name":"starting"}
+{"timestamp":1747342945.1656132,"name":"shell.start","context":{"taskmap":{"version":1,"map":[[0,1,2,1]]}}}
+{"timestamp":1747342956.7642388,"name":"shell.task-exit","context":{"localid":1,"rank":1,"state":"Exited","pid":153,"wait_status":0,"signaled":0,"exitcode":0}}
+{"timestamp":1747342956.76772,"name":"complete","context":{"status":0}}
+{"timestamp":1747342956.7677462,"name":"done"}
+
+FLUX-JOB-EVENTLOG END
+FLUX-JOB END 175724560384 lammps-iter-1
+FLUX JOB STATS
+{"job_states":{"depend":0,"priority":0,"sched":0,"run":0,"cleanup":0,"inactive":1,"total":1},"successful":1,"failed":0,"canceled":0,"timeout":0,"inactive_purged":0,"queues":[]}

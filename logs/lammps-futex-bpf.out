@@ -1,0 +1,1423 @@
+Looking for /opt/programs/futex-models/ebpf-collect.c
+[22:34:14] Starting eBPF (Tracepoints for futex syscalls).
+[22:34:15] BPF program loaded and tracepoints automatically attached.
+[22:34:15] 
+Start Indicator file defined '/mnt/flux/start_ebpf_collection'. Waiting.
+[22:34:20] Start indicator found. Proceeding.
+[22:34:20] Ring buffers opened. Polling for events...
+[22:34:36] 
+Indicator file '/mnt/flux/stop_ebpf_collection' found. Stopping.
+[22:34:36] Cleaning up BPF resources...
+{
+  "final_aggregated_futex_summary_river": [
+    {
+      "tgid": 56965,
+      "comm": "fluent-bit-gke-",
+      "cgroup_id": 24268,
+      "wait_duration_stats_ns": {
+        "count": 9070.0,
+        "sum": 664076214810.0021,
+        "mean": 73216782.22822514,
+        "median": 333549.9044605441,
+        "min": 372,
+        "max": 6231649774,
+        "variance_ns2": 5.6300524645120104e+16,
+        "iqr_ns": 21390919.08087197,
+        "q1_ns": 45227.95272760857,
+        "q3_ns": 21436147.033599578
+      },
+      "futex_op_counts": {
+        "128": 9070
+      },
+      "first_seen_ts_ns": 8065178100236,
+      "last_seen_ts_ns": 8085770678759
+    },
+    {
+      "tgid": 3791,
+      "comm": "kubelet",
+      "cgroup_id": 6640,
+      "wait_duration_stats_ns": {
+        "count": 2583.0,
+        "sum": 527739227577.99915,
+        "mean": 204312515.51606625,
+        "median": 3160151.624351503,
+        "min": 557,
+        "max": 6819107803,
+        "variance_ns2": 7.998408568241672e+17,
+        "iqr_ns": 35648040.54716343,
+        "q1_ns": 231890.24137538343,
+        "q3_ns": 35879930.78853881
+      },
+      "futex_op_counts": {
+        "128": 2583
+      },
+      "first_seen_ts_ns": 8065171744380,
+      "last_seen_ts_ns": 8086370119010
+    },
+    {
+      "tgid": 9727,
+      "comm": "sidecar",
+      "cgroup_id": 9803,
+      "wait_duration_stats_ns": {
+        "count": 123.0,
+        "sum": 115117850450.0,
+        "mean": 935917483.3333334,
+        "median": 33450454.01123773,
+        "min": 1057,
+        "max": 9999745554,
+        "variance_ns2": 4.070572622846188e+18,
+        "iqr_ns": 1184739403.3661768,
+        "q1_ns": 3162796.9103857176,
+        "q3_ns": 1187902200.2765625
+      },
+      "futex_op_counts": {
+        "128": 123
+      },
+      "first_seen_ts_ns": 8071617254461,
+      "last_seen_ts_ns": 8085791253282
+    },
+    {
+      "tgid": 7850,
+      "comm": "containerd-shim",
+      "cgroup_id": 6520,
+      "wait_duration_stats_ns": {
+        "count": 161.0,
+        "sum": 100820957976.99994,
+        "mean": 626217130.2919251,
+        "median": 469839.20070163853,
+        "min": 1015,
+        "max": 10004004173,
+        "variance_ns2": 4.1067307044089324e+18,
+        "iqr_ns": 1912930646.066828,
+        "q1_ns": 83249.46250647982,
+        "q3_ns": 1913013895.5293345
+      },
+      "futex_op_counts": {
+        "128": 161
+      },
+      "first_seen_ts_ns": 8072105064737,
+      "last_seen_ts_ns": 8085632338307
+    },
+    {
+      "tgid": 3602,
+      "comm": "containerd",
+      "cgroup_id": 6520,
+      "wait_duration_stats_ns": {
+        "count": 1195.0,
+        "sum": 80639712355.00003,
+        "mean": 67480930.84100421,
+        "median": 575914.1229669116,
+        "min": 493,
+        "max": 4864439158,
+        "variance_ns2": 8.968360105386509e+16,
+        "iqr_ns": 27558680.29837713,
+        "q1_ns": 130165.08513375561,
+        "q3_ns": 27688845.383510888
+      },
+      "futex_op_counts": {
+        "128": 1195
+      },
+      "first_seen_ts_ns": 8065171960867,
+      "last_seen_ts_ns": 8086338926099
+    },
+    {
+      "tgid": 12011,
+      "comm": "kube-state-metr",
+      "cgroup_id": 12173,
+      "wait_duration_stats_ns": {
+        "count": 49.0,
+        "sum": 77882588208.0,
+        "mean": 1589440575.6734695,
+        "median": 1093488536.8404748,
+        "min": 15197,
+        "max": 10000360328,
+        "variance_ns2": 3.992474900167276e+18,
+        "iqr_ns": 1640791905.9256349,
+        "q1_ns": 602825911.642052,
+        "q3_ns": 2243617817.567687
+      },
+      "futex_op_counts": {
+        "128": 49
+      },
+      "first_seen_ts_ns": 8070824883275,
+      "last_seen_ts_ns": 8086217440443
+    },
+    {
+      "tgid": 10859,
+      "comm": "proxy-agent",
+      "cgroup_id": 11383,
+      "wait_duration_stats_ns": {
+        "count": 100.0,
+        "sum": 70652036088.99997,
+        "mean": 706520360.8899997,
+        "median": 26636262.571433276,
+        "min": 13402,
+        "max": 9957452387,
+        "variance_ns2": 2.489465338595497e+18,
+        "iqr_ns": 494330066.02406615,
+        "q1_ns": 1697816.7419020527,
+        "q3_ns": 496027882.7659682
+      },
+      "futex_op_counts": {
+        "128": 100
+      },
+      "first_seen_ts_ns": 8065173263759,
+      "last_seen_ts_ns": 8085756953690
+    },
+    {
+      "tgid": 11840,
+      "comm": "operator",
+      "cgroup_id": 12015,
+      "wait_duration_stats_ns": {
+        "count": 238.0,
+        "sum": 67519995977.999954,
+        "mean": 283697462.0924368,
+        "median": 93121208.52816868,
+        "min": 1129,
+        "max": 5275971003,
+        "variance_ns2": 4.318078367066699e+17,
+        "iqr_ns": 481282397.1053624,
+        "q1_ns": 448816.0102364565,
+        "q3_ns": 481731213.11559886
+      },
+      "futex_op_counts": {
+        "128": 238
+      },
+      "first_seen_ts_ns": 8065486129255,
+      "last_seen_ts_ns": 8085987209558
+    },
+    {
+      "tgid": 12480,
+      "comm": "prometheus",
+      "cgroup_id": 12410,
+      "wait_duration_stats_ns": {
+        "count": 818.0,
+        "sum": 65079602486.99988,
+        "mean": 79559416.24327613,
+        "median": 44063563.98776767,
+        "min": 11080,
+        "max": 4727576358,
+        "variance_ns2": 1.0309770303372411e+17,
+        "iqr_ns": 10517481.49790106,
+        "q1_ns": 39442000.08226754,
+        "q3_ns": 49959481.5801686
+      },
+      "futex_op_counts": {
+        "128": 818
+      },
+      "first_seen_ts_ns": 8065213171796,
+      "last_seen_ts_ns": 8086366039686
+    },
+    {
+      "tgid": 10793,
+      "comm": "metrics-server",
+      "cgroup_id": 11225,
+      "wait_duration_stats_ns": {
+        "count": 371.0,
+        "sum": 64743669641.999985,
+        "mean": 174511238.92722368,
+        "median": 96989506.33454208,
+        "min": 9071,
+        "max": 7657107107,
+        "variance_ns2": 2.5225391477609645e+17,
+        "iqr_ns": 105008538.3790174,
+        "q1_ns": 78722668.12059866,
+        "q3_ns": 183731206.49961606
+      },
+      "futex_op_counts": {
+        "128": 371
+      },
+      "first_seen_ts_ns": 8065322850739,
+      "last_seen_ts_ns": 8086323371422
+    },
+    {
+      "tgid": 57367,
+      "comm": "containerd-shim",
+      "cgroup_id": 6520,
+      "wait_duration_stats_ns": {
+        "count": 97.0,
+        "sum": 63653678112.00003,
+        "mean": 656223485.690722,
+        "median": 12676780.537507765,
+        "min": 1346,
+        "max": 10895224733,
+        "variance_ns2": 4.427721364170268e+18,
+        "iqr_ns": 186052228.57898736,
+        "q1_ns": 2842583.382031551,
+        "q3_ns": 188894811.96101892
+      },
+      "futex_op_counts": {
+        "128": 97
+      },
+      "first_seen_ts_ns": 8071161928701,
+      "last_seen_ts_ns": 8086378863555
+    },
+    {
+      "tgid": 11142,
+      "comm": "containerd-shim",
+      "cgroup_id": 6520,
+      "wait_duration_stats_ns": {
+        "count": 28.0,
+        "sum": 55923072508.99999,
+        "mean": 1997252589.6071427,
+        "median": 2229092562.3172483,
+        "min": 805,
+        "max": 10021468468,
+        "variance_ns2": 1.0528247930096736e+19,
+        "iqr_ns": 4600593113.487534,
+        "q1_ns": 1465278.9710463574,
+        "q3_ns": 4602058392.45858
+      },
+      "futex_op_counts": {
+        "128": 28
+      },
+      "first_seen_ts_ns": 8072111303239,
+      "last_seen_ts_ns": 8085828303343
+    },
+    {
+      "tgid": 11563,
+      "comm": "manager",
+      "cgroup_id": 11936,
+      "wait_duration_stats_ns": {
+        "count": 225.0,
+        "sum": 55415173494.0,
+        "mean": 246289659.97333333,
+        "median": 114575138.08846101,
+        "min": 9137,
+        "max": 7134164479,
+        "variance_ns2": 2.805888643275825e+17,
+        "iqr_ns": 288096832.860753,
+        "q1_ns": 18027852.73464518,
+        "q3_ns": 306124685.5953982
+      },
+      "futex_op_counts": {
+        "128": 225
+      },
+      "first_seen_ts_ns": 8070385661815,
+      "last_seen_ts_ns": 8085885825170
+    },
+    {
+      "tgid": 7887,
+      "comm": "containerd-shim",
+      "cgroup_id": 6520,
+      "wait_duration_stats_ns": {
+        "count": 41.0,
+        "sum": 54776884917.00001,
+        "mean": 1336021583.3414636,
+        "median": 53832689.43547647,
+        "min": 1061,
+        "max": 10014698968,
+        "variance_ns2": 8.120322121898179e+18,
+        "iqr_ns": 4517150407.091813,
+        "q1_ns": 3514931.795449876,
+        "q3_ns": 4520665338.887263
+      },
+      "futex_op_counts": {
+        "128": 41
+      },
+      "first_seen_ts_ns": 8072107527829,
+      "last_seen_ts_ns": 8084623445492
+    },
+    {
+      "tgid": 7867,
+      "comm": "containerd-shim",
+      "cgroup_id": 6520,
+      "wait_duration_stats_ns": {
+        "count": 23.0,
+        "sum": 52280643337.00001,
+        "mean": 2273071449.434783,
+        "median": 1198175964.2223754,
+        "min": 14906,
+        "max": 10017677475,
+        "variance_ns2": 1.2431363293553897e+19,
+        "iqr_ns": 5700414602.707448,
+        "q1_ns": 15956424.434822746,
+        "q3_ns": 5716371027.142271
+      },
+      "futex_op_counts": {
+        "128": 23
+      },
+      "first_seen_ts_ns": 8072112710307,
+      "last_seen_ts_ns": 8084614932107
+    },
+    {
+      "tgid": 4040,
+      "comm": "kube-proxy",
+      "cgroup_id": 7366,
+      "wait_duration_stats_ns": {
+        "count": 9.0,
+        "sum": 49640024804.0,
+        "mean": 5515558311.555555,
+        "median": 4998335136.0,
+        "min": 671651215,
+        "max": 18302210593,
+        "variance_ns2": 2.649768549820099e+19,
+        "iqr_ns": 1411573286.3385415,
+        "q1_ns": 3587643746.6614585,
+        "q3_ns": 4999217033.0
+      },
+      "futex_op_counts": {
+        "128": 9
+      },
+      "first_seen_ts_ns": 8074680424742,
+      "last_seen_ts_ns": 8085362492642
+    },
+    {
+      "tgid": 10139,
+      "comm": "kube-dns",
+      "cgroup_id": 10514,
+      "wait_duration_stats_ns": {
+        "count": 58.0,
+        "sum": 49634584014.0,
+        "mean": 855768689.8965517,
+        "median": 544022302.2588545,
+        "min": 15807,
+        "max": 7055748419,
+        "variance_ns2": 1.482830131489211e+18,
+        "iqr_ns": 1170444521.4224272,
+        "q1_ns": 117071812.2098943,
+        "q3_ns": 1287516333.6323216
+      },
+      "futex_op_counts": {
+        "128": 58
+      },
+      "first_seen_ts_ns": 8070457157942,
+      "last_seen_ts_ns": 8086136504281
+    },
+    {
+      "tgid": 11356,
+      "comm": "kube-rbac-proxy",
+      "cgroup_id": 11857,
+      "wait_duration_stats_ns": {
+        "count": 9.0,
+        "sum": 44999210555.0,
+        "mean": 4999912283.888889,
+        "median": 4999922380.0,
+        "min": 4999788193,
+        "max": 5000027339,
+        "variance_ns2": 8895170996.861963,
+        "iqr_ns": 67582.66666603088,
+        "q1_ns": 4999877592.5,
+        "q3_ns": 4999945175.166666
+      },
+      "futex_op_counts": {
+        "128": 9
+      },
+      "first_seen_ts_ns": 8071737100532,
+      "last_seen_ts_ns": 8081737199547
+    },
+    {
+      "tgid": 8333,
+      "comm": "containerd-shim",
+      "cgroup_id": 6520,
+      "wait_duration_stats_ns": {
+        "count": 6.0,
+        "sum": 44898891029.0,
+        "mean": 7483148504.833333,
+        "median": 4929142901.0,
+        "min": 4928644936,
+        "max": 10037714873,
+        "variance_ns2": 7.829363778810541e+18,
+        "iqr_ns": 0.0,
+        "q1_ns": 4929142901.0,
+        "q3_ns": 4929142901.0
+      },
+      "futex_op_counts": {
+        "128": 6
+      },
+      "first_seen_ts_ns": 8072108146965,
+      "last_seen_ts_ns": 8082146292262
+    },
+    {
+      "tgid": 8625,
+      "comm": "containerd-shim",
+      "cgroup_id": 6520,
+      "wait_duration_stats_ns": {
+        "count": 15.0,
+        "sum": 44898855837.0,
+        "mean": 2993257055.8,
+        "median": 767800804.0815972,
+        "min": 9309,
+        "max": 10021110055,
+        "variance_ns2": 1.71588516632353e+19,
+        "iqr_ns": 3479069124.5408854,
+        "q1_ns": 49496437.075277776,
+        "q3_ns": 3528565561.6161633
+      },
+      "futex_op_counts": {
+        "128": 15
+      },
+      "first_seen_ts_ns": 8065497336292,
+      "last_seen_ts_ns": 8082137917212
+    },
+    {
+      "tgid": 9064,
+      "comm": "containerd-shim",
+      "cgroup_id": 6520,
+      "wait_duration_stats_ns": {
+        "count": 6.0,
+        "sum": 44894058198.0,
+        "mean": 7482343033.0,
+        "median": 4945182475.0,
+        "min": 4944700105,
+        "max": 10020078803,
+        "variance_ns2": 7.726434106095032e+18,
+        "iqr_ns": 0.0,
+        "q1_ns": 4945182475.0,
+        "q3_ns": 4945182475.0
+      },
+      "futex_op_counts": {
+        "128": 6
+      },
+      "first_seen_ts_ns": 8072117863815,
+      "last_seen_ts_ns": 8082138412762
+    },
+    {
+      "tgid": 8723,
+      "comm": "containerd-shim",
+      "cgroup_id": 6520,
+      "wait_duration_stats_ns": {
+        "count": 6.0,
+        "sum": 44893651981.0,
+        "mean": 7482275330.166666,
+        "median": 4928889693.0,
+        "min": 4928459137,
+        "max": 10036234805,
+        "variance_ns2": 7.82541360663209e+18,
+        "iqr_ns": 0.0,
+        "q1_ns": 4928889693.0,
+        "q3_ns": 4928889693.0
+      },
+      "futex_op_counts": {
+        "128": 6
+      },
+      "first_seen_ts_ns": 8072105761054,
+      "last_seen_ts_ns": 8082142410938
+    },
+    {
+      "tgid": 9244,
+      "comm": "containerd-shim",
+      "cgroup_id": 6520,
+      "wait_duration_stats_ns": {
+        "count": 6.0,
+        "sum": 44891245041.0,
+        "mean": 7481874173.5,
+        "median": 4944637055.0,
+        "min": 4944185847,
+        "max": 10019688805,
+        "variance_ns2": 7.726714063182391e+18,
+        "iqr_ns": 0.0,
+        "q1_ns": 4944637055.0,
+        "q3_ns": 4944637055.0
+      },
+      "futex_op_counts": {
+        "128": 6
+      },
+      "first_seen_ts_ns": 8072119436194,
+      "last_seen_ts_ns": 8082139487875
+    },
+    {
+      "tgid": 9263,
+      "comm": "containerd-shim",
+      "cgroup_id": 6520,
+      "wait_duration_stats_ns": {
+        "count": 12.0,
+        "sum": 44889439203.0,
+        "mean": 3740786600.25,
+        "median": 4114721095.445833,
+        "min": 960663,
+        "max": 10020309658,
+        "variance_ns2": 1.873821033471887e+19,
+        "iqr_ns": 5724399650.796957,
+        "q1_ns": 1453967523.388228,
+        "q3_ns": 7178367174.1851845
+      },
+      "futex_op_counts": {
+        "128": 12
+      },
+      "first_seen_ts_ns": 8072110744781,
+      "last_seen_ts_ns": 8082147734268
+    },
+    {
+      "tgid": 8869,
+      "comm": "containerd-shim",
+      "cgroup_id": 6520,
+      "wait_duration_stats_ns": {
+        "count": 12.0,
+        "sum": 44886687414.0,
+        "mean": 3740557284.5,
+        "median": 4117360117.4305563,
+        "min": 2899809,
+        "max": 10019700449,
+        "variance_ns2": 1.874058692828738e+19,
+        "iqr_ns": 6301053538.784721,
+        "q1_ns": 877357012.6226854,
+        "q3_ns": 7178410551.407407
+      },
+      "futex_op_counts": {
+        "128": 12
+      },
+      "first_seen_ts_ns": 8072108686303,
+      "last_seen_ts_ns": 8082143383465
+    },
+    {
+      "tgid": 9117,
+      "comm": "containerd-shim",
+      "cgroup_id": 6520,
+      "wait_duration_stats_ns": {
+        "count": 23.0,
+        "sum": 44886364548.00001,
+        "mean": 1951581067.3043482,
+        "median": 280341148.3827399,
+        "min": 54418,
+        "max": 10032319653,
+        "variance_ns2": 1.3048502016469742e+19,
+        "iqr_ns": 4825822836.976501,
+        "q1_ns": 17551346.236085393,
+        "q3_ns": 4843374183.212586
+      },
+      "futex_op_counts": {
+        "128": 23
+      },
+      "first_seen_ts_ns": 8072106926268,
+      "last_seen_ts_ns": 8082147234637
+    },
+    {
+      "tgid": 3979,
+      "comm": "containerd-shim",
+      "cgroup_id": 6520,
+      "wait_duration_stats_ns": {
+        "count": 18.0,
+        "sum": 44880850531.0,
+        "mean": 2493380585.0555553,
+        "median": 2380414049.557065,
+        "min": 753,
+        "max": 7413657186,
+        "variance_ns2": 8.621779729119236e+18,
+        "iqr_ns": 3074338830.495,
+        "q1_ns": 688086093.5782174,
+        "q3_ns": 3762424924.0732174
+      },
+      "futex_op_counts": {
+        "128": 18
+      },
+      "first_seen_ts_ns": 8072117417440,
+      "last_seen_ts_ns": 8082136775010
+    },
+    {
+      "tgid": 12165,
+      "comm": "containerd-shim",
+      "cgroup_id": 6520,
+      "wait_duration_stats_ns": {
+        "count": 12.0,
+        "sum": 44869814841.0,
+        "mean": 3739151236.75,
+        "median": 4110809418.1444435,
+        "min": 6753243,
+        "max": 10021571830,
+        "variance_ns2": 1.874204075713752e+19,
+        "iqr_ns": 6298986592.305555,
+        "q1_ns": 875141297.2499999,
+        "q3_ns": 7174127889.555555
+      },
+      "futex_op_counts": {
+        "128": 12
+      },
+      "first_seen_ts_ns": 8072106299609,
+      "last_seen_ts_ns": 8082142911233
+    },
+    {
+      "tgid": 8968,
+      "comm": "containerd-shim",
+      "cgroup_id": 6520,
+      "wait_duration_stats_ns": {
+        "count": 13.0,
+        "sum": 44853371540.0,
+        "mean": 3450259349.230769,
+        "median": 4158565500.9153647,
+        "min": 2727919,
+        "max": 10015761184,
+        "variance_ns2": 1.6399240108278245e+19,
+        "iqr_ns": 6285826462.746031,
+        "q1_ns": 563078390.5873017,
+        "q3_ns": 6848904853.333333
+      },
+      "futex_op_counts": {
+        "128": 13
+      },
+      "first_seen_ts_ns": 8072115264146,
+      "last_seen_ts_ns": 8082138906480
+    },
+    {
+      "tgid": 10635,
+      "comm": "cluster-proport",
+      "cgroup_id": 11067,
+      "wait_duration_stats_ns": {
+        "count": 21.0,
+        "sum": 42800261704.00001,
+        "mean": 2038107700.1904764,
+        "median": 472331282.04434526,
+        "min": 4322382,
+        "max": 9982329931,
+        "variance_ns2": 9.445787579597222e+18,
+        "iqr_ns": 3407843977.8565526,
+        "q1_ns": 42403486.665240884,
+        "q3_ns": 3450247464.5217934
+      },
+      "futex_op_counts": {
+        "128": 21
+      },
+      "first_seen_ts_ns": 8071108423766,
+      "last_seen_ts_ns": 8085373461987
+    },
+    {
+      "tgid": 10634,
+      "comm": "404-server-with",
+      "cgroup_id": 10988,
+      "wait_duration_stats_ns": {
+        "count": 5.0,
+        "sum": 40000192907.0,
+        "mean": 8000038581.4,
+        "median": 9999978183.0,
+        "min": 17039,
+        "max": 10000197480,
+        "variance_ns2": 2.0000107724595536e+19,
+        "iqr_ns": 190053.0,
+        "q1_ns": 9999905076.0,
+        "q3_ns": 10000095129.0
+      },
+      "futex_op_counts": {
+        "128": 5
+      },
+      "first_seen_ts_ns": 8075017780875,
+      "last_seen_ts_ns": 8085017953602
+    },
+    {
+      "tgid": 9912,
+      "comm": "event-exporter",
+      "cgroup_id": 10119,
+      "wait_duration_stats_ns": {
+        "count": 11.0,
+        "sum": 39981666081.99999,
+        "mean": 3634696916.545454,
+        "median": 3689683739.958333,
+        "min": 29771,
+        "max": 9999328823,
+        "variance_ns2": 7.874114807357484e+18,
+        "iqr_ns": 3391438574.5583334,
+        "q1_ns": 1358946626.625,
+        "q3_ns": 4750385201.183333
+      },
+      "futex_op_counts": {
+        "128": 11
+      },
+      "first_seen_ts_ns": 8074548423480,
+      "last_seen_ts_ns": 8084552808438
+    },
+    {
+      "tgid": 10730,
+      "comm": "main",
+      "cgroup_id": 11146,
+      "wait_duration_stats_ns": {
+        "count": 12.0,
+        "sum": 39971482415.0,
+        "mean": 3330956867.9166665,
+        "median": 4347287342.091111,
+        "min": 11480037,
+        "max": 5003148143,
+        "variance_ns2": 4.15322402813113e+18,
+        "iqr_ns": 2471977340.9506173,
+        "q1_ns": 2522824651.0493827,
+        "q3_ns": 4994801992.0
+      },
+      "futex_op_counts": {
+        "128": 12
+      },
+      "first_seen_ts_ns": 8070483282281,
+      "last_seen_ts_ns": 8085487065983
+    },
+    {
+      "tgid": 1731,
+      "comm": "google_guest_ag",
+      "cgroup_id": 4174,
+      "wait_duration_stats_ns": {
+        "count": 13.0,
+        "sum": 39944855090.99999,
+        "mean": 3072681160.8461533,
+        "median": 4344216661.625,
+        "min": 19918794,
+        "max": 5004059362,
+        "variance_ns2": 5.284861830371528e+18,
+        "iqr_ns": 3088303051.711111,
+        "q1_ns": 1887396595.288889,
+        "q3_ns": 4975699647.0
+      },
+      "futex_op_counts": {
+        "128": 13
+      },
+      "first_seen_ts_ns": 8070637118646,
+      "last_seen_ts_ns": 8085673919139
+    },
+    {
+      "tgid": 10786,
+      "comm": "cluster-proport",
+      "cgroup_id": 11304,
+      "wait_duration_stats_ns": {
+        "count": 23.0,
+        "sum": 39244228335.00001,
+        "mean": 1706270797.1739132,
+        "median": 408448088.09434503,
+        "min": 84916,
+        "max": 9983459571,
+        "variance_ns2": 9.084617812145713e+18,
+        "iqr_ns": 1528174474.1334548,
+        "q1_ns": 21546273.427347615,
+        "q3_ns": 1549720747.5608025
+      },
+      "futex_op_counts": {
+        "128": 23
+      },
+      "first_seen_ts_ns": 8072291542089,
+      "last_seen_ts_ns": 8085373304956
+    },
+    {
+      "tgid": 3857,
+      "comm": "node-problem-de",
+      "cgroup_id": 6700,
+      "wait_duration_stats_ns": {
+        "count": 42.0,
+        "sum": 31975185137.999992,
+        "mean": 761313931.8571427,
+        "median": 974733660.8013841,
+        "min": 2622,
+        "max": 1000102355,
+        "variance_ns2": 1.5766957973702496e+17,
+        "iqr_ns": 332146215.0555786,
+        "q1_ns": 665274497.0639328,
+        "q3_ns": 997420712.1195114
+      },
+      "futex_op_counts": {
+        "128": 42
+      },
+      "first_seen_ts_ns": 8071071185614,
+      "last_seen_ts_ns": 8086072110327
+    },
+    {
+      "tgid": 10189,
+      "comm": "dnsmasq-nanny",
+      "cgroup_id": 10593,
+      "wait_duration_stats_ns": {
+        "count": 3.0,
+        "sum": 29990002927.0,
+        "mean": 9996667642.333334,
+        "median": 9999976671.0,
+        "min": 9989912695,
+        "max": 10000113561,
+        "variance_ns2": 34226669825103.688,
+        "iqr_ns": 10200866.0,
+        "q1_ns": 9989912695.0,
+        "q3_ns": 10000113561.0
+      },
+      "futex_op_counts": {
+        "128": 3
+      },
+      "first_seen_ts_ns": 8077569830572,
+      "last_seen_ts_ns": 8077579430566
+    },
+    {
+      "tgid": 9869,
+      "comm": "main",
+      "cgroup_id": 10040,
+      "wait_duration_stats_ns": {
+        "count": 8.0,
+        "sum": 29962807295.0,
+        "mean": 3745350911.875,
+        "median": 4989011887.0,
+        "min": 806890,
+        "max": 5004097011,
+        "variance_ns2": 5.334074666222109e+18,
+        "iqr_ns": 558359923.0,
+        "q1_ns": 4431117641.0,
+        "q3_ns": 4989477564.0
+      },
+      "futex_op_counts": {
+        "128": 8
+      },
+      "first_seen_ts_ns": 8075243193545,
+      "last_seen_ts_ns": 8085247069638
+    },
+    {
+      "tgid": 10017,
+      "comm": "main",
+      "cgroup_id": 10356,
+      "wait_duration_stats_ns": {
+        "count": 8.0,
+        "sum": 29958925450.0,
+        "mean": 3744865681.25,
+        "median": 4988025919.0,
+        "min": 2470068,
+        "max": 5004076693,
+        "variance_ns2": 5.327432806981561e+18,
+        "iqr_ns": 559096780.4444447,
+        "q1_ns": 4429877928.555555,
+        "q3_ns": 4988974709.0
+      },
+      "futex_op_counts": {
+        "128": 8
+      },
+      "first_seen_ts_ns": 8072039297227,
+      "last_seen_ts_ns": 8082043582984
+    },
+    {
+      "tgid": 10960,
+      "comm": "main",
+      "cgroup_id": 11541,
+      "wait_duration_stats_ns": {
+        "count": 9.0,
+        "sum": 29954947069.0,
+        "mean": 3328327452.111111,
+        "median": 4984818764.0,
+        "min": 4107322,
+        "max": 5003090915,
+        "variance_ns2": 6.212057809038964e+18,
+        "iqr_ns": 3122368919.25,
+        "q1_ns": 1870849220.75,
+        "q3_ns": 4993218140.0
+      },
+      "futex_op_counts": {
+        "128": 9
+      },
+      "first_seen_ts_ns": 8071945470189,
+      "last_seen_ts_ns": 8081955147183
+    },
+    {
+      "tgid": 1732,
+      "comm": "google_osconfig",
+      "cgroup_id": 4234,
+      "wait_duration_stats_ns": {
+        "count": 10.0,
+        "sum": 29948935453.999996,
+        "mean": 2994893545.3999996,
+        "median": 2742001262.0,
+        "min": 2240173276,
+        "max": 5000239210,
+        "variance_ns2": 1.1656968528437821e+18,
+        "iqr_ns": 800866428.6812501,
+        "q1_ns": 2541323243.2666664,
+        "q3_ns": 3342189671.9479165
+      },
+      "futex_op_counts": {
+        "128": 10
+      },
+      "first_seen_ts_ns": 8070766535669,
+      "last_seen_ts_ns": 8083024450987
+    },
+    {
+      "tgid": 10968,
+      "comm": "main",
+      "cgroup_id": 11620,
+      "wait_duration_stats_ns": {
+        "count": 10.0,
+        "sum": 29945664897.0,
+        "mean": 2994566489.7,
+        "median": 4979308383.0,
+        "min": 491337,
+        "max": 5003046756,
+        "variance_ns2": 6.623885743937493e+18,
+        "iqr_ns": 3124968173.125,
+        "q1_ns": 1867362488.3750002,
+        "q3_ns": 4992330661.5
+      },
+      "futex_op_counts": {
+        "128": 10
+      },
+      "first_seen_ts_ns": 8071938663123,
+      "last_seen_ts_ns": 8081949484739
+    },
+    {
+      "tgid": 10016,
+      "comm": "monitor",
+      "cgroup_id": 10277,
+      "wait_duration_stats_ns": {
+        "count": 5.0,
+        "sum": 20107671966.0,
+        "mean": 4021534393.2,
+        "median": 41309606.0,
+        "min": 40327441,
+        "max": 10000109082,
+        "variance_ns2": 2.9709593279990243e+19,
+        "iqr_ns": 9943536455.0,
+        "q1_ns": 41194691.0,
+        "q3_ns": 9984731146.0
+      },
+      "futex_op_counts": {
+        "128": 5
+      },
+      "first_seen_ts_ns": 8077044882042,
+      "last_seen_ts_ns": 8077095810904
+    },
+    {
+      "tgid": 12575,
+      "comm": "config-reloader",
+      "cgroup_id": 12489,
+      "wait_duration_stats_ns": {
+        "count": 2.0,
+        "sum": 20007808045.0,
+        "mean": 10003904022.5,
+        "median": 10008816194.0,
+        "min": 9998991851,
+        "max": 10008816194,
+        "variance_ns2": 48258857690824.5,
+        "iqr_ns": 9824343.0,
+        "q1_ns": 9998991851.0,
+        "q3_ns": 10008816194.0
+      },
+      "futex_op_counts": {
+        "128": 2
+      },
+      "first_seen_ts_ns": 8080074258316,
+      "last_seen_ts_ns": 8080083308912
+    },
+    {
+      "tgid": 2763,
+      "comm": "dockerd",
+      "cgroup_id": 6400,
+      "wait_duration_stats_ns": {
+        "count": 2.0,
+        "sum": 19989986410.0,
+        "mean": 9994993205.0,
+        "median": 10000074941.0,
+        "min": 9989911469,
+        "max": 10000074941,
+        "variance_ns2": 51648081547392.0,
+        "iqr_ns": 10163472.0,
+        "q1_ns": 9989911469.0,
+        "q3_ns": 10000074941.0
+      },
+      "futex_op_counts": {
+        "128": 2
+      },
+      "first_seen_ts_ns": 8083598604632,
+      "last_seen_ts_ns": 8083608547947
+    },
+    {
+      "tgid": 10093,
+      "comm": "gce-pd-csi-driv",
+      "cgroup_id": 10435,
+      "wait_duration_stats_ns": {
+        "count": 28.0,
+        "sum": 16517333390.999996,
+        "mean": 589904763.9642856,
+        "median": 589904527.065658,
+        "min": 580575062,
+        "max": 599747307,
+        "variance_ns2": 6831065882523.1045,
+        "iqr_ns": 188801.8072321415,
+        "q1_ns": 589731288.2603681,
+        "q3_ns": 589920090.0676003
+      },
+      "futex_op_counts": {
+        "128": 28
+      },
+      "first_seen_ts_ns": 8070512032955,
+      "last_seen_ts_ns": 8086112013580
+    },
+    {
+      "tgid": 9803,
+      "comm": "otelsvc",
+      "cgroup_id": 9961,
+      "wait_duration_stats_ns": {
+        "count": 65.0,
+        "sum": 15715726287.000002,
+        "mean": 241780404.41538465,
+        "median": 269728956.1376048,
+        "min": 57391,
+        "max": 499155702,
+        "variance_ns2": 5.295954831344836e+16,
+        "iqr_ns": 486916716.79366094,
+        "q1_ns": 5657883.299575013,
+        "q3_ns": 492574600.09323597
+      },
+      "futex_op_counts": {
+        "128": 65
+      },
+      "first_seen_ts_ns": 8065424093301,
+      "last_seen_ts_ns": 8085923316310
+    },
+    {
+      "tgid": 57916,
+      "comm": "runc",
+      "cgroup_id": 6520,
+      "wait_duration_stats_ns": {
+        "count": 407.0,
+        "sum": 204434429.99999997,
+        "mean": 502295.8968058967,
+        "median": 27804.96016484774,
+        "min": 528,
+        "max": 30544670,
+        "variance_ns2": 12273470306620.773,
+        "iqr_ns": 101003.67219380595,
+        "q1_ns": 11327.06055974113,
+        "q3_ns": 112330.73275354708
+      },
+      "futex_op_counts": {
+        "128": 407
+      },
+      "first_seen_ts_ns": 8074589534350,
+      "last_seen_ts_ns": 8074622820413
+    },
+    {
+      "tgid": 58200,
+      "comm": "runc",
+      "cgroup_id": 6520,
+      "wait_duration_stats_ns": {
+        "count": 395.0,
+        "sum": 196302529.00000003,
+        "mean": 496968.42784810136,
+        "median": 23883.792703723902,
+        "min": 5116,
+        "max": 34205892,
+        "variance_ns2": 13408889276152.44,
+        "iqr_ns": 70735.54585091062,
+        "q1_ns": 11380.966386983288,
+        "q3_ns": 82116.51223789391
+      },
+      "futex_op_counts": {
+        "128": 395
+      },
+      "first_seen_ts_ns": 8084590310084,
+      "last_seen_ts_ns": 8084627342964
+    },
+    {
+      "tgid": 58210,
+      "comm": "runc:[2:INIT]",
+      "cgroup_id": 10198,
+      "wait_duration_stats_ns": {
+        "count": 26.0,
+        "sum": 131157980.0,
+        "mean": 5044537.692307692,
+        "median": 930377.1233071953,
+        "min": 12356,
+        "max": 15314933,
+        "variance_ns2": 42030121173015.42,
+        "iqr_ns": 7773951.224937206,
+        "q1_ns": 42434.84938271605,
+        "q3_ns": 7816386.074319922
+      },
+      "futex_op_counts": {
+        "128": 26
+      },
+      "first_seen_ts_ns": 8084597394989,
+      "last_seen_ts_ns": 8084627327600
+    },
+    {
+      "tgid": 57928,
+      "comm": "runc:[2:INIT]",
+      "cgroup_id": 10198,
+      "wait_duration_stats_ns": {
+        "count": 27.0,
+        "sum": 110911112.0,
+        "mean": 4107818.9629629627,
+        "median": 850682.3755505987,
+        "min": 640,
+        "max": 15569332,
+        "variance_ns2": 32029444336978.81,
+        "iqr_ns": 6597556.030587795,
+        "q1_ns": 54468.007104883975,
+        "q3_ns": 6652024.037692679
+      },
+      "futex_op_counts": {
+        "128": 27
+      },
+      "first_seen_ts_ns": 8074596878788,
+      "last_seen_ts_ns": 8074622860568
+    },
+    {
+      "tgid": 57928,
+      "comm": "csi-node-driver",
+      "cgroup_id": 10198,
+      "wait_duration_stats_ns": {
+        "count": 18.0,
+        "sum": 9239776.999999998,
+        "mean": 513320.9444444444,
+        "median": 207238.3818204365,
+        "min": 13336,
+        "max": 1813385,
+        "variance_ns2": 421877922531.9379,
+        "iqr_ns": 360834.5132375257,
+        "q1_ns": 45254.15926247428,
+        "q3_ns": 406088.6725
+      },
+      "futex_op_counts": {
+        "128": 18
+      },
+      "first_seen_ts_ns": 8074624664613,
+      "last_seen_ts_ns": 8074627796660
+    },
+    {
+      "tgid": 57950,
+      "comm": "ptp",
+      "cgroup_id": 6520,
+      "wait_duration_stats_ns": {
+        "count": 13.0,
+        "sum": 8977747.999999998,
+        "mean": 690595.9999999999,
+        "median": 211667.16666666666,
+        "min": 2141,
+        "max": 2593025,
+        "variance_ns2": 851634576048.5,
+        "iqr_ns": 641259.1861111111,
+        "q1_ns": 31367.66666666667,
+        "q3_ns": 672626.8527777777
+      },
+      "futex_op_counts": {
+        "128": 13
+      },
+      "first_seen_ts_ns": 8079719226550,
+      "last_seen_ts_ns": 8079722175560
+    },
+    {
+      "tgid": 57971,
+      "comm": "ptp",
+      "cgroup_id": 6520,
+      "wait_duration_stats_ns": {
+        "count": 15.0,
+        "sum": 8849584.0,
+        "mean": 589972.2666666666,
+        "median": 80720.61448412697,
+        "min": 8428,
+        "max": 2510587,
+        "variance_ns2": 712835984817.781,
+        "iqr_ns": 684546.2546296295,
+        "q1_ns": 40395.63888888889,
+        "q3_ns": 724941.8935185184
+      },
+      "futex_op_counts": {
+        "128": 15
+      },
+      "first_seen_ts_ns": 8079728246745,
+      "last_seen_ts_ns": 8079731103922
+    },
+    {
+      "tgid": 58210,
+      "comm": "csi-node-driver",
+      "cgroup_id": 10198,
+      "wait_duration_stats_ns": {
+        "count": 15.0,
+        "sum": 8193878.0,
+        "mean": 546258.5333333333,
+        "median": 235271.27430555556,
+        "min": 24140,
+        "max": 1712551,
+        "variance_ns2": 385720751583.5524,
+        "iqr_ns": 721411.3559722222,
+        "q1_ns": 42707.45486111112,
+        "q3_ns": 764118.8108333333
+      },
+      "futex_op_counts": {
+        "128": 15
+      },
+      "first_seen_ts_ns": 8084629060540,
+      "last_seen_ts_ns": 8084631876846
+    },
+    {
+      "tgid": 57956,
+      "comm": "host-local",
+      "cgroup_id": 6520,
+      "wait_duration_stats_ns": {
+        "count": 6.0,
+        "sum": 2657106.0,
+        "mean": 442851.0,
+        "median": 268933.0,
+        "min": 107772,
+        "max": 904143,
+        "variance_ns2": 96414450456.4,
+        "iqr_ns": 0.0,
+        "q1_ns": 268933.0,
+        "q3_ns": 268933.0
+      },
+      "futex_op_counts": {
+        "128": 6
+      },
+      "first_seen_ts_ns": 8079721052293,
+      "last_seen_ts_ns": 8079721894205
+    },
+    {
+      "tgid": 57977,
+      "comm": "host-local",
+      "cgroup_id": 6520,
+      "wait_duration_stats_ns": {
+        "count": 6.0,
+        "sum": 2317866.0,
+        "mean": 386311.0,
+        "median": 232990.0,
+        "min": 90497,
+        "max": 784663,
+        "variance_ns2": 79292014454.0,
+        "iqr_ns": 0.0,
+        "q1_ns": 232990.0,
+        "q3_ns": 232990.0
+      },
+      "futex_op_counts": {
+        "128": 6
+      },
+      "first_seen_ts_ns": 8079730030183,
+      "last_seen_ts_ns": 8079730817194
+    },
+    {
+      "tgid": 57945,
+      "comm": "portmap",
+      "cgroup_id": 6520,
+      "wait_duration_stats_ns": {
+        "count": 6.0,
+        "sum": 1425656.0,
+        "mean": 237609.33333333334,
+        "median": 223352.0,
+        "min": 75218,
+        "max": 496476,
+        "variance_ns2": 22394958680.666664,
+        "iqr_ns": 0.0,
+        "q1_ns": 223352.0,
+        "q3_ns": 223352.0
+      },
+      "futex_op_counts": {
+        "128": 6
+      },
+      "first_seen_ts_ns": 8079717031815,
+      "last_seen_ts_ns": 8079717525517
+    },
+    {
+      "tgid": 57966,
+      "comm": "portmap",
+      "cgroup_id": 6520,
+      "wait_duration_stats_ns": {
+        "count": 7.0,
+        "sum": 1285699.0,
+        "mean": 183671.2857142857,
+        "median": 160764.0,
+        "min": 35412,
+        "max": 444362,
+        "variance_ns2": 18835032258.57143,
+        "iqr_ns": 51536.0,
+        "q1_ns": 109228.0,
+        "q3_ns": 160764.0
+      },
+      "futex_op_counts": {
+        "128": 7
+      },
+      "first_seen_ts_ns": 8079726027074,
+      "last_seen_ts_ns": 8079726486298
+    },
+    {
+      "tgid": 57940,
+      "comm": "loopback",
+      "cgroup_id": 6520,
+      "wait_duration_stats_ns": {
+        "count": 8.0,
+        "sum": 1018394.0,
+        "mean": 127299.25,
+        "median": 112247.27777777778,
+        "min": 16461,
+        "max": 349232,
+        "variance_ns2": 11944303449.928572,
+        "iqr_ns": 76319.11111111112,
+        "q1_ns": 77745.0,
+        "q3_ns": 154064.11111111112
+      },
+      "futex_op_counts": {
+        "128": 8
+      },
+      "first_seen_ts_ns": 8079715072005,
+      "last_seen_ts_ns": 8079715444810
+    },
+    {
+      "tgid": 57961,
+      "comm": "loopback",
+      "cgroup_id": 6520,
+      "wait_duration_stats_ns": {
+        "count": 6.0,
+        "sum": 836419.0,
+        "mean": 139403.16666666666,
+        "median": 87412.0,
+        "min": 63653,
+        "max": 298352,
+        "variance_ns2": 8966572870.566666,
+        "iqr_ns": 45732.66666666666,
+        "q1_ns": 87412.0,
+        "q3_ns": 133144.66666666666
+      },
+      "futex_op_counts": {
+        "128": 6
+      },
+      "first_seen_ts_ns": 8079724205413,
+      "last_seen_ts_ns": 8079724492887
+    },
+    {
+      "tgid": 57757,
+      "comm": "flux-broker-0",
+      "cgroup_id": 24670,
+      "wait_duration_stats_ns": {
+        "count": 120.0,
+        "sum": 414605.0000000001,
+        "mean": 3455.0416666666674,
+        "median": 1012.3583048931445,
+        "min": 457,
+        "max": 23123,
+        "variance_ns2": 24981018.57808124,
+        "iqr_ns": 3802.490541920679,
+        "q1_ns": 725.2347030860899,
+        "q3_ns": 4527.725245006769
+      },
+      "futex_op_counts": {
+        "128": 120
+      },
+      "first_seen_ts_ns": 8070381281158,
+      "last_seen_ts_ns": 8086374333506
+    },
+    {
+      "tgid": 57913,
+      "comm": "lmp",
+      "cgroup_id": 24670,
+      "wait_duration_stats_ns": {
+        "count": 1.0,
+        "sum": 8060.0,
+        "mean": 8060.0,
+        "median": 8060.0,
+        "min": 8060,
+        "max": 8060,
+        "variance_ns2": null,
+        "iqr_ns": 0.0,
+        "q1_ns": 8060.0,
+        "q3_ns": 8060.0
+      },
+      "futex_op_counts": {
+        "128": 1
+      },
+      "first_seen_ts_ns": 8082051584583,
+      "last_seen_ts_ns": 8082051584583
+    },
+    {
+      "tgid": 57912,
+      "comm": "lmp",
+      "cgroup_id": 24670,
+      "wait_duration_stats_ns": {
+        "count": 1.0,
+        "sum": 8021.0,
+        "mean": 8021.0,
+        "median": 8021.0,
+        "min": 8021,
+        "max": 8021,
+        "variance_ns2": null,
+        "iqr_ns": 0.0,
+        "q1_ns": 8021.0,
+        "q3_ns": 8021.0
+      },
+      "futex_op_counts": {
+        "128": 1
+      },
+      "first_seen_ts_ns": 8082051610895,
+      "last_seen_ts_ns": 8082051610895
+    }
+  ]
+}
+[22:34:36] Cleanup complete.
