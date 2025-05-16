@@ -159,7 +159,7 @@ def print_net_json(event, comm, type_str, duration_str, bytes_val_str, timestamp
             body["connect_ret_val"] = event.bytes_count  # ret val
         # For ACCEPT and SOCKET_NEW, the relevant info is already event.fd
         if event.duration_ns > 0:
-            body["duration_ns_call"] = event.duration_ns  # For connect syscall duration
+            body["duration_ns"] = event.duration_ns
     else:  # Data transfer
         body["bytes_count"] = event.bytes_count
         body["bytes_human"] = bytes_val_str
