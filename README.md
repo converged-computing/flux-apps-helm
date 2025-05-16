@@ -57,7 +57,7 @@ For ebpf (that requires mounting the host) I recommend a cloud:
 NODES=1
 GOOGLE_PROJECT=llnl-flux
 INSTANCE=h3-standard-88
-time gcloud container clusters create test-cluster  --threads-per-core=1  --num-nodes=$NODES --machine-type=$INSTANCE  --placement-type=COMPACT --image-type=UBUNTU_CONTAINERD --region=us-central1-a --project=${GOOGLE_PROJECT}
+ctime gcloud container clusters create test-cluster  --threads-per-core=1  --num-nodes=$NODES --machine-type=$INSTANCE  --placement-type=COMPACT --image-type=UBUNTU_CONTAINERD --region=us-central1-a --project=${GOOGLE_PROJECT}
 
 # When time to delete
 gcloud container clusters delete test-cluster --region=us-central1-a

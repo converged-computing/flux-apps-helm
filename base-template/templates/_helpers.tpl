@@ -147,7 +147,7 @@ Currently only supported for single nodes and debian, requires proot.
          echo "The cgroup id is \$TARGET_CGROUP_ID"
          echo -n \$TARGET_CGROUP_ID > /mnt/flux/cgroup-id.txt
          sleep 10
-         touch /mnt/flux/start_ebpf_collection
+         flux exec -r all touch /mnt/flux/start_ebpf_collection
 {{- end }}
 
 {{- define "chart.record" -}}{{ if .Values.experiment.record }}fs-record --out {{ include "chart.record_file" . }} --mpi{{ end }} {{- end }}

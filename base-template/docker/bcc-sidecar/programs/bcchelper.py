@@ -29,7 +29,7 @@ def read_bpf_text(dirname, c_filename="ebpf-collect.c"):
     Find the c program alongside the python program
     """
     # Ensure we get the c program alongside
-    script_dir_path = os.path.dirname(os.path.abspath(__file__))
+    script_dir_path = os.path.dirname(dirname)
     filename = os.path.join(script_dir_path, c_filename)
     print(f"Looking for {filename}")
     if not os.path.exists(filename):
