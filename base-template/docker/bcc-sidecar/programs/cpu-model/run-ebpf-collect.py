@@ -16,7 +16,7 @@ from river import stats
 running = True
 as_table = True
 include_patterns = None
-excude_patterns = None
+exclude_patterns = None
 cgroup_indicator_file = None
 cgroup_id_filter = None
 
@@ -25,40 +25,43 @@ root = os.path.dirname(here)
 sys.path.insert(0, root)
 import bcchelper as helpers
 
-bpf_text = helpers.read_bpf_text(os.path.abspath(__file__))
+# Ensure you pass the correct path to your NEW BPF C code
+bpf_text = helpers.read_bpf_text(os.path.join(here, "ebpf-collect.c"))
 
 # Key: (tgid, comm_str),
 # Value: dict of River stats models
 aggregated_data_river = defaultdict(
     lambda: {
-        # For Mean, Var, Count, Sum (derived)
         "on_cpu_ns_var": stats.Var(),
         "on_cpu_ns_min": stats.Min(),
         "on_cpu_ns_max": stats.Max(),
-        "on_cpu_ns_median": stats.Quantile(0.50),  # Median
-        "on_cpu_ns_q1": stats.Quantile(0.25),  # 1st Quartile
-        "on_cpu_ns_q3": stats.Quantile(0.75),  # 3rd Quartile
-        # For Mean, Var, Count, Sum (derived)
+        "on_cpu_ns_median": stats.Quantile(0.50),
+        "on_cpu_ns_q1": stats.Quantile(0.25),
+        "on_cpu_ns_q3": stats.Quantile(0.75),
         "runq_latency_ns_var": stats.Var(),
         "runq_latency_ns_min": stats.Min(),
         "runq_latency_ns_max": stats.Max(),
         "runq_latency_ns_median": stats.Quantile(0.50),
         "runq_latency_ns_q1": stats.Quantile(0.25),
         "runq_latency_ns_q3": stats.Quantile(0.75),
-        # Store last seen cgroup_id
         "cgroup_id": 0,
-        # Timestamp of first event for this group
         "first_seen_ts_ns": 0,
-        # Timestamp of last event for this group
         "last_seen_ts_ns": 0,
     }
 )
 
-# From the C code
+# From the C code (remains for compatibility, though SchedEventData is not directly used)
 TASK_COMM_LEN_PY = 16
+CGROUP_FS_ROOT = "/sys/fs/cgroup" # Standard for cgroup v2 unified hierarchy
+
+# Process info cache to reduce /proc lookups
+_process_info_cache = {}
+_CACHE_EXPIRY_TIME_SEC = 2  # How long to keep a cache entry valid
+_TID_NOT_FOUND_CACHE_EXPIRY_SEC = 10 # Longer cache for TIDs that were not found (likely exited)
+_tid_not_found_cache = {}
 
 
-class SchedEventData(ct.Structure):
+class SchedEventData(ct.Structure): # Unused by new BPF code, kept for "minimal change"
     _fields_ = [
         ("timestamp_ns", ct.c_ulonglong),
         ("tgid", ct.c_uint),
@@ -72,48 +75,81 @@ class SchedEventData(ct.Structure):
     ]
 
 
-def aggregate_event_data_river_callback(cpu, data, size):
+def get_process_info(tid_int):
     """
-    Aggregation Callback using RiverML ---
+    Get process info from /proc
+
+    We get this in user space because it helps the c code be more efficient.
     """
-    global aggregated_data_river
-    global include_patterns
-    global excude_patterns
-    global cgroup_id_filter
+    current_time_monotonic = time.monotonic()
 
-    event = ct.cast(data, ct.POINTER(SchedEventData)).contents
-    comm = event.comm.decode("utf-8", "replace").strip("\\x00").strip()
+    if tid_int in _tid_not_found_cache and \
+       (current_time_monotonic - _tid_not_found_cache[tid_int]) < _TID_NOT_FOUND_CACHE_EXPIRY_SEC:
+        return None # Still in not-found cache
 
-    if include_patterns and not any(p.search(comm) for p in include_patterns):
-        return
-    if excude_patterns and any(p.search(comm) for p in excude_patterns):
-        return
-    if cgroup_id_filter is not None and str(event.cgroup_id) != cgroup_id_filter:
-        return
+    cached_info = _process_info_cache.get(tid_int)
+    if cached_info and (current_time_monotonic - cached_info['timestamp_mono']) < _CACHE_EXPIRY_TIME_SEC:
+        return cached_info
 
-    agg_key = (event.tgid, comm)
-    river_stats = aggregated_data_river[agg_key]
+    try:
+        comm_str = "N/A"
+        tgid_int = tid_int # Default tgid to tid if not found
+        cgroup_id_val = 0
+        proc_tid_path = f"/proc/{tid_int}"
 
-    river_stats["cgroup_id"] = event.cgroup_id
-    if river_stats["first_seen_ts_ns"] == 0:  # First event for this group
-        river_stats["first_seen_ts_ns"] = event.timestamp_ns
-    river_stats["last_seen_ts_ns"] = event.timestamp_ns
+        with open(f"{proc_tid_path}/comm", "r") as f:
+            comm_str = f.read().strip()
+        
+        with open(f"{proc_tid_path}/status", "r") as f:
+            for line in f:
+                if line.startswith("Tgid:"):
+                    tgid_int = int(line.split(":", 1)[1].strip())
+                    break
+        
+        # Get cgroup ID (inode of the cgroup directory)
+        with open(f"{proc_tid_path}/cgroup", "r") as f_cgroup:
+            for line_cg in f_cgroup:
+                parts = line_cg.strip().split(':')
+                if len(parts) >= 3:
+                    cgroup_path_suffix = parts[-1]
+                    if cgroup_path_suffix.startswith('/'):
+                        full_cgroup_path = os.path.join(CGROUP_FS_ROOT, cgroup_path_suffix.lstrip('/'))
+                        if os.path.exists(full_cgroup_path):
+                            cgroup_id_val = os.stat(full_cgroup_path).st_ino
+                            break 
+                        # Attempt fallback for common Docker cgroupfs (e.g., with 'cpu' controller)
+                        # This can be environment-specific
+                        for controller_subdir in ["cpu", "cpuacct", "cpuset", ""]: # common controller names or unified path
+                            alt_path_parts = [CGROUP_FS_ROOT]
+                            if controller_subdir:
+                                alt_path_parts.append(controller_subdir)
+                            alt_path_parts.append(cgroup_path_suffix.lstrip('/'))
+                            alt_path = os.path.join(*alt_path_parts)
+                            if os.path.exists(alt_path):
+                                cgroup_id_val = os.stat(alt_path).st_ino
+                                break
+                        # This means we found it
+                        if cgroup_id_val != 0: 
+                            break
+            # If still 0, means cgroup path resolution failed or not found.
+            
+        info = {'comm': comm_str, 'tgid': tgid_int, 'cgroup_id': cgroup_id_val, 'timestamp_mono': current_time_monotonic}
+        _process_info_cache[tid_int] = info
 
-    if event.on_cpu_ns > 0:
-        river_stats["on_cpu_ns_var"].update(event.on_cpu_ns)
-        river_stats["on_cpu_ns_min"].update(event.on_cpu_ns)
-        river_stats["on_cpu_ns_max"].update(event.on_cpu_ns)
-        river_stats["on_cpu_ns_median"].update(event.on_cpu_ns)
-        river_stats["on_cpu_ns_q1"].update(event.on_cpu_ns)
-        river_stats["on_cpu_ns_q3"].update(event.on_cpu_ns)
+        # Remove from not-found if now found
+        if tid_int in _tid_not_found_cache:
+            del _tid_not_found_cache[tid_int]
+        return info
 
-    if event.runq_latency_ns > 0:
-        river_stats["runq_latency_ns_var"].update(event.runq_latency_ns)
-        river_stats["runq_latency_ns_min"].update(event.runq_latency_ns)
-        river_stats["runq_latency_ns_max"].update(event.runq_latency_ns)
-        river_stats["runq_latency_ns_median"].update(event.runq_latency_ns)
-        river_stats["runq_latency_ns_q1"].update(event.runq_latency_ns)
-        river_stats["runq_latency_ns_q3"].update(event.runq_latency_ns)
+    # Add to not-found cache
+    except FileNotFoundError:
+        _tid_not_found_cache[tid_int] = current_time_monotonic
+        return None
+
+    # Other errors (e.g., permission, process racingly exited mid-read)
+    except Exception:
+        # helpers.log(f"Error fetching info for tid {tid_int}: {e_proc}", "DEBUG")
+        return None
 
 
 def ns_to_ms_str(ns_val):
@@ -125,12 +161,18 @@ def ns_to_s_str(ns_val):
 
 
 def print_final_summary_river():
+    """
+    Print the final summary of river models.
+    """
     global aggregated_data_river
     global as_table
 
     if not aggregated_data_river:
         if as_table:
             print("No aggregated data (River) to display.")
+        # Also print for JSON if empty (it should not be empty!)
+        else:
+            print(json.dumps({"final_aggregated_summary_river": []}, indent=2))
         return
 
     summary_list_for_json = []
@@ -143,8 +185,7 @@ def print_final_summary_river():
         print(header2)
         print("-" * (len(header1) + len(header2) - 35 + 2))
 
-    # Sort by total on-CPU time. We need to calculate sum for sorting.
-    # Sum = Mean * N
+
     sorted_summary = sorted(
         aggregated_data_river.items(),
         key=lambda item: (
@@ -157,8 +198,6 @@ def print_final_summary_river():
     )
 
     for (tgid, comm), river_stats_dict in sorted_summary:
-
-        # On CPU Stats
         oc_var_obj = river_stats_dict["on_cpu_ns_var"]
         oc_min_obj = river_stats_dict["on_cpu_ns_min"]
         oc_max_obj = river_stats_dict["on_cpu_ns_max"]
@@ -183,7 +222,6 @@ def print_final_summary_river():
             else None
         )
 
-        # Runq Latency Stats
         rq_var_obj = river_stats_dict["runq_latency_ns_var"]
         rq_min_obj = river_stats_dict["runq_latency_ns_min"]
         rq_max_obj = river_stats_dict["runq_latency_ns_max"]
@@ -207,120 +245,115 @@ def print_final_summary_river():
             if rq_q1_val is not None and rq_q3_val is not None
             else None
         )
+        cgroup_disp = str(river_stats_dict["cgroup_id"])[:10] # For table display
 
-        cgroup_disp = str(river_stats_dict["cgroup_id"])[:10]
         if as_table:
-            # Note: Variance is in (ns^2), converting to (ms^2) might be confusing.
-            # For display, it might be better to show variance in (ns^2) or its sqrt (std dev) in ns/ms.
-            # Let's display variance in (ms_value)^2 if we convert the value, or keep it raw.
-            # For simplicity, I'll convert the value to ms and then square it, but label it ms2.
-            # This is not strictly (ms)^2 in unit terms but rather (value_in_ms)^2.
-            # A better way would be var_ns2 / (1e6 * 1e6) for units of ms^2.
             oc_variance_display = (
                 (oc_variance_ns2 / (1e6 * 1e6)) if oc_variance_ns2 is not None else None
             )
             rq_variance_display = (
                 (rq_variance_ns2 / (1e6 * 1e6)) if rq_variance_ns2 is not None else None
             )
-
             row1 = f"{tgid:<7} {comm:<15} {cgroup_disp:<10} | {oc_count:>7} {ns_to_s_str(oc_sum_ns):>10} {ns_to_ms_str(oc_mean_ns):>11} {ns_to_ms_str(oc_median_ns):>10} {ns_to_ms_str(oc_min_ns):>10} {ns_to_ms_str(oc_max_ns):>10} {f'{oc_variance_display:.3f}' if oc_variance_display is not None else 'N/A':>11} {ns_to_ms_str(oc_iqr_ns):>10} |"
             row2 = f"{'':<35} | {rq_count:>7} {ns_to_s_str(rq_sum_ns):>11} {ns_to_ms_str(rq_mean_ns):>12} {ns_to_ms_str(rq_median_ns):>11} {ns_to_ms_str(rq_min_ns):>11} {ns_to_ms_str(rq_max_ns):>11} {f'{rq_variance_display:.3f}' if rq_variance_display is not None else 'N/A':>12} {ns_to_ms_str(rq_iqr_ns):>11} |"
             print(row1)
             print(row2)
-
-        # This is probably the best way to print
         else:
-            summary_list_for_json.append(
-                {
-                    "tgid": tgid,
-                    "comm": comm,
-                    "cgroup_id": river_stats_dict["cgroup_id"],
-                    "on_cpu_stats_ns": {
-                        "count": oc_count,
-                        "sum": oc_sum_ns,
-                        "mean": oc_mean_ns,
-                        "median": oc_median_ns,
-                        "min": oc_min_ns,
-                        "max": oc_max_ns,
-                        "variance_ns2": oc_variance_ns2,
-                        "iqr_ns": oc_iqr_ns,
-                        "q1_ns": oc_q1_val,
-                        "q3_ns": oc_q3_val,
-                    },
-                    "runq_latency_stats_ns": {
-                        "count": rq_count,
-                        "sum": rq_sum_ns,
-                        "mean": rq_mean_ns,
-                        "median": rq_median_ns,
-                        "min": rq_min_ns,
-                        "max": rq_max_ns,
-                        "variance_ns2": rq_variance_ns2,
-                        "iqr_ns": rq_iqr_ns,
-                        "q1_ns": rq_q1_val,
-                        "q3_ns": rq_q3_val,
-                    },
-                    "first_seen_ts_ns": river_stats_dict["first_seen_ts_ns"],
-                    "last_seen_ts_ns": river_stats_dict["last_seen_ts_ns"],
-                    "duration_active_s": (
-                        (
-                            river_stats_dict["last_seen_ts_ns"]
-                            - river_stats_dict["first_seen_ts_ns"]
-                        )
-                        / 1e9
-                        if river_stats_dict["first_seen_ts_ns"] > 0
-                        else 0
-                    ),
-                }
-            )
+            summary_item = {
+                "tgid": tgid,
+                "comm": comm,
+                "cgroup_id": river_stats_dict["cgroup_id"], # Use the full cgroup_id
+                "on_cpu_stats_ns": {
+                    "count": oc_count,
+                    "sum_ns": oc_sum_ns,
+                    "mean_ns": oc_mean_ns,
+                    "median_ns": oc_median_ns,
+                    "min_ns": oc_min_ns,
+                    "max_ns": oc_max_ns,
+                    "variance_ns2": oc_variance_ns2,
+                    "iqr_ns": oc_iqr_ns,
+                    "q1_ns": oc_q1_val,
+                    "q3_ns": oc_q3_val,
+                },
+                "runq_latency_stats_ns": {
+                    "count": rq_count,
+                    "sum_ns": rq_sum_ns,
+                    "mean_ns": rq_mean_ns,
+                    "median_ns": rq_median_ns,
+                    "min_ns": rq_min_ns,
+                    "max_ns": rq_max_ns,
+                    "variance_ns2": rq_variance_ns2,
+                    "iqr_ns": rq_iqr_ns,
+                    "q1_ns": rq_q1_val,
+                    "q3_ns": rq_q3_val,
+                },
+                "first_seen_ts_ns": river_stats_dict["first_seen_ts_ns"],
+                "last_seen_ts_ns": river_stats_dict["last_seen_ts_ns"],
+                "duration_active_s": (
+                    (
+                        river_stats_dict["last_seen_ts_ns"]
+                        - river_stats_dict["first_seen_ts_ns"]
+                    )
+                    / 1e9
+                    if river_stats_dict["first_seen_ts_ns"] > 0 and river_stats_dict["last_seen_ts_ns"] > river_stats_dict["first_seen_ts_ns"]
+                    else 0
+                ),
+            }
+            summary_list_for_json.append(summary_item)
 
     if not as_table and summary_list_for_json:
-        # Use indent for pretty printing JSON
         print(
             json.dumps(
                 {"final_aggregated_summary_river": summary_list_for_json}, indent=2
             )
         )
+    elif not as_table and not summary_list_for_json:
+        print(json.dumps({"final_aggregated_summary_river": []}, indent=2))
 
 
 def signal_stop_handler(signum, frame):
     global running
-    helpers.log(
-        f"Signal {signal.Signals(signum).name} received, stopping...", file=sys.stderr
-    )
+    helpers.log(f"Signal {signal.Signals(signum).name} received, stopping...")
     running = False
 
 
 def collect_trace(
     start_indicator_file_arg=None,
     stop_indicator_file_arg=None,
-    output_as_table_arg=True,
-    enable_debug_flag_arg=False,
+    output_as_table=True,
+    debug=False, # This flag is unused in provided code
 ):
     global running
     global as_table
     global cgroup_indicator_file
     global cgroup_id_filter
     global aggregated_data_river
-
-    as_table = output_as_table_arg
+    global include_patterns
+    global exclude_patterns
+    as_table = output_as_table
+    # aggregated_data_river.clear() # Already a defaultdict, will be new on each script run
 
     signal.signal(signal.SIGINT, signal_stop_handler)
     signal.signal(signal.SIGTERM, signal_stop_handler)
 
-    # if a cgroup filter is set
     if cgroup_indicator_file is not None and cgroup_id_filter is None:
         if os.path.exists(cgroup_indicator_file):
             cgroup_id_filter = helpers.get_cgroup_filter(cgroup_indicator_file)
+            helpers.log(f"Applied cgroup ID filter: {cgroup_id_filter}")
 
     if start_indicator_file_arg is not None:
-        helpers.log(
-            f"Waiting for start indicator file: '{start_indicator_file_arg}'."
-        )
+        helpers.log(f"Waiting for start indicator file: '{start_indicator_file_arg}'.")
         while running and not os.path.exists(start_indicator_file_arg):
             time.sleep(0.2)
+        if not running:
+            return
         helpers.log("Start indicator found. Proceeding with monitoring.")
 
     bpf_instance = None
+    # Define polling interval for reading BPF maps (e.g., 1 second)
+    # Match original ring_buffer_poll timeout of 100ms if frequent updates are desired
+    polling_interval_seconds = 0.1 # Adjust as needed
+
     try:
         helpers.log("Initializing eBPF for CPU Scheduling monitoring...")
         bpf_instance = BPF(text=bpf_text)
@@ -337,40 +370,98 @@ def collect_trace(
         )
         helpers.log("Attached tracepoints.")
 
-        events_table = bpf_instance.get_table("events_out")
-        events_table.open_perf_buffer(aggregate_event_data_river_callback)
-        helpers.log("Perf buffer 'events_out' opened.")
+        # Get the BPF map for aggregated stats
+        agg_stats_map = bpf_instance.get_table("aggregated_task_stats")
 
-        # if enable_debug_flag_arg and hasattr(bpf_instance, 'get_table') and "debug_events_out" in bpf_instance.tables:
-        #     debug_table = bpf_instance.get_table("debug_events_out")
-        #     debug_table.open_perf_buffer(print_debug_callback_function) # You'd need this callback
-        #     helpers.log("Debug perf buffer opened.")
-
-        if as_table:
-            print(  # Per-event table header
-                f"{'TIMESTAMP':<18} {'COMM':<15} {'TID':<7} {'TGID':<7} "
-                f"{'CGROUP':<10} {'ON_CPU_MS':>10} {'RUNQ_LAT_MS':>12} {'PREV_STATE':>10}"
-            )
-            print("-" * 100)
-
-        helpers.log("Monitoring CPU scheduling events... Press Ctrl+C to stop.")
+        helpers.log("Monitoring CPU scheduling events (polling aggregated map)... Press Ctrl+C to stop.")
+        
         while running:
-            try:
-                bpf_instance.perf_buffer_poll(timeout=100)
-                if stop_indicator_file_arg is not None and os.path.exists(
-                    stop_indicator_file_arg
-                ):
-                    helpers.log(
-                        f"Stop indicator file '{stop_indicator_file_arg}' found. Stopping."
-                    )
-                    running = False
 
-                if not running:
-                    break
-            except Exception as e_poll:
-                helpers.log(f"Error during perf_buffer_poll: {e_poll}")
-                time.sleep(0.1)
+             # Polling interval
+            time.sleep(polling_interval_seconds)
 
+             # Timestamp for this polling batch
+            current_loop_ts_ns = time.time_ns()
+
+            # Iterate over aggregated_task_stats map
+            # For PERCPU_HASH, items() returns a list of values (one per CPU) for each key
+            for tid_bpf, stats_per_cpu_list in agg_stats_map.items():
+                tid_val = tid_bpf.value # This is the Thread ID (kernel PID)
+
+                # Aggregate stats from all CPUs for this TID for this interval
+                interval_total_on_cpu_ns = 0
+                interval_total_runq_latency_ns = 0
+                interval_on_cpu_count = 0
+                interval_runq_count = 0
+
+                for cpu_stat in stats_per_cpu_list: # cpu_stat is 'struct task_aggr_stats'
+                    interval_total_on_cpu_ns += cpu_stat.total_on_cpu_ns
+                    interval_total_runq_latency_ns += cpu_stat.total_runq_latency_ns
+                    interval_on_cpu_count += cpu_stat.on_cpu_count
+                    interval_runq_count += cpu_stat.runq_count
+                
+                if interval_on_cpu_count == 0 and interval_runq_count == 0:
+                    continue # No activity for this TID in this interval
+
+                # Get process info (comm, tgid, cgroup_id) from /proc
+                proc_info = get_process_info(tid_val)
+                if not proc_info:
+                    # helpers.log(f"Skipping TID {tid_val}, process info not found (likely exited).", "DEBUG")
+                    continue
+                
+                comm_str = proc_info['comm']
+                tgid_val = proc_info['tgid']
+                fetched_cgroup_id = proc_info['cgroup_id']
+
+                # Apply filters
+                if include_patterns and not any(p.search(comm_str) for p in include_patterns):
+                    continue
+                if exclude_patterns and any(p.search(comm_str) for p in exclude_patterns):
+                    continue
+                if cgroup_id_filter is not None and str(fetched_cgroup_id) != cgroup_id_filter:
+                    continue
+
+                # Update aggregated_data_river
+                agg_key = (tgid_val, comm_str)
+                river_stats = aggregated_data_river[agg_key]
+
+                river_stats["cgroup_id"] = fetched_cgroup_id # Update with most recently fetched cgroup_id
+                if river_stats["first_seen_ts_ns"] == 0:
+                    river_stats["first_seen_ts_ns"] = current_loop_ts_ns
+                river_stats["last_seen_ts_ns"] = current_loop_ts_ns
+
+                # Update River stats objects with data from this interval
+                # Note: This feeds interval averages. Min/Max/Quantiles will be of these averages.
+                if interval_on_cpu_count > 0:
+                    avg_on_cpu_ns_interval = interval_total_on_cpu_ns / interval_on_cpu_count
+                    river_stats["on_cpu_ns_var"].update(avg_on_cpu_ns_interval)
+                    river_stats["on_cpu_ns_min"].update(avg_on_cpu_ns_interval)
+                    river_stats["on_cpu_ns_max"].update(avg_on_cpu_ns_interval)
+                    river_stats["on_cpu_ns_median"].update(avg_on_cpu_ns_interval)
+                    river_stats["on_cpu_ns_q1"].update(avg_on_cpu_ns_interval)
+                    river_stats["on_cpu_ns_q3"].update(avg_on_cpu_ns_interval)
+
+                if interval_runq_count > 0:
+                    avg_runq_latency_ns_interval = interval_total_runq_latency_ns / interval_runq_count
+                    river_stats["runq_latency_ns_var"].update(avg_runq_latency_ns_interval)
+                    river_stats["runq_latency_ns_min"].update(avg_runq_latency_ns_interval)
+                    river_stats["runq_latency_ns_max"].update(avg_runq_latency_ns_interval)
+                    river_stats["runq_latency_ns_median"].update(avg_runq_latency_ns_interval)
+                    river_stats["runq_latency_ns_q1"].update(avg_runq_latency_ns_interval)
+                    river_stats["runq_latency_ns_q3"].update(avg_runq_latency_ns_interval)
+
+            # Clear the BPF map after processing its contents for this interval
+            # This gets fresh aggregates for the next interval.
+            agg_stats_map.clear()
+
+            if stop_indicator_file_arg is not None and os.path.exists(stop_indicator_file_arg):
+                helpers.log(f"Stop indicator file '{stop_indicator_file_arg}' found. Stopping.")
+                running = False
+            
+            # Check running flag again, in case signal handled during sleep or processing
+            if not running:
+                break
+            
     except Exception as e:
         helpers.log(f"Error or interrupt during BPF setup or main loop: {e}")
         traceback.print_exc()
@@ -381,13 +472,19 @@ def collect_trace(
 
         if bpf_instance:
             helpers.log("Cleaning up BPF instance...")
+
+            # Detaches tracepoints, closes FDs
             bpf_instance.cleanup()
+
+        # Clear cache on exit
+        _process_info_cache.clear()
+        _tid_not_found_cache.clear()
         helpers.log("Cleanup complete. Exiting.")
 
 
 def main():
     global include_patterns
-    global excude_patterns
+    global exclude_patterns
     global cgroup_indicator_file
 
     if os.geteuid() != 0:
@@ -399,17 +496,16 @@ def main():
     if args.include_pattern:
         include_patterns = [re.compile(p) for p in args.include_pattern]
     if args.exclude_pattern:
-        excude_patterns = [re.compile(p) for p in args.exclude_pattern]
+        exclude_patterns = [re.compile(p) for p in args.exclude_pattern]
 
     cgroup_indicator_file = args.cgroup_indicator_file
 
     collect_trace(
         args.start_indicator_file,
         args.stop_indicator_file,
-        not args.json,  # as_table
-        args.debug,
+        not args.json,
+        args.debug, # We aren't using this now, passing for consistency.
     )
-
 
 if __name__ == "__main__":
     main()
