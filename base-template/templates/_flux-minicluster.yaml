@@ -38,7 +38,7 @@ spec:
           type: DirectoryOrCreate
 {{ end }}
 ---
-{{- $privileged := .Values.minicluster.privileged -}}{{ if eq .Values.experiment.monitor true }}{{- $privileged = true -}}{{ end }}{{ if eq .Values.experiment.record true }}{{- $privileged = true -}}{{ end }}
+{{- $privileged := .Values.minicluster.privileged -}}{{ if .Values.experiment.monitor }}{{- $privileged = true -}}{{ end }}{{ if eq .Values.experiment.record true }}{{- $privileged = true -}}{{ end }}
 apiVersion: flux-framework.org/v1alpha2
 kind: MiniCluster
 metadata:

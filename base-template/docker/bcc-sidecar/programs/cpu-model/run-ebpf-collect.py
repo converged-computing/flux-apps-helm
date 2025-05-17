@@ -312,6 +312,14 @@ def collect_trace(
         if os.path.exists(cgroup_indicator_file):
             cgroup_id_filter = helpers.get_cgroup_filter(cgroup_indicator_file)
 
+    if start_indicator_file_arg is not None:
+        helpers.log(
+            f"Waiting for start indicator file: '{start_indicator_file_arg}'."
+        )
+        while running and not os.path.exists(start_indicator_file_arg):
+            time.sleep(0.2)
+        helpers.log("Start indicator found. Proceeding with monitoring.")
+
     bpf_instance = None
     try:
         helpers.log("Initializing eBPF for CPU Scheduling monitoring...")
@@ -337,17 +345,6 @@ def collect_trace(
         #     debug_table = bpf_instance.get_table("debug_events_out")
         #     debug_table.open_perf_buffer(print_debug_callback_function) # You'd need this callback
         #     helpers.log("Debug perf buffer opened.")
-
-        if start_indicator_file_arg is not None:
-            helpers.log(
-                f"Waiting for start indicator file: '{start_indicator_file_arg}'."
-            )
-            while running and not os.path.exists(start_indicator_file_arg):
-                time.sleep(0.2)
-            if not running:
-                helpers.log("Stopped while waiting for start.")
-                return
-            helpers.log("Start indicator found. Proceeding with monitoring.")
 
         if as_table:
             print(  # Per-event table header
