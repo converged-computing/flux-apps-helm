@@ -21,6 +21,7 @@ here = os.path.dirname(os.path.abspath(__file__))
 root = os.path.dirname(here)
 sys.path.insert(0, root)
 import bcchelper as helpers
+
 bpf_text = helpers.read_bpf_text(os.path.abspath(__file__))
 
 # Python constants
@@ -198,7 +199,9 @@ def print_net_table_header():  # Your existing function
     print("-" * header_len)
 
 
-def collect_trace(start_indicator_file=None, stop_indicator_file=None, table=True, debug=False):
+def collect_trace(
+    start_indicator_file=None, stop_indicator_file=None, table=True, debug=False
+):
     global running
     global as_table
     global cgroup_indicator_file
@@ -210,7 +213,7 @@ def collect_trace(start_indicator_file=None, stop_indicator_file=None, table=Tru
 
     if cgroup_indicator_file is not None and os.path.exists(cgroup_indicator_file):
         cgroup_id_filter = helpers.get_cgroup_filter(cgroup_indicator_file)
-            
+
     helpers.log("Starting eBPF (Tracepoints for network syscalls).")
     bpf_instance = None
     try:
@@ -230,7 +233,7 @@ def collect_trace(start_indicator_file=None, stop_indicator_file=None, table=Tru
 
     if start_indicator_file is not None:
         helpers.log(f"Start Indicator file defined '{start_indicator_file}'. Waiting.")
-        while running and not os.path.exists(start_indicator_file):  
+        while running and not os.path.exists(start_indicator_file):
             time.sleep(0.2)
         helpers.log("Start indicator found. Proceeding.")
 

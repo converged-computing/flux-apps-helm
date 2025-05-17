@@ -38,7 +38,7 @@ spec:
           type: DirectoryOrCreate
 {{ end }}
 ---
-{{- $privileged := .Values.minicluster.privileged -}}{{ if eq .Values.experiment.monitor true }}{{- $privileged = true -}}{{ end }}{{ if eq .Values.experiment.record true }}{{- $privileged = true -}}{{ end }}
+{{- $privileged := .Values.minicluster.privileged -}}{{ if .Values.experiment.monitor }}{{- $privileged = true -}}{{ end }}{{ if eq .Values.experiment.record true }}{{- $privileged = true -}}{{ end }}
 apiVersion: flux-framework.org/v1alpha2
 kind: MiniCluster
 metadata:
@@ -88,11 +88,11 @@ spec:
          {{ include "chart.fluxfinish" . }}
          {{ if .Values.experiment.record }}{{ include "chart.record_finish" . }}{{ end }}
       pre: |
+         echo "ulimit -l unlimited" >> /root/.bashrc
          {{ if .Values.minicluster.gpus }}{{ include "chart.gpus" . }}{{ end }}
          cat <<EOF >> /tmp/run_${app}.sh
          #!/bin/bash
          set -euo pipefail
-         mkdir -p /tmp/output
          flux resource list
          {{ if .Values.experiment.monitor }}{{ include "chart.monitor_start" . }}{{ end }}
          {{ if .Values.experiment.pairs }}{{ include "chart.fluxpairs" . }}
