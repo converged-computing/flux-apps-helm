@@ -7,7 +7,6 @@ Use eBPF (Extended Berkeley Packet Filter) to measure the duration of time threa
 
 from bcc import BPF
 import ctypes as ct
-import re
 import os
 import json
 import signal
@@ -365,14 +364,26 @@ def print_futex_table_header():  # Your function
 
 
 def collect_trace(
-    start_indicator_file=None, stop_indicator_file=None, table=True, debug=False
+    start_indicator_file=None,
+    stop_indicator_file=None,
+    cgroup_indicator=None,
+    table=True,
+    include_regex=None,
+    exclude_regex=None,
+    debug=False,  # This flag is unused in provided code
 ):
     global running
     global as_table
     global cgroup_indicator_file
     global cgroup_id_filter
-    global aggregated_river_stats
+    global aggregated_data_river
+    global include_patterns
+    global exclude_patterns
     as_table = table
+    exclude_patterns = exclude_regex
+    include_patterns = include_regex
+    cgroup_indicator_file = cgroup_indicator
+    # aggregated_data_river.clear() # Already a defaultdict, will be new on each script run
 
     signal.signal(signal.SIGINT, signal_stop_handler)
     signal.signal(signal.SIGTERM, signal_stop_handler)
@@ -433,35 +444,3 @@ def collect_trace(
         if bpf_instance:
             bpf_instance.cleanup()
         helpers.log("Cleanup complete.")
-
-
-def main():
-    global include_patterns
-    global exclude_patterns
-    global cgroup_indicator_file
-
-    if os.geteuid() != 0:
-        sys.exit("This script must be run as root.")
-
-    parser = helpers.get_parser("eBPF Futex Wait Time Analyzer.")
-    args, _ = parser.parse_known_args()
-
-    # Compile regex patterns from args and store in globals
-    if args.include_pattern:
-        include_patterns = [re.compile(p) for p in args.include_pattern]
-    if args.exclude_pattern:
-        exclude_patterns = [re.compile(p) for p in args.exclude_pattern]
-
-    cgroup_indicator_file = args.cgroup_indicator_file  # Set global path
-
-    # Call collect_trace with its original signature
-    collect_trace(
-        args.start_indicator_file,
-        args.stop_indicator_file,
-        not args.json,  # as_table
-        args.debug,
-    )
-
-
-if __name__ == "__main__":
-    main()

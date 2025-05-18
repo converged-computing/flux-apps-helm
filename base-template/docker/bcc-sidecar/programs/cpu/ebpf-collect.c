@@ -29,11 +29,11 @@ struct task_aggr_stats {
     u64 runq_count;
 };
 
-// --- Tracepoint context structures (ensure these match your kernel) ---
+// --- Tracepoint context structures (ensure these match the kernel) ---
 // For BCC, these are often implicitly handled or can be derived.
 // For libbpf, use CO-RE with vmlinux.h.
 struct trace_event_raw_sched_switch {
-    unsigned long long __unused_header; // Or specific common_fields
+    unsigned long long __unused_header;
     char prev_comm[TASK_COMM_LEN];
     int prev_pid; // Kernel's pid_t
     int prev_prio;
@@ -44,7 +44,7 @@ struct trace_event_raw_sched_switch {
 };
 
 struct trace_event_raw_sched_wakeup {
-    unsigned long long __unused_header; // Or specific common_fields
+    unsigned long long __unused_header;
     char comm[TASK_COMM_LEN];
     int pid; // Kernel's pid_t
     int prio;
@@ -128,6 +128,7 @@ int tp_sched_switch(struct trace_event_raw_sched_switch *ctx) {
     wakeup_ts_ptr = task_wakeup_ts.lookup(&next_tid);
     if (wakeup_ts_ptr) {
         u64 runq_latency = current_ts - *wakeup_ts_ptr;
+
         // Basic sanity check
         if ((s64)runq_latency >= 0) {
             stats_ptr = aggregated_task_stats.lookup(&next_tid);

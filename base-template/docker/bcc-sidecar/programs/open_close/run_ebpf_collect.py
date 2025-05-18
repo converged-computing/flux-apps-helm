@@ -215,16 +215,26 @@ def print_table_header():
 
 
 def collect_trace(
-    start_indicator_file=None, stop_indicator_file=None, table=True, debug=False
+    start_indicator_file=None,
+    stop_indicator_file=None,
+    cgroup_indicator=None,
+    output_as_table=True,
+    include_regex=None,
+    exclude_regex=None,
+    debug=False,  # This flag is unused in provided code
 ):
-    """
-    Collect a trace until we receive a signal from the global indicator.
-    """
     global running
-
-    # Are we printing as a table, or json?
     global as_table
-    as_table = table
+    global cgroup_indicator_file
+    global cgroup_id_filter
+    global aggregated_data_river
+    global include_patterns
+    global exclude_patterns
+    as_table = output_as_table
+    exclude_patterns = exclude_regex
+    include_patterns = include_regex
+    cgroup_indicator_file = cgroup_indicator
+    # aggregated_data_river.clear() # Already a defaultdict, will be new on each script run
 
     # Setup signal handlers
     signal.signal(signal.SIGINT, signal_stop_handler)
@@ -249,7 +259,7 @@ def collect_trace(
         helpers.log(f"Error initializing/attaching BPF: {e}", exit=True)
 
     # Only print a header if it's a table...
-    if table:
+    if as_table:
         print_table_header()
 
     # Are we filtering to a cgroup?
@@ -300,36 +310,3 @@ def collect_trace(
         helpers.log("Cleaning up BPF resources...")
         if bpf_instance:
             bpf_instance.cleanup()
-
-
-def main():
-    """
-    Main execution to run trace.
-    """
-    global include_patterns
-    global exclude_patterns
-    global cgroup_indicator_file
-
-    if os.geteuid() != 0:
-        sys.exit("This script must be run as root.")
-
-    parser = helpers.get_parser("File Open/Close Analyzer.")
-    args, _ = parser.parse_known_args()
-
-    # If debug is set, we print a table
-    if args.debug:
-        args.json = False
-
-    include_patterns = args.include_pattern
-    exclude_patterns = args.exclude_pattern
-    cgroup_indicator_file = args.cgroup_indicator_file
-    collect_trace(
-        args.start_indicator_file,
-        args.stop_indicator_file,
-        not args.json,
-        args.debug,
-    )
-
-
-if __name__ == "__main__":
-    main()

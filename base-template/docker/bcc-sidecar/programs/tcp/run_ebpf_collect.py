@@ -2,7 +2,6 @@
 
 from bcc import BPF
 import ctypes as ct
-import re
 import os
 import json
 import signal
@@ -178,7 +177,9 @@ def get_event_type_str(event_type_val):
 
 
 def update_and_get_stats_dict(model_stat_set, value):
-    """Updates all stats in a set and returns their current values as a dictionary."""
+    """
+    Updates all stats in a set and returns their current values as a dictionary.
+    """
     if value is None:
         return {name: "N/A" for name in model_stat_set}
     current_stats = {}
@@ -252,114 +253,28 @@ def print_event_ringbuf_cb(ctx, data, size):
             )
 
 
-def print_net_json(
-    event,
-    comm,
-    type_str,
-    bytes_val_str_orig,
-    timestamp_sec,
-    bucket_label,
-    live_stats_display_dict,
-):
-    body = {
-        "event_type": type_str,
-        "timestamp_sec": timestamp_sec,
-        "tgid": event.tgid,
-        "tid": event.tid,
-        "comm": comm,
-        "cgroup_id": event.cgroup_id,
-        "fd": event.fd,
-        "immediate_bytes_val": (
-            event.bytes_count
-            if type_str not in ["CONNECT", "ACCEPT", "SOCKET_NEW"]
-            else None
-        ),
-        "immediate_connect_ret": event.bytes_count if type_str == "CONNECT" else None,
-        "immediate_duration_ns": event.duration_ns,
-        "immediate_duration_human": format_duration_us(event.duration_ns),
-        "byte_bucket": bucket_label if bucket_label != "N/A" else None,
-        "live_stats_for_event_context": live_stats_display_dict,
-    }
-    print(json.dumps(body))
-
-
-def print_net_table_row(
-    event,
-    comm,
-    type_str,
-    bytes_str_orig,
-    timestamp_sec,
-    bucket_label,
-    live_stats_display_dict,
-):
-    # Display immediate event values and some key live stats
-    imm_dur_us = format_duration_us(event.duration_ns)
-
-    # For data transfer, show bucketed duration mean. For connect, show connect duration mean.
-    avg_dur_display = "N/A"
-    count_display = "N/A"
-
-    if type_str in ["TCP_SEND", "TCP_RECV", "WRITE_SOCK", "READ_SOCK"]:
-        avg_dur_display = live_stats_display_dict.get("bucketed_dur_mean_us", "N/A")
-        count_display = str(live_stats_display_dict.get("bucketed_dur_count", "N/A"))
-    elif type_str == "CONNECT":
-        avg_dur_display = live_stats_display_dict.get("connect_dur_mean_us", "N/A")
-        count_display = str(live_stats_display_dict.get("connect_dur_count", "N/A"))
-
-    print(
-        f"{timestamp_sec:<18.6f} {event.tgid:<7} {comm:<{TASK_COMM_LEN_PY}} "
-        f"{type_str:<{SYSCALL_TYPE_DISPLAY_WIDTH}} FD:{event.fd:<3} "
-        f"{bytes_str_orig:>{10}} {imm_dur_us:>{12}} "  # Immediate bytes and duration
-        f"{bucket_label:<{BUCKET_DISPLAY_WIDTH}} "
-        f"CNT:{count_display:<5} "
-        f"AVG_D(us):{avg_dur_display:<{STATS_FIELD_DISPLAY_WIDTH}}"
-    )
-
-
-def print_net_table_header():
-    print(
-        f"{'TIMESTAMP':<18} {'TGID':<7} {'COMMAND':<{TASK_COMM_LEN_PY}} "
-        f"{'TYPE':<{SYSCALL_TYPE_DISPLAY_WIDTH}} {'FD':<5} "
-        f"{'BYTES/RET':>{10}} {'IMM_DUR':>{12}} "  # Immediate values
-        f"{'BYTE_BUCKET':<{BUCKET_DISPLAY_WIDTH}} "
-        f"{'COUNT':<6} "  # Count for that bucket's duration model
-        f"{'AVG_DUR_us':<{STATS_FIELD_DISPLAY_WIDTH}}"  # Avg duration for that bucket
-    )
-    header_len = (
-        18
-        + 1
-        + 7
-        + 1
-        + TASK_COMM_LEN_PY
-        + 1
-        + SYSCALL_TYPE_DISPLAY_WIDTH
-        + 1
-        + 5
-        + 1
-        + 10
-        + 1
-        + 12
-        + 1
-        + BUCKET_DISPLAY_WIDTH
-        + 1
-        + 6
-        + 1
-        + STATS_FIELD_DISPLAY_WIDTH
-    )
-    print("-" * header_len)
-
-
 def collect_trace(
     start_indicator_file=None,
     stop_indicator_file=None,
+    cgroup_indicator=None,
     output_as_table=True,
-    debug=False,
+    include_regex=None,
+    exclude_regex=None,
+    debug=False,  # This flag is unused in provided code
 ):
     global running
     global as_table
     global cgroup_indicator_file
     global cgroup_id_filter
+    global aggregated_data_river
+    global include_patterns
+    global exclude_patterns
     as_table = output_as_table
+    exclude_patterns = exclude_regex
+    include_patterns = include_regex
+    cgroup_indicator_file = cgroup_indicator
+    # aggregated_data_river.clear() # Already a defaultdict, will be new on each script run
+
     signal.signal(signal.SIGINT, signal_stop_handler)
     signal.signal(signal.SIGTERM, signal_stop_handler)
 
@@ -531,27 +446,3 @@ def collect_trace(
         helpers.log("\n--- FINAL AGGREGATED STATISTICS (JSON) ---")
         print(json.dumps(final_stats_summary, indent=2, sort_keys=True))
         helpers.log("--- END OF FINAL STATISTICS ---")
-
-
-def main():
-    global include_patterns
-    global exclude_patterns
-    global cgroup_indicator_file
-    if os.geteuid() != 0:
-        sys.exit("This script must be run as root.")
-    parser = helpers.get_parser(
-        "eBPF TCP Socket Analyzer with RiverML Conditional Statistics."
-    )
-    args, _ = parser.parse_known_args()
-    if args.include_pattern:
-        include_patterns = [re.compile(p) for p in args.include_pattern]
-    if args.exclude_pattern:
-        exclude_patterns = [re.compile(p) for p in args.exclude_pattern]
-    cgroup_indicator_file = args.cgroup_indicator_file
-    collect_trace(
-        args.start_indicator_file, args.stop_indicator_file, not args.json, args.debug
-    )
-
-
-if __name__ == "__main__":
-    main()

@@ -4,7 +4,6 @@ from bcc import BPF
 import ctypes as ct
 import time
 import os
-import re
 import sys
 import json
 import signal
@@ -52,16 +51,18 @@ aggregated_data_river = defaultdict(
 
 # From the C code (remains for compatibility, though SchedEventData is not directly used)
 TASK_COMM_LEN_PY = 16
-CGROUP_FS_ROOT = "/sys/fs/cgroup" # Standard for cgroup v2 unified hierarchy
+CGROUP_FS_ROOT = "/sys/fs/cgroup"  # Standard for cgroup v2 unified hierarchy
 
 # Process info cache to reduce /proc lookups
 _process_info_cache = {}
 _CACHE_EXPIRY_TIME_SEC = 2  # How long to keep a cache entry valid
-_TID_NOT_FOUND_CACHE_EXPIRY_SEC = 10 # Longer cache for TIDs that were not found (likely exited)
+_TID_NOT_FOUND_CACHE_EXPIRY_SEC = (
+    10  # Longer cache for TIDs that were not found (likely exited)
+)
 _tid_not_found_cache = {}
 
 
-class SchedEventData(ct.Structure): # Unused by new BPF code, kept for "minimal change"
+class SchedEventData(ct.Structure):  # Unused by new BPF code, kept for "minimal change"
     _fields_ = [
         ("timestamp_ns", ct.c_ulonglong),
         ("tgid", ct.c_uint),
@@ -83,57 +84,76 @@ def get_process_info(tid_int):
     """
     current_time_monotonic = time.monotonic()
 
-    if tid_int in _tid_not_found_cache and \
-       (current_time_monotonic - _tid_not_found_cache[tid_int]) < _TID_NOT_FOUND_CACHE_EXPIRY_SEC:
-        return None # Still in not-found cache
+    if (
+        tid_int in _tid_not_found_cache
+        and (current_time_monotonic - _tid_not_found_cache[tid_int])
+        < _TID_NOT_FOUND_CACHE_EXPIRY_SEC
+    ):
+        return None  # Still in not-found cache
 
     cached_info = _process_info_cache.get(tid_int)
-    if cached_info and (current_time_monotonic - cached_info['timestamp_mono']) < _CACHE_EXPIRY_TIME_SEC:
+    if (
+        cached_info
+        and (current_time_monotonic - cached_info["timestamp_mono"])
+        < _CACHE_EXPIRY_TIME_SEC
+    ):
         return cached_info
 
     try:
         comm_str = "N/A"
-        tgid_int = tid_int # Default tgid to tid if not found
+        tgid_int = tid_int  # Default tgid to tid if not found
         cgroup_id_val = 0
         proc_tid_path = f"/proc/{tid_int}"
 
         with open(f"{proc_tid_path}/comm", "r") as f:
             comm_str = f.read().strip()
-        
+
         with open(f"{proc_tid_path}/status", "r") as f:
             for line in f:
                 if line.startswith("Tgid:"):
                     tgid_int = int(line.split(":", 1)[1].strip())
                     break
-        
+
         # Get cgroup ID (inode of the cgroup directory)
         with open(f"{proc_tid_path}/cgroup", "r") as f_cgroup:
             for line_cg in f_cgroup:
-                parts = line_cg.strip().split(':')
+                parts = line_cg.strip().split(":")
                 if len(parts) >= 3:
                     cgroup_path_suffix = parts[-1]
-                    if cgroup_path_suffix.startswith('/'):
-                        full_cgroup_path = os.path.join(CGROUP_FS_ROOT, cgroup_path_suffix.lstrip('/'))
+                    if cgroup_path_suffix.startswith("/"):
+                        full_cgroup_path = os.path.join(
+                            CGROUP_FS_ROOT, cgroup_path_suffix.lstrip("/")
+                        )
                         if os.path.exists(full_cgroup_path):
                             cgroup_id_val = os.stat(full_cgroup_path).st_ino
-                            break 
+                            break
                         # Attempt fallback for common Docker cgroupfs (e.g., with 'cpu' controller)
                         # This can be environment-specific
-                        for controller_subdir in ["cpu", "cpuacct", "cpuset", ""]: # common controller names or unified path
+                        for controller_subdir in [
+                            "cpu",
+                            "cpuacct",
+                            "cpuset",
+                            "",
+                        ]:  # common controller names or unified path
                             alt_path_parts = [CGROUP_FS_ROOT]
                             if controller_subdir:
                                 alt_path_parts.append(controller_subdir)
-                            alt_path_parts.append(cgroup_path_suffix.lstrip('/'))
+                            alt_path_parts.append(cgroup_path_suffix.lstrip("/"))
                             alt_path = os.path.join(*alt_path_parts)
                             if os.path.exists(alt_path):
                                 cgroup_id_val = os.stat(alt_path).st_ino
                                 break
                         # This means we found it
-                        if cgroup_id_val != 0: 
+                        if cgroup_id_val != 0:
                             break
             # If still 0, means cgroup path resolution failed or not found.
-            
-        info = {'comm': comm_str, 'tgid': tgid_int, 'cgroup_id': cgroup_id_val, 'timestamp_mono': current_time_monotonic}
+
+        info = {
+            "comm": comm_str,
+            "tgid": tgid_int,
+            "cgroup_id": cgroup_id_val,
+            "timestamp_mono": current_time_monotonic,
+        }
         _process_info_cache[tid_int] = info
 
         # Remove from not-found if now found
@@ -184,7 +204,6 @@ def print_final_summary_river():
         print(header1)
         print(header2)
         print("-" * (len(header1) + len(header2) - 35 + 2))
-
 
     sorted_summary = sorted(
         aggregated_data_river.items(),
@@ -245,7 +264,7 @@ def print_final_summary_river():
             if rq_q1_val is not None and rq_q3_val is not None
             else None
         )
-        cgroup_disp = str(river_stats_dict["cgroup_id"])[:10] # For table display
+        cgroup_disp = str(river_stats_dict["cgroup_id"])[:10]  # For table display
 
         if as_table:
             oc_variance_display = (
@@ -262,7 +281,7 @@ def print_final_summary_river():
             summary_item = {
                 "tgid": tgid,
                 "comm": comm,
-                "cgroup_id": river_stats_dict["cgroup_id"], # Use the full cgroup_id
+                "cgroup_id": river_stats_dict["cgroup_id"],  # Use the full cgroup_id
                 "on_cpu_stats_ns": {
                     "count": oc_count,
                     "sum_ns": oc_sum_ns,
@@ -295,7 +314,9 @@ def print_final_summary_river():
                         - river_stats_dict["first_seen_ts_ns"]
                     )
                     / 1e9
-                    if river_stats_dict["first_seen_ts_ns"] > 0 and river_stats_dict["last_seen_ts_ns"] > river_stats_dict["first_seen_ts_ns"]
+                    if river_stats_dict["first_seen_ts_ns"] > 0
+                    and river_stats_dict["last_seen_ts_ns"]
+                    > river_stats_dict["first_seen_ts_ns"]
                     else 0
                 ),
             }
@@ -318,10 +339,13 @@ def signal_stop_handler(signum, frame):
 
 
 def collect_trace(
-    start_indicator_file_arg=None,
-    stop_indicator_file_arg=None,
+    start_indicator_file=None,
+    stop_indicator_file=None,
+    cgroup_indicator=None,
     output_as_table=True,
-    debug=False, # This flag is unused in provided code
+    include_regex=None,
+    exclude_regex=None,
+    debug=False,  # This flag is unused in provided code
 ):
     global running
     global as_table
@@ -331,6 +355,9 @@ def collect_trace(
     global include_patterns
     global exclude_patterns
     as_table = output_as_table
+    exclude_patterns = exclude_regex
+    include_patterns = include_regex
+    cgroup_indicator_file = cgroup_indicator
     # aggregated_data_river.clear() # Already a defaultdict, will be new on each script run
 
     signal.signal(signal.SIGINT, signal_stop_handler)
@@ -341,9 +368,9 @@ def collect_trace(
             cgroup_id_filter = helpers.get_cgroup_filter(cgroup_indicator_file)
             helpers.log(f"Applied cgroup ID filter: {cgroup_id_filter}")
 
-    if start_indicator_file_arg is not None:
-        helpers.log(f"Waiting for start indicator file: '{start_indicator_file_arg}'.")
-        while running and not os.path.exists(start_indicator_file_arg):
+    if start_indicator_file is not None:
+        helpers.log(f"Waiting for start indicator file: '{start_indicator_file}'.")
+        while running and not os.path.exists(start_indicator_file):
             time.sleep(0.2)
         if not running:
             return
@@ -352,7 +379,7 @@ def collect_trace(
     bpf_instance = None
     # Define polling interval for reading BPF maps (e.g., 1 second)
     # Match original ring_buffer_poll timeout of 100ms if frequent updates are desired
-    polling_interval_seconds = 0.1 # Adjust as needed
+    polling_interval_seconds = 0.1  # Adjust as needed
 
     try:
         helpers.log("Initializing eBPF for CPU Scheduling monitoring...")
@@ -373,20 +400,22 @@ def collect_trace(
         # Get the BPF map for aggregated stats
         agg_stats_map = bpf_instance.get_table("aggregated_task_stats")
 
-        helpers.log("Monitoring CPU scheduling events (polling aggregated map)... Press Ctrl+C to stop.")
-        
+        helpers.log(
+            "Monitoring CPU scheduling events (polling aggregated map)... Press Ctrl+C to stop."
+        )
+
         while running:
 
-             # Polling interval
+            # Polling interval
             time.sleep(polling_interval_seconds)
 
-             # Timestamp for this polling batch
+            # Timestamp for this polling batch
             current_loop_ts_ns = time.time_ns()
 
             # Iterate over aggregated_task_stats map
             # For PERCPU_HASH, items() returns a list of values (one per CPU) for each key
             for tid_bpf, stats_per_cpu_list in agg_stats_map.items():
-                tid_val = tid_bpf.value # This is the Thread ID (kernel PID)
+                tid_val = tid_bpf.value  # This is the Thread ID (kernel PID)
 
                 # Aggregate stats from all CPUs for this TID for this interval
                 interval_total_on_cpu_ns = 0
@@ -394,38 +423,49 @@ def collect_trace(
                 interval_on_cpu_count = 0
                 interval_runq_count = 0
 
-                for cpu_stat in stats_per_cpu_list: # cpu_stat is 'struct task_aggr_stats'
+                for (
+                    cpu_stat
+                ) in stats_per_cpu_list:  # cpu_stat is 'struct task_aggr_stats'
                     interval_total_on_cpu_ns += cpu_stat.total_on_cpu_ns
                     interval_total_runq_latency_ns += cpu_stat.total_runq_latency_ns
                     interval_on_cpu_count += cpu_stat.on_cpu_count
                     interval_runq_count += cpu_stat.runq_count
-                
+
                 if interval_on_cpu_count == 0 and interval_runq_count == 0:
-                    continue # No activity for this TID in this interval
+                    continue  # No activity for this TID in this interval
 
                 # Get process info (comm, tgid, cgroup_id) from /proc
                 proc_info = get_process_info(tid_val)
                 if not proc_info:
                     # helpers.log(f"Skipping TID {tid_val}, process info not found (likely exited).", "DEBUG")
                     continue
-                
-                comm_str = proc_info['comm']
-                tgid_val = proc_info['tgid']
-                fetched_cgroup_id = proc_info['cgroup_id']
+
+                comm_str = proc_info["comm"]
+                tgid_val = proc_info["tgid"]
+                fetched_cgroup_id = proc_info["cgroup_id"]
 
                 # Apply filters
-                if include_patterns and not any(p.search(comm_str) for p in include_patterns):
+                if include_patterns and not any(
+                    p.search(comm_str) for p in include_patterns
+                ):
                     continue
-                if exclude_patterns and any(p.search(comm_str) for p in exclude_patterns):
+                if exclude_patterns and any(
+                    p.search(comm_str) for p in exclude_patterns
+                ):
                     continue
-                if cgroup_id_filter is not None and str(fetched_cgroup_id) != cgroup_id_filter:
+                if (
+                    cgroup_id_filter is not None
+                    and str(fetched_cgroup_id) != cgroup_id_filter
+                ):
                     continue
 
                 # Update aggregated_data_river
                 agg_key = (tgid_val, comm_str)
                 river_stats = aggregated_data_river[agg_key]
 
-                river_stats["cgroup_id"] = fetched_cgroup_id # Update with most recently fetched cgroup_id
+                river_stats["cgroup_id"] = (
+                    fetched_cgroup_id  # Update with most recently fetched cgroup_id
+                )
                 if river_stats["first_seen_ts_ns"] == 0:
                     river_stats["first_seen_ts_ns"] = current_loop_ts_ns
                 river_stats["last_seen_ts_ns"] = current_loop_ts_ns
@@ -433,7 +473,9 @@ def collect_trace(
                 # Update River stats objects with data from this interval
                 # Note: This feeds interval averages. Min/Max/Quantiles will be of these averages.
                 if interval_on_cpu_count > 0:
-                    avg_on_cpu_ns_interval = interval_total_on_cpu_ns / interval_on_cpu_count
+                    avg_on_cpu_ns_interval = (
+                        interval_total_on_cpu_ns / interval_on_cpu_count
+                    )
                     river_stats["on_cpu_ns_var"].update(avg_on_cpu_ns_interval)
                     river_stats["on_cpu_ns_min"].update(avg_on_cpu_ns_interval)
                     river_stats["on_cpu_ns_max"].update(avg_on_cpu_ns_interval)
@@ -442,26 +484,42 @@ def collect_trace(
                     river_stats["on_cpu_ns_q3"].update(avg_on_cpu_ns_interval)
 
                 if interval_runq_count > 0:
-                    avg_runq_latency_ns_interval = interval_total_runq_latency_ns / interval_runq_count
-                    river_stats["runq_latency_ns_var"].update(avg_runq_latency_ns_interval)
-                    river_stats["runq_latency_ns_min"].update(avg_runq_latency_ns_interval)
-                    river_stats["runq_latency_ns_max"].update(avg_runq_latency_ns_interval)
-                    river_stats["runq_latency_ns_median"].update(avg_runq_latency_ns_interval)
-                    river_stats["runq_latency_ns_q1"].update(avg_runq_latency_ns_interval)
-                    river_stats["runq_latency_ns_q3"].update(avg_runq_latency_ns_interval)
+                    avg_runq_latency_ns_interval = (
+                        interval_total_runq_latency_ns / interval_runq_count
+                    )
+                    river_stats["runq_latency_ns_var"].update(
+                        avg_runq_latency_ns_interval
+                    )
+                    river_stats["runq_latency_ns_min"].update(
+                        avg_runq_latency_ns_interval
+                    )
+                    river_stats["runq_latency_ns_max"].update(
+                        avg_runq_latency_ns_interval
+                    )
+                    river_stats["runq_latency_ns_median"].update(
+                        avg_runq_latency_ns_interval
+                    )
+                    river_stats["runq_latency_ns_q1"].update(
+                        avg_runq_latency_ns_interval
+                    )
+                    river_stats["runq_latency_ns_q3"].update(
+                        avg_runq_latency_ns_interval
+                    )
 
             # Clear the BPF map after processing its contents for this interval
             # This gets fresh aggregates for the next interval.
             agg_stats_map.clear()
 
-            if stop_indicator_file_arg is not None and os.path.exists(stop_indicator_file_arg):
-                helpers.log(f"Stop indicator file '{stop_indicator_file_arg}' found. Stopping.")
+            if stop_indicator_file is not None and os.path.exists(stop_indicator_file):
+                helpers.log(
+                    f"Stop indicator file '{stop_indicator_file}' found. Stopping."
+                )
                 running = False
-            
+
             # Check running flag again, in case signal handled during sleep or processing
             if not running:
                 break
-            
+
     except Exception as e:
         helpers.log(f"Error or interrupt during BPF setup or main loop: {e}")
         traceback.print_exc()
@@ -480,32 +538,3 @@ def collect_trace(
         _process_info_cache.clear()
         _tid_not_found_cache.clear()
         helpers.log("Cleanup complete. Exiting.")
-
-
-def main():
-    global include_patterns
-    global exclude_patterns
-    global cgroup_indicator_file
-
-    if os.geteuid() != 0:
-        helpers.log("This script must be run as root.", exit_flag=True)
-
-    parser = helpers.get_parser("eBPF CPU Scheduler Analyzer with RiverML full stats.")
-    args, _ = parser.parse_known_args()
-
-    if args.include_pattern:
-        include_patterns = [re.compile(p) for p in args.include_pattern]
-    if args.exclude_pattern:
-        exclude_patterns = [re.compile(p) for p in args.exclude_pattern]
-
-    cgroup_indicator_file = args.cgroup_indicator_file
-
-    collect_trace(
-        args.start_indicator_file,
-        args.stop_indicator_file,
-        not args.json,
-        args.debug, # We aren't using this now, passing for consistency.
-    )
-
-if __name__ == "__main__":
-    main()
