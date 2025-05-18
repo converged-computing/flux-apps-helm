@@ -11,241 +11,351 @@ import sys
 
 # Global indicator to set to stop running
 running = True
-as_table = True
+as_table_summary = True
 include_patterns = None
 exclude_patterns = None
 cgroup_indicator_file = None
-cgroup_id = None
+cgroup_id_filter = None
 
 here = os.path.dirname(os.path.abspath(__file__))
 root = os.path.dirname(here)
 sys.path.insert(0, root)
 import bcchelper as helpers
 
-bpf_text = helpers.read_bpf_text(os.path.abspath(__file__))
+BPF_C_PROGRAM_FILENAME = "ebpf-collect.c"
+bpf_text = helpers.read_bpf_text(os.path.join(here, BPF_C_PROGRAM_FILENAME))
 
-# Python constants and ctypes (same as before)
+# Python constants and ctypes
 MAX_FILENAME_LEN_PY = 256
 TASK_COMM_LEN_PY = 16
 FILENAME_DISPLAY_WIDTH = 50
-EVENT_OPEN_PY = 0
-EVENT_CLOSE_PY = 1
 
 
-class EventData(ct.Structure):
+# CTypes for BPF map structures (must match C code)
+class FileKeyData(ct.Structure):
     _fields_ = [
-        ("timestamp_ns", ct.c_ulonglong),
-        ("tgid", ct.c_uint),
-        ("tid", ct.c_uint),
-        ("ppid", ct.c_uint),
-        ("cgroup_id", ct.c_ulonglong),
-        ("comm", ct.c_char * TASK_COMM_LEN_PY),
-        ("type", ct.c_int),
         ("filename", ct.c_char * MAX_FILENAME_LEN_PY),
-        ("fd", ct.c_int),
-        ("ret_val", ct.c_int),
     ]
 
 
+class FileSummaryData(ct.Structure):
+    _fields_ = [
+        ("open_count", ct.c_ulonglong),
+        ("close_count", ct.c_ulonglong),
+        ("tgid", ct.c_uint),
+        ("comm", ct.c_char * TASK_COMM_LEN_PY),
+        ("cgroup_id", ct.c_ulonglong),
+    ]
+
+
+# Debug Event CTypes (must match C code)
 class DebugEventData(ct.Structure):
     _fields_ = [
         ("id", ct.c_ulonglong),
         ("stage", ct.c_int),
         ("val1", ct.c_long),
         ("val2", ct.c_long),
+        ("SDBGa", ct.c_char * 16),  # Matches C struct
+        ("SDBGb", ct.c_char * 16),  # Matches C struct
     ]
 
 
+# Debug Enum values (must match C code for debug_events_rb)
 DBG_OPEN_ENTRY_START = 100
 DBG_OPEN_ENTRY_READ_DONE = 101
+DBG_OPEN_ENTRY_UPDATE_FAIL = 102
 DBG_OPEN_RETURN_START = 200
-DBG_OPEN_RETURN_LOOKUP_DONE = 201
-
+DBG_OPEN_RETURN_LOOKUP_FAIL = 201  # Placeholder if used
+DBG_OPEN_RETURN_NO_KEY = 202
+DBG_OPEN_RETURN_ACTIVE_FD_UPDATE_FAIL = 203
+DBG_OPEN_RETURN_STATS_UPDATE_FAIL = 204
 DBG_CLOSE_ENTRY_START = 300
-DBG_CLOSE_ENTRY_SUBMITTING = 301
-DBG_CLOSE_RETURN_DONE = 302
+DBG_CLOSE_ACTIVE_FD_LOOKUP_FAIL = 301
+DBG_CLOSE_STATS_LOOKUP_FAIL = 302
+DBG_CLOSE_STATS_UPDATE_FAIL = 303
 
 
-def print_event_ringbuf_cb(ctx, data, size):
-    """
-    Print output from the ring buffer, either as a table or json
-    """
-    global as_table
-    global include_patterns
-    global exclude_patterns
-    global cgroup_indicator_file
-    global cgroup_id
-
-    # Do we have a cgroup indicator file written?
-    if cgroup_indicator_file is not None and cgroup_id is None:
-        if os.path.exists(cgroup_indicator_file):
-            cgroup_id = helpers.read_file(cgroup_indicator_file).strip()
-            print(f"Scoping to cgroup {cgroup_id}")
-
-    event = ct.cast(data, ct.POINTER(EventData)).contents
-    epatterns = "(%s)" % "|".join(exclude_patterns or [])
-    ipatterns = "(%s)" % "|".join(include_patterns or [])
-
-    # Convert to seconds from nanoseconds
-    timestamp = event.timestamp_ns / 1e9
-
-    # Get the command, in the event it is called "comm"
-    try:
-        comm = event.comm.decode("utf-8", "replace").rstrip("\x00")
-    except:
-        comm = "<comm_err>"
-    if include_patterns and not re.search(ipatterns, comm):
-        return
-    if exclude_patterns and re.search(epatterns, comm):
-        return
-
-    # Cut out early if not the right cgroup
-    if cgroup_id is not None and str(event.cgroup_id) != cgroup_id:
-        return
-
-    # Event type (open or close) and filename
-    # Let's just keep the opens for now, we aren't timing anything
-    filename = ""
-    if event.type == EVENT_OPEN_PY:
-        event_type = "OPEN"
-        try:
-            filename = event.filename.decode("utf-8", "replace").rstrip("\x00")
-        except:
-            filename = "<error>"
-    elif event.type == EVENT_CLOSE_PY:
-        event_type = "CLOSE"
-    else:
-        raise ValueError("EVENT TYPE NOT KNOWN {event.type}")
-
-    # Don't bother if no filename - we aren't timing things for now
-    if as_table:
-        print_table(event, comm, event_type, filename, timestamp)
-    else:
-        print_json(event, comm, event_type, filename, timestamp)
-
-
-def print_json(event, comm, event_type, filename, timestamp):
-    """
-    Print the event as json
-    """
-    body = {
-        "event": event_type,
-        "command": comm,
-        "retval": event.ret_val,
-        "ts_sec": timestamp,
-        "tgid": event.tgid,
-        "tid": event.tid,
-        "ppid": event.ppid,
-        "cgroup_id": event.cgroup_id,
-    }
-    # I can't get close to have them
-    if filename:
-        body["filename"] = filename
-    # I don't think we can get cgroups for things in proc
-    if "/proc" in filename:
-        del body["cgroup_id"]
-    print(json.dumps(body))
-
-
-def print_table(event, comm, event_type, filename, timestamp):
-    """
-    Print the event as a table
-    """
-    # Ensure we don't go over the terminal width
-    if len(filename) > FILENAME_DISPLAY_WIDTH:
-        filename = filename[: FILENAME_DISPLAY_WIDTH - 3] + "..."
-    event_type_field = f"TYPE({event_type})"
-    details = f' RET:{event.ret_val:<3} FILE: "{filename}"'
-    print(
-        f"EVENT: {timestamp:<18.6f} {event.tgid:<7} {comm:<{TASK_COMM_LEN_PY}} {event_type_field:<6} {details}"
+def print_summary_table_header():
+    header = (
+        f"{'FILENAME':<{FILENAME_DISPLAY_WIDTH}} | "
+        f"{'COMM':<{TASK_COMM_LEN_PY}} | "
+        f"{'TGID':<7} | "
+        f"{'CGROUP_ID':<10} | "
+        f"{'OPENS':<7} | "
+        f"{'CLOSES':<7}"
     )
+    print(header)
+    print("-" * len(header))
+
+
+def print_summary_table_row(file_key_obj, summary_data_obj):
+    global include_patterns, exclude_patterns, cgroup_id_filter
+    try:
+        # file_key_obj is FileKeyData instance
+        filename = file_key_obj.filename.decode("utf-8", "replace").rstrip("\x00")
+    except Exception:
+        filename = "<fn_err>"
+
+    try:
+        # summary_data_obj is FileSummaryData instance
+        comm = summary_data_obj.comm.decode("utf-8", "replace").rstrip("\x00")
+    except Exception:
+        comm = "<comm_err>"
+
+    # Apply Python-side filtering on display
+    if include_patterns:
+        ipatterns = "(%s)" % "|".join(include_patterns)
+        if not re.search(ipatterns, comm):
+            return False  # Indicates row should not be printed
+    if exclude_patterns:
+        epatterns = "(%s)" % "|".join(exclude_patterns)
+        if re.search(epatterns, comm):
+            return False
+    if (
+        cgroup_id_filter is not None
+        and str(summary_data_obj.cgroup_id) != cgroup_id_filter
+    ):
+        return False
+
+    display_filename = filename
+    if len(display_filename) > FILENAME_DISPLAY_WIDTH:
+        display_filename = display_filename[: FILENAME_DISPLAY_WIDTH - 3] + "..."
+
+    print(
+        f"{display_filename:<{FILENAME_DISPLAY_WIDTH}} | "
+        f"{comm:<{TASK_COMM_LEN_PY}} | "
+        f"{summary_data_obj.tgid:<7} | "
+        f"{summary_data_obj.cgroup_id:<10} | "
+        f"{summary_data_obj.open_count:<7} | "
+        f"{summary_data_obj.close_count:<7}"
+    )
+    return True  # Indicates row was printed
+
+
+def print_summary_json_entry(file_key_obj, summary_data_obj, timestamp):
+    global include_patterns, exclude_patterns, cgroup_id_filter
+    try:
+        filename = file_key_obj.filename.decode("utf-8", "replace").rstrip("\x00")
+    except Exception:
+        filename = "<fn_err>"
+
+    try:
+        comm = summary_data_obj.comm.decode("utf-8", "replace").rstrip("\x00")
+    except Exception:
+        comm = "<comm_err>"
+
+    # Apply Python-side filtering
+    if include_patterns:
+        ipatterns = "(%s)" % "|".join(include_patterns)
+        if not re.search(ipatterns, comm):
+            return None
+    if exclude_patterns:
+        epatterns = "(%s)" % "|".join(exclude_patterns)
+        if re.search(epatterns, comm):
+            return None
+    if (
+        cgroup_id_filter is not None
+        and str(summary_data_obj.cgroup_id) != cgroup_id_filter
+    ):
+        return None
+
+    entry = {
+        "filename": filename,
+        "command": comm,
+        "tgid": summary_data_obj.tgid,
+        "cgroup_id": summary_data_obj.cgroup_id,
+        "open_count": summary_data_obj.open_count,
+        "close_count": summary_data_obj.close_count,
+        "summary_timestamp": timestamp,  # Timestamp of when Python generated this summary
+    }
+    if "/proc" in filename and "cgroup_id" in entry:
+        del entry["cgroup_id"]
+    return entry
+
+
+def print_final_summary_from_map(bpf_instance):
+    global as_table_summary, cgroup_indicator_file, cgroup_id_filter
+
+    helpers.log("DEBUG: Entered print_final_summary_from_map function.")
+
+    if bpf_instance is None:
+        print(
+            "ERROR: Python print_final_summary_from_map: bpf_instance is None!",
+            file=sys.stderr,
+        )
+        return
+
+    summary_map = None
+    try:
+        summary_map = bpf_instance.get_table("file_stats_map")
+        helpers.log(
+            "DEBUG: Python print_final_summary_from_map: Successfully got 'file_stats_map'."
+        )
+    except Exception as e_get_table:
+        print(
+            f"ERROR: Python print_final_summary_from_map: Exception when calling get_table('file_stats_map'): {e_get_table}",
+            file=sys.stderr,
+        )
+        return
+
+    if not summary_map:
+        print(
+            "ERROR: Python print_final_summary_from_map: Could not get 'file_stats_map' (it's None after get_table).",
+            file=sys.stderr,
+        )
+        return
+
+    items = []
+    try:
+        items = list(summary_map.items())
+        helpers.log(
+            f"DEBUG: Python print_final_summary_from_map: summary_map.items() call returned {len(items)} items."
+        )
+    except Exception as e_items:
+        print(
+            f"ERROR: Python print_final_summary_from_map: Exception when calling summary_map.items(): {e_items}",
+            file=sys.stderr,
+        )
+        return
+
+    if len(items) == 0:
+        print(
+            "INFO: Python print_final_summary_from_map: 'file_stats_map' is empty or all items were filtered out by BPF-side logic.",
+            file=sys.stderr,
+        )
+        if include_patterns or exclude_patterns or cgroup_id_filter:
+            print(
+                f"INFO: Python print_final_summary_from_map: Current Python filters: include={include_patterns}, exclude={exclude_patterns}, cgroup_filter={cgroup_id_filter}",
+                file=sys.stderr,
+            )
+        return
+
+    helpers.log(
+        "DEBUG: Python print_final_summary_from_map: Map is not empty, proceeding to print."
+    )
+
+    # Update cgroup_id_filter if indicator file is present
+    if (
+        cgroup_indicator_file is not None and cgroup_id_filter is None
+    ):  # Check only if not already set
+        if os.path.exists(cgroup_indicator_file):
+            globals()["cgroup_id_filter"] = helpers.read_file(
+                cgroup_indicator_file
+            ).strip()
+            helpers.log(f"SUMMARY: Scoping to cgroup {cgroup_id_filter}")
+
+    if as_table_summary:
+        print("\n--- Final File Access Summary ---")
+        print_summary_table_header()
+        printed_rows = 0
+        for file_key, summary_data in items:
+            if print_summary_table_row(file_key, summary_data):
+                printed_rows += 1
+        if printed_rows == 0 and len(items) > 0:
+            print(
+                "INFO: All items from BPF map were filtered out by Python-side display filters.",
+                file=sys.stderr,
+            )
+
+    else:  # JSON output
+        json_output_list = []
+        summary_ts = time.time()
+        for file_key, summary_data in items:
+            entry = print_summary_json_entry(file_key, summary_data, summary_ts)
+            if entry:
+                json_output_list.append(entry)
+
+        if not json_output_list and len(items) > 0:
+            print(
+                "INFO: All items from BPF map were filtered out by Python-side display filters.",
+                file=sys.stderr,
+            )
+        elif json_output_list:
+            print(json.dumps(json_output_list, indent=2))
+
+    # For kernel-side aggregation, map clearing is usually not done by the reader unless specifically designed for delta views.
+    # summary_map.clear() # If you wanted to clear it for some reason.
 
 
 def print_debug_event_cb(ctx, data, size):
-    """
-    Print debug info. This is important because I stopped seeing opens, and it was
-    because I was getting a -14 response, meaning the open failed.
-    """
     event = ct.cast(data, ct.POINTER(DebugEventData)).contents
-    stage = "UNKNOWN_DBG"
-    pid_tgid = event.id
-    val1 = event.val1
-    val2 = event.val2
-
+    stage_name = "UNKNOWN_DBG"
+    # Map enum int to string name - can be made more elegant with a dict
     if event.stage == DBG_OPEN_ENTRY_START:
-        stage = "OPEN_ENTRY_START"
+        stage_name = "OPEN_ENTRY_START"
     elif event.stage == DBG_OPEN_ENTRY_READ_DONE:
-        stage = "OPEN_ENTRY_READ_DONE"
+        stage_name = "OPEN_ENTRY_READ_DONE"
+    elif event.stage == DBG_OPEN_ENTRY_UPDATE_FAIL:
+        stage_name = "OPEN_ENTRY_UPDATE_FAIL"
     elif event.stage == DBG_OPEN_RETURN_START:
-        stage = "OPEN_RETURN_START"
-    elif event.stage == DBG_OPEN_RETURN_LOOKUP_DONE:
-        stage = "OPEN_RETURN_LOOKUP_DONE"
+        stage_name = "OPEN_RETURN_START"
+    elif event.stage == DBG_OPEN_RETURN_NO_KEY:
+        stage_name = "OPEN_RETURN_NO_KEY"
+    elif event.stage == DBG_OPEN_RETURN_ACTIVE_FD_UPDATE_FAIL:
+        stage_name = "OPEN_RETURN_ACTIVE_FD_UPDATE_FAIL"
+    elif event.stage == DBG_OPEN_RETURN_STATS_UPDATE_FAIL:
+        stage_name = "OPEN_RETURN_STATS_UPDATE_FAIL"
     elif event.stage == DBG_CLOSE_ENTRY_START:
-        stage = "CLOSE_ENTRY_START"
-    elif event.stage == DBG_CLOSE_ENTRY_SUBMITTING:
-        stage = "CLOSE_ENTRY_SUBMITTING"
-    elif event.stage == DBG_CLOSE_RETURN_DONE:
-        stage = "CLOSE_RETURN_DONE"
-    print(f"DEBUG: ID:{pid_tgid:<12} STAGE: {stage:<25} VAL1:{val1:<7} VAL2:{val2:<7}")
+        stage_name = "CLOSE_ENTRY_START"
+    elif event.stage == DBG_CLOSE_ACTIVE_FD_LOOKUP_FAIL:
+        stage_name = "CLOSE_ACTIVE_FD_LOOKUP_FAIL"
+    elif event.stage == DBG_CLOSE_STATS_LOOKUP_FAIL:
+        stage_name = "CLOSE_STATS_LOOKUP_FAIL"
+    elif event.stage == DBG_CLOSE_STATS_UPDATE_FAIL:
+        stage_name = "CLOSE_STATS_UPDATE_FAIL"
+
+    sdbga = event.SDBGa.decode("utf-8", "replace").rstrip("\x00")
+    sdbgb = event.SDBGb.decode("utf-8", "replace").rstrip("\x00")
+
+    print(
+        f"BPF_DBG: ID:{event.id:<10} STAGE:{event.stage}({stage_name:<30}) V1:{event.val1:<7} V2:{event.val2:<5} S1:'{sdbga}' S2:'{sdbgb}'"
+    )
 
 
 def signal_stop_handler(signum, frame):
-    """
-    Set running to False if we get a signal to do so.
-
-    This would trigger if we had a success completion policy on the Flux
-    Operator, but instead we are just looking for a file indicator.
-    """
     global running
     print("\nSignal received, stopping...", file=sys.stderr)
     running = False
-
-
-def print_table_header():
-    """
-    Print a header for the table (human friendly variant to json)
-    """
-    print(
-        f"{'TYPE':<6} {'TIMESTAMP':<18} {'TGID':<7} {'COMMAND':<{TASK_COMM_LEN_PY}} {'EVENT':<6} {'DETAILS'}"
-    )
-    header_line_len = (
-        6 + 19 + 8 + TASK_COMM_LEN_PY + 7 + 6 + FILENAME_DISPLAY_WIDTH + 25
-    )
-    print("-" * header_line_len)
 
 
 def collect_trace(
     start_indicator_file=None,
     stop_indicator_file=None,
     cgroup_indicator=None,
-    output_as_table=True,
-    include_regex=None,
-    exclude_regex=None,
-    debug=False,  # This flag is unused in provided code
+    output_as_table_summary=True,
+    include_regex_list=None,
+    exclude_regex_list=None,
+    debug=False,
 ):
     global running
-    global as_table
+    global as_table_summary
     global cgroup_indicator_file
     global cgroup_id_filter
-    global aggregated_data_river
     global include_patterns
     global exclude_patterns
-    as_table = output_as_table
-    exclude_patterns = exclude_regex
-    include_patterns = include_regex
-    cgroup_indicator_file = cgroup_indicator
-    # aggregated_data_river.clear() # Already a defaultdict, will be new on each script run
 
-    # Setup signal handlers
+    as_table_summary = output_as_table_summary
+    include_patterns = include_regex_list
+    exclude_patterns = exclude_regex_list
+    cgroup_indicator_file = cgroup_indicator
+    # cgroup_id_filter will be set if cgroup_indicator is found
+
     signal.signal(signal.SIGINT, signal_stop_handler)
     signal.signal(signal.SIGTERM, signal_stop_handler)
 
-    helpers.log("Starting eBPF (Tracepoint for open entry).")
+    helpers.log(
+        f"Starting eBPF with C code: {BPF_C_PROGRAM_FILENAME} (Kernel-Side Aggregation)"
+    )
+
+    if start_indicator_file is not None:
+        helpers.log(f"Start Indicator file defined '{start_indicator_file}'. Waiting.")
+        while running and not os.path.exists(start_indicator_file):
+            time.sleep(0.2)
+        helpers.log("Start indicator found. Proceeding.")
+
     try:
-        # Create the bpf program (I think this compiles)
         bpf_instance = BPF(text=bpf_text)
 
-        # These are kprobes for opens and closes
         bpf_instance.attach_kretprobe(
             event=bpf_instance.get_syscall_fnname("openat"),
             fn_name="trace_openat_return_kretprobe",
@@ -256,57 +366,54 @@ def collect_trace(
         )
 
     except Exception as e:
-        helpers.log(f"Error initializing/attaching BPF: {e}", exit=True)
-
-    # Only print a header if it's a table...
-    if as_table:
-        print_table_header()
-
-    # Are we filtering to a cgroup?
-    if cgroup_indicator_file is not None:
-        helpers.log(f"\nCgroup Indicator file defined '{cgroup_indicator_file}'.")
-
-    # Wait to start, if applicable
-    if start_indicator_file is not None:
-        helpers.log(
-            f"\nStart Indicator file defined '{start_indicator_file}'. Waiting."
+        print(
+            f"PYTHON CRITICAL ERROR during BPF init/attach: {type(e).__name__}: {e}",
+            file=sys.stderr,
         )
-        while not os.path.exists(start_indicator_file):
-            time.sleep(1)
+        import traceback
 
-    # We are going to open ring buffers
-    try:
-        bpf_instance["events"].open_ring_buffer(print_event_ringbuf_cb, ctx=None)
-        # Debug printing, if needed
-        if debug:
-            bpf_instance["debug_events_rb"].open_ring_buffer(
-                print_debug_event_cb, ctx=None
-            )
+        traceback.print_exc()
+        print(
+            "PYTHON CRITICAL ERROR: Exiting due to BPF load/attach failure.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
-    except Exception as e:
-        helpers.log(f"Failed to open ring buffer(s): {e}")
-        if bpf_instance:
-            bpf_instance.cleanup()
-            sys.exit(1)
+    if bpf_instance is None:
+        print(
+            "PYTHON CRITICAL ERROR: BPF loading/attachment failed silently or bpf_instance is None. Exiting.",
+            file=sys.stderr,
+        )
+        sys.exit(1)  # Force exit
 
-    # As this is running, poll the ring buffer to get output
+    helpers.log("eBPF program started. Aggregating file access summaries in kernel...")
+
     try:
         while running:
-            bpf_instance.ring_buffer_poll(timeout=100)
-
-            # If the indicator file is present, we are done.
-            # The Flux Operator has finished running the app and generated it.
+            time.sleep(0.2)  # Sleep briefly if not polling debug ring buffer
             if stop_indicator_file is not None and os.path.exists(stop_indicator_file):
                 helpers.log(
                     f"\nIndicator file '{stop_indicator_file}' found. Stopping."
                 )
                 running = False
-
-    # Stop due to exception or other
     except Exception as e:
-        helpers.log(f"\nError during polling: {e}")
+        helpers.log(f"\nError or interrupt during main loop: {e}")
         running = False
     finally:
-        helpers.log("Cleaning up BPF resources...")
-        if bpf_instance:
-            bpf_instance.cleanup()
+        if bpf_instance is not None:
+            try:
+                print_final_summary_from_map(bpf_instance)
+            except Exception as e_summary:
+                print(f"Error printing summary: {e_summary}", file=sys.stderr)
+            try:
+                bpf_instance.cleanup()
+            except Exception as e_cleanup:
+                print(
+                    f"Exception during bpf_instance.cleanup(): {e_cleanup}",
+                    file=sys.stderr,
+                )
+        else:
+            print(
+                "bpf_instance is None in finally block. BPF program likely failed to load.",
+                file=sys.stderr,
+            )

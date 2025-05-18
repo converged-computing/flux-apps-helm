@@ -396,15 +396,15 @@ def collect_trace(
     except Exception as e:
         helpers.log(f"Error initializing/attaching BPF: {e}", exit_flag=True)
 
-    # Initial read of cgroup filter from file if cgroup_indicator_file (global) is set
-    if cgroup_indicator_file and os.path.exists(cgroup_indicator_file):
-        helpers.get_cgroup_filter(cgroup_indicator_file)
-
     if start_indicator_file is not None:
         helpers.log(f"Start Indicator file defined '{start_indicator_file}'. Waiting.")
         while running and not os.path.exists(start_indicator_file):
             time.sleep(0.2)
         helpers.log("Start indicator found. Proceeding.")
+
+    # Initial read of cgroup filter from file if cgroup_indicator_file (global) is set
+    if cgroup_indicator_file and os.path.exists(cgroup_indicator_file):
+        helpers.get_cgroup_filter(cgroup_indicator_file)
 
     # Print per-event table header if table output is chosen for events
     if table:

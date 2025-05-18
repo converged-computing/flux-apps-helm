@@ -8,7 +8,7 @@ import sys
 
 
 here = os.path.dirname(__file__)
-known_programs = [x for x in os.listdir(here) if os.path.isdir(x)]
+known_programs = ["cpu", "tcp", "shmem", "futex", "open_close"]
 
 sys.path.insert(0, here)
 
@@ -28,6 +28,7 @@ def get_parser(description):
     )
     parser.add_argument(
         "--nodes",
+        type=int,
         help="Total nodes in the study. If not provided, the analysis is randomly selected.",
         default=None,
     )
@@ -71,9 +72,9 @@ def get_parser(description):
     return parser
 
 
-def select_program(nodes, programs):
+def select_program(nodes, programs, index):
     """
-    Determine the program to run based on a number of total nodes
+    Determine the program to run based on a number of total nodes and pod index
     """
     start = 0
     # 0 index
@@ -83,10 +84,13 @@ def select_program(nodes, programs):
     # If we have more programs than nodes, select randomly
     if count > nodes:
         print("More programs than nodes - will randomly select.")
-        return random.select(programs)
+        return random.choice(programs)
 
     interval_size = (end - start) / count
-    index = int((count - start) / interval_size)
+    index = int((index - start) / interval_size)
+    if index >= len(programs):
+        print("More programs than nodes - will randomly select.")
+        return random.choice(programs)
     return programs[index]
 
 
@@ -123,7 +127,7 @@ def main():
             raise ValueError(
                 "More than one program selected in multi node environment. Set JOB_COMPLETION_INDEX to select."
             )
-        args.program = select_program(args.nodes, args.program)
+        args.program = select_program(args.nodes, args.program, int(index))
 
     print(f"PROGRAM: {args.program}")
 
@@ -137,11 +141,10 @@ def main():
         args.stop_indicator_file,
         args.cgroup_indicator_file,
         not args.json,
-        include_patterns,
-        exclude_patterns,
+        args.include_pattern,
+        args.exclude_pattern,
         args.debug,  # We aren't using this now, passing for consistency.
     )
-
 
 if __name__ == "__main__":
     main()
