@@ -543,14 +543,13 @@ For this setup, you'll see `flux submit` so the jobs will run at the same time o
 
 ##### 3. Monitor with BCC
 
-This setup will deploy a sidecar and monitor different interacts with bcc. We have several programs that help to understand tcp, file open/closes, or futex wait times. Although you can filter to a cgroup or command, for the default we allow all containers in the pod to be seen. It generates a lot more data, but is interesting. This might need to be tweaked for actual experiments if the data is too big. The default is file open/close (you could leave out `monitor_program`) below:
+This setup will deploy a sidecar and monitor different interacts with bcc. We have several programs that help to understand tcp, file open/closes, or futex wait times. Although you can filter to a cgroup or command, for the default we allow all containers in the pod to be seen. It generates a lot more data, but is interesting. This might need to be tweaked for actual experiments if the data is too big. Here is how to select a metric:
 
 ```bash
 helm install \
-  --set experiment.monitor_program=open-close \
-  --set experiment.monitor=true \
+  --set experiment.monitor=open-code \
   --set minicluster.save_logs=true \
-  lammps ./lammps-reax
+  --dry-run lammps ./lammps-reax
 ```
 
 <details>
@@ -578,63 +577,12 @@ Cleaning up BPF resources...
 
 </details>
 
-Here is how to see futex wait times.
+Here is how to do multiple at once:
 
 ```bash
 helm install \
-  --set experiment.monitor_program=futex-model \
-  --set experiment.monitor=true \
+  --set experiment.monitor="cpu-model|shmem|tcp-model|futex-model|open-close" \
   --set minicluster.save_logs=true \
-  lammps ./lammps-reax
-```
-
-The `futex-model` is going to print river models grouped by tgid and comm. Here is tcp
-
-```bash
-helm install \
-  --set experiment.monitor_program=tcp \
-  --set experiment.monitor=true \
-  --set minicluster.save_logs=true \
-  lammps ./lammps-reax
-```
-
-Here is example data:
-
-```bash
-{"event_type": "RECV", "timestamp_sec": 3978.855691216, "tgid": 36693, "tid": 36693, "comm": "lmp", "cgroup_id": 19947, "fd": 11, "bytes": 20, "bytes_human": "20", "duration_ns": 13430, "duration_human": "13.43us"}
-{"event_type": "RECV", "timestamp_sec": 3978.855698151, "tgid": 36693, "tid": 36693, "comm": "lmp", "cgroup_id": 19947, "fd": 11, "bytes": 20, "bytes_human": "20", "duration_ns": 1920, "duration_human": "1.92us"}
-{"event_type": "RECV", "timestamp_sec": 3978.855731232, "tgid": 36693, "tid": 36693, "comm": "lmp", "cgroup_id": 19947, "fd": 11, "bytes": 20, "bytes_human": "20", "duration_ns": 12363, "duration_human": "12.36us"}
-{"event_type": "RECV", "timestamp_sec": 3978.855737251, "tgid": 36693, "tid": 36693, "comm": "lmp", "cgroup_id":
-```
-
-Try shared memory:
-
-```bash
-helm install \
-  --set experiment.monitor_program=shmem \
-  --set experiment.monitor=true \
-  --set minicluster.save_logs=true \
-  lammps ./lammps-reax
-```
-
-And cpu (using river ML for summary models):
-
-```bash
-helm install \
-  --set experiment.monitor_program=cpu-models \
-  --set experiment.monitor=true \
-  --set minicluster.save_logs=true \
-  lammps ./lammps-reax
-```
-
-
-Also try changing the command entirely.
-
-```bash
-helm install \
-  --set experiment.monitor=true \
-  --set minicluster.save_logs=true \
-  --set minicluster.monitor_command="tcplife-bpfcc -stT" \
   lammps ./lammps-reax
 ```
 

@@ -93,12 +93,13 @@ Iterations is not relevant for this one
 {{- end }}
 
 {{ define "chart.monitor" }}
-  {{ if .Values.experiment.monitor }}- image: "ghcr.io/converged-computing/bcc-sidecar:ubuntu2204"
+  {{ if .Values.experiment.monitor }}{{- $progs := .Values.experiment.monitor | splitList "|" }}
+  - image: "ghcr.io/converged-computing/bcc-sidecar:ubuntu2204"
     name: bcc-monitor
     runFlux: false
     pullAlways: true 
     securityContext:
-      addCapabilities: [SYS_ADMIN]
+      addCapabilities: [SYS_ADMIN, BPF, PERFMON]
       privileged: true
     volumes:
       modules:
@@ -110,11 +111,9 @@ Iterations is not relevant for this one
       debug:
         hostPath: /sys/kernel/debug
         path: /sys/kernel/debug
-    # If you want the sidecar to run a specific command on start:
-    # command: "opensnoop-bpfcc -T"
-    # command: "tcplife-bpfcc -stT"
-    # command: "execsnoop-bpfcc -T"
-    command: "{{ if .Values.experiment.monitor_command }}{{ .Values.experiment.monitor_command }}{{ else }}python3 /opt/programs/{{ default "open-close" .Values.experiment.monitor_program }}/run-ebpf-collect.py --start-indicator-file=/mnt/flux/start_ebpf_collection {{ if .Values.experiment.monitor_debug }}--debug{{ end }} --json {{ if .Values.experiment.monitor_target }}--include-pattern={{ .Values.experiment.monitor_target }}{{ end }} --stop-indicator-file=/mnt/flux/stop_ebpf_collection{{ end }}"{{ end }}
+    commands:
+      pre: echo "ulimit -l unlimited" >> /root/.bashrc
+    command: "ulimit -l unlimited && ulimit -l && {{ if .Values.experiment.monitor_command }}{{ .Values.experiment.monitor_command }}{{ else }}python3 /opt/programs/ebpf_collect.py --nodes {{ .Values.experiment.nodes }} --start-indicator-file=/mnt/flux/start_ebpf_collection {{ if .Values.experiment.monitor_debug }}--debug{{ end }} --json {{ if .Values.experiment.monitor_target }}--include-pattern={{ .Values.experiment.monitor_target }}{{ end }} --stop-indicator-file=/mnt/flux/stop_ebpf_collection{{ end }} {{- range $index, $prog := $progs }} -p {{ $prog }} {{- end -}}"{{ end }}
 {{- end }}
 
 {{/* Recording of application libraries 

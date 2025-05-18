@@ -58,12 +58,25 @@ def signal_stop_handler(signum, frame):
 def collect_trace(
     start_indicator_file=None,
     stop_indicator_file=None,
+    cgroup_indicator=None,
     output_as_table=True,
-    debug_flag=False,
+    include_regex=None,
+    exclude_regex=None,
+    debug=False,  # This flag is unused in provided code
 ):
-    global running, as_table  # Ensure these globals are modified
+    global running
+    global as_table
+    global cgroup_indicator_file
+    global cgroup_id_filter
+    global aggregated_data_river
+    global include_patterns
+    global exclude_patterns
+    as_table = output_as_table
+    exclude_patterns = exclude_regex
+    include_patterns = include_regex
+    cgroup_indicator_file = cgroup_indicator
+    # aggregated_data_river.clear() # Already a defaultdict, will be new on each script run
 
-    as_table = output_as_table  # Set based on argument
     signal.signal(signal.SIGINT, signal_stop_handler)
     signal.signal(signal.SIGTERM, signal_stop_handler)
 
@@ -110,7 +123,7 @@ def collect_trace(
         print("  Kprobes for shm_open/shm_unlink should auto-attach if symbols exist.")
         print("Finished attaching probes.")
 
-        if debug_flag:
+        if debug:
             print(
                 "Check kernel trace pipe for BPF messages: sudo cat /sys/kernel/debug/tracing/trace_pipe\n"
             )
@@ -220,28 +233,3 @@ def collect_trace(
         if bpf_instance:
             bpf_instance.cleanup()
         print("Cleanup complete.")
-
-
-def main():
-    global include_patterns
-    global exclude_patterns
-
-    if os.geteuid() != 0:
-        helpers.log("This script must be run as root.", exit_flag=True)
-
-    parser = helpers.get_parser("eBPF Shared Memory Analyzer.")
-    args, _ = parser.parse_known_args()
-
-    include_patterns = args.include_pattern
-    exclude_patterns = args.exclude_pattern
-
-    collect_trace(
-        args.start_indicator_file,
-        args.stop_indicator_file,
-        not args.json,  # as_table
-        args.debug,
-    )
-
-
-if __name__ == "__main__":
-    main()

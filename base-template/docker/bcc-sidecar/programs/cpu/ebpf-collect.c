@@ -1,76 +1,87 @@
 // SPDX-License-Identifier: (LGPL-2.1 OR BSD-2-Clause)
 
-// Define SEC macro because got error and not provided by BCC
 #ifndef SEC
 # define SEC(name) __attribute__((section(name), used))
 #endif
 
-// Basic types, another import error...
+// --- Standard BPF type definitions ---
+// These are usually provided by <linux/bpf.h> or libbpf's bpf_helpers.h
+// I was getting errors (I think BCC handles) so adding them manually.
 typedef unsigned long long u64;
 typedef unsigned int u32;
-typedef unsigned char u8;
-// pid_t is usually defined by system headers included by BCC
+// Use u32 for PIDs/TIDs in BPF maps for consistency and common practice.
+// Kernel's pid_t is usually 'int'.
+typedef u32 pid_t_bpf;
 
 #define TASK_COMM_LEN 16
 
-// --- Manually defined tracepoint context structures (from your original script) ---
+// Max entries for hash maps
+// I made this really big because default was slowing down apps
+#define MAX_MAP_ENTRIES 10240
+
+// --- Data structure for aggregated stats in the BPF map ---
+struct task_aggr_stats {
+    u64 total_on_cpu_ns;
+    u64 total_runq_latency_ns;
+    // Number of times task was scheduled out (completed a CPU burst)
+    u64 on_cpu_count;
+    // Number of times task experienced runqueue latency
+    u64 runq_count;
+};
+
+// --- Tracepoint context structures (ensure these match the kernel) ---
+// For BCC, these are often implicitly handled or can be derived.
+// For libbpf, use CO-RE with vmlinux.h.
 struct trace_event_raw_sched_switch {
     unsigned long long __unused_header;
     char prev_comm[TASK_COMM_LEN];
-    pid_t prev_pid;
+    int prev_pid; // Kernel's pid_t
     int prev_prio;
     long prev_state;
     char next_comm[TASK_COMM_LEN];
-    pid_t next_pid;
+    int next_pid; // Kernel's pid_t
     int next_prio;
 };
 
 struct trace_event_raw_sched_wakeup {
     unsigned long long __unused_header;
     char comm[TASK_COMM_LEN];
-    pid_t pid;
+    int pid; // Kernel's pid_t
     int prio;
     int success;
     int target_cpu;
 };
 
-// Event types sent to user-space
-#define EVENT_TYPE_SCHED_STATS 1
+// --- BPF Map Definitions ---
 
-// Data structure for events sent to user-space
-struct sched_event_data {
-    u64 timestamp_ns;
-    u32 tgid;
-    u32 tid;
-    u64 cgroup_id;
-    char comm[TASK_COMM_LEN];
-    u64 on_cpu_ns;
-    u64 runq_latency_ns;
-    u8 event_type;
-    u8 prev_state_task_switched_out;
-};
+// Stores the timestamp when a task was last scheduled IN.
+// Key: TID (Thread ID, which is kernel's PID). Value: Timestamp (ns).
+BPF_HASH(task_scheduled_in_ts, pid_t_bpf, u64, MAX_MAP_ENTRIES);
 
-// --- BCC Style Map Definitions ---
-BPF_HASH(task_scheduled_in_ts, pid_t, u64, 10240);
-BPF_HASH(task_wakeup_ts, pid_t, u64, 10240);
+// Stores the timestamp when a task was last woken up.
+// Key: TID. Value: Timestamp (ns).
+BPF_HASH(task_wakeup_ts, pid_t_bpf, u64, MAX_MAP_ENTRIES);
 
-// Use BCC's perf output mechanism
-BPF_PERF_OUTPUT(events_out);
+// Stores aggregated CPU metrics per task (TID).
+// This is a PERCPU hash map. User-space sums values for a key across all CPUs.
+// Key: TID. Value: struct task_aggr_stats.
+BPF_PERCPU_HASH(aggregated_task_stats, pid_t_bpf, struct task_aggr_stats, MAX_MAP_ENTRIES);
 
 
 // --- BPF Program Functions ---
 
 SEC("tracepoint/sched/sched_wakeup")
 int tp_sched_wakeup(struct trace_event_raw_sched_wakeup *ctx) {
-    pid_t tid = ctx->pid;
+    pid_t_bpf tid = (pid_t_bpf)ctx->pid;
     u64 ts = bpf_ktime_get_ns();
+    // Update will insert if key doesn't exist, or overwrite if it does.
     task_wakeup_ts.update(&tid, &ts);
     return 0;
 }
 
 SEC("tracepoint/sched/sched_wakeup_new")
 int tp_sched_wakeup_new(struct trace_event_raw_sched_wakeup *ctx) {
-    pid_t tid = ctx->pid;
+    pid_t_bpf tid = (pid_t_bpf)ctx->pid;
     u64 ts = bpf_ktime_get_ns();
     task_wakeup_ts.update(&tid, &ts);
     return 0;
@@ -79,69 +90,59 @@ int tp_sched_wakeup_new(struct trace_event_raw_sched_wakeup *ctx) {
 SEC("tracepoint/sched/sched_switch")
 int tp_sched_switch(struct trace_event_raw_sched_switch *ctx) {
     u64 current_ts = bpf_ktime_get_ns();
-    pid_t prev_tid = ctx->prev_pid;
-    pid_t next_tid = ctx->next_pid;
-    // This initializes to zero
-    struct sched_event_data data = {}; 
+    pid_t_bpf prev_tid = (pid_t_bpf)ctx->prev_pid;
+    pid_t_bpf next_tid = (pid_t_bpf)ctx->next_pid;
     u64 *scheduled_in_ts_ptr;
     u64 *wakeup_ts_ptr;
+    struct task_aggr_stats *stats_ptr;
 
-    // --- Handle previous task switching out ---
+    // --- Handle previous task switching out (prev_tid) ---
     scheduled_in_ts_ptr = task_scheduled_in_ts.lookup(&prev_tid);
-
     if (scheduled_in_ts_ptr) {
         u64 on_cpu_duration = current_ts - *scheduled_in_ts_ptr;
-        task_scheduled_in_ts.delete(&prev_tid);
-
-        data.timestamp_ns = current_ts;
-        data.tgid = prev_tid; // Note: This is TID
-        data.tid = prev_tid;
-
-        for (int i = 0; i < TASK_COMM_LEN; ++i) {
-            data.comm[i] = ctx->prev_comm[i];
-            if (ctx->prev_comm[i] == '\0') break;
+        // Basic sanity check for duration (e.g. against time warps)
+        if ((s64)on_cpu_duration >= 0) {
+            stats_ptr = aggregated_task_stats.lookup(&prev_tid);
+            if (stats_ptr) {
+                stats_ptr->total_on_cpu_ns += on_cpu_duration;
+                stats_ptr->on_cpu_count += 1;
+            } else {
+                // First time this CPU sees this TID for aggregation, or entry was cleared.
+                // BPF_PERCPU_HASH.update will create/initialize if necessary.
+                struct task_aggr_stats new_stats = {0};
+                new_stats.total_on_cpu_ns = on_cpu_duration;
+                new_stats.on_cpu_count = 1;
+                aggregated_task_stats.update(&prev_tid, &new_stats);
+            }
         }
-        data.comm[TASK_COMM_LEN - 1] = '\0';
-
-        data.cgroup_id = bpf_get_current_cgroup_id();
-        data.on_cpu_ns = on_cpu_duration;
-        data.runq_latency_ns = 0;
-        data.event_type = EVENT_TYPE_SCHED_STATS;
-        data.prev_state_task_switched_out = (u8)ctx->prev_state;
-        
-        events_out.perf_submit(ctx, &data, sizeof(data));
+        task_scheduled_in_ts.delete(&prev_tid); // Clean up timestamp
     }
 
-    // --- Handle next task switching in ---
+    // --- Handle next task switching in (next_tid) ---
+    // Record that next_tid is now on CPU by storing its start timestamp.
+    // The value needs to be on the stack or globally accessible for update.
     u64 current_ts_val = current_ts;
     task_scheduled_in_ts.update(&next_tid, &current_ts_val);
 
+    // Calculate runqueue latency for the task switching in.
     wakeup_ts_ptr = task_wakeup_ts.lookup(&next_tid);
     if (wakeup_ts_ptr) {
-
-        // This means it's ready and wants to use the CPU) 
-        // but was waiting for a CPU core to become available.
         u64 runq_latency = current_ts - *wakeup_ts_ptr;
-        task_wakeup_ts.delete(&next_tid);
-        
-        struct sched_event_data data_next = {};
-        data_next.timestamp_ns = current_ts;
-        data_next.tgid = next_tid; // Note: This is TID
-        data_next.tid = next_tid;
 
-        for (int i = 0; i < TASK_COMM_LEN; ++i) {
-            data_next.comm[i] = ctx->next_comm[i];
-            if (ctx->next_comm[i] == '\0') break;
+        // Basic sanity check
+        if ((s64)runq_latency >= 0) {
+            stats_ptr = aggregated_task_stats.lookup(&next_tid);
+            if (stats_ptr) {
+                stats_ptr->total_runq_latency_ns += runq_latency;
+                stats_ptr->runq_count += 1;
+            } else {
+                struct task_aggr_stats new_stats = {0};
+                new_stats.total_runq_latency_ns = runq_latency;
+                new_stats.runq_count = 1;
+                aggregated_task_stats.update(&next_tid, &new_stats);
+            }
         }
-        data_next.comm[TASK_COMM_LEN - 1] = '\0';
-
-        data_next.cgroup_id = bpf_get_current_cgroup_id();
-        data_next.on_cpu_ns = 0;
-        data_next.runq_latency_ns = runq_latency;
-        data_next.event_type = EVENT_TYPE_SCHED_STATS;
-        data_next.prev_state_task_switched_out = 0;
-
-        events_out.perf_submit(ctx, &data_next, sizeof(data_next));
+        task_wakeup_ts.delete(&next_tid); // Clean up timestamp
     }
     return 0;
 }
