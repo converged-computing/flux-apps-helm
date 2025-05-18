@@ -22,7 +22,7 @@ osu:
 
 minicluster:
   # Container image
-  image: ghcr.io/converged-computing/osu-benchmarks 
+  image: ghcr.io/converged-computing/osu-benchmarks:ubuntu2204
 
   # Interactive MiniCluster?
   interactive: false

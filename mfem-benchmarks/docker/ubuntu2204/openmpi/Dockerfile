@@ -3,8 +3,8 @@ FROM ${base}
 
 WORKDIR /opt
 RUN mkdir build && \
-    cd build && \
-    git clone https://github.com/mfem/mfem.git && \
+    cd build && \ 
+    git clone -b pbench_ceed https://github.com/mfem/mfem.git && \
     git clone https://github.com/hypre-space/hypre.git && \
     git clone https://github.com/google/benchmark.git google-benchmark && \
     wget "https://github.com/mfem/tpls/raw/refs/heads/gh-pages/metis-5.1.0.tar.gz" && \
