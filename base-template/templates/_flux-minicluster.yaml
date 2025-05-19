@@ -38,7 +38,7 @@ spec:
           type: DirectoryOrCreate
 {{ end }}
 ---
-{{- $privileged := .Values.minicluster.privileged -}}{{ if .Values.experiment.monitor }}{{- $privileged = true -}}{{ end }}{{ if eq .Values.experiment.record true }}{{- $privileged = true -}}{{ end }}
+{{- $privileged := .Values.minicluster.privileged -}}{{ if .Values.experiment.monitor }}{{- $privileged = true -}}{{ end }}
 apiVersion: flux-framework.org/v1alpha2
 kind: MiniCluster
 metadata:
@@ -48,7 +48,7 @@ metadata:
 spec:
   size: {{ default 1 .Values.minicluster.size }}
   {{ if .Values.minicluster.interactive }}interactive: true {{ end }}
-  {{ if or (.Values.experiment.record) (.Values.experiment.monitor) }}shareProcessNamespace: true{{ end }}
+  {{ if .Values.experiment.monitor }}shareProcessNamespace: true{{ end }}
   logging:
     quiet: {{ if .Values.logging.quiet }}true{{ else }}false{{ end }}
 
@@ -76,7 +76,7 @@ spec:
     runFlux: true
     securityContext:
       privileged: {{ if $privileged }}true{{ else }}false{{ end }}
-      addCapabilities: [{{ if or (.Values.experiment.record) (.Values.experiment.monitor) }}SYS_ADMIN{{ end }}{{ if .Values.minicluster.addCapabilities }}{{ .Values.minicluster.addCapabilities }}{{ end }}]
+      addCapabilities: [{{ if .Values.experiment.monitor }}SYS_ADMIN{{ end }}{{ if .Values.minicluster.addCapabilities }}{{ .Values.minicluster.addCapabilities }}{{ end }}]
     resources:
       limits:
         nvidia.com/gpu: "{{ default 0  .Values.minicluster.gpus }}"
@@ -86,7 +86,6 @@ spec:
       post: |
          {{ if .Values.experiment.monitor }}{{ include "chart.monitor_finish" . }}{{ end }}
          {{ include "chart.fluxfinish" . }}
-         {{ if .Values.experiment.record }}{{ include "chart.record_finish" . }}{{ end }}
       pre: |
          echo "ulimit -l unlimited" >> /root/.bashrc
          {{ if .Values.minicluster.gpus }}{{ include "chart.gpus" . }}{{ end }}
@@ -102,5 +101,4 @@ spec:
          {{ include "chart.savelogs" . }}
          EOF
          cat /tmp/run_${app}.sh
-         {{ if .Values.experiment.record }}{{ include "chart.record_setup" . }}{{ end }}
 {{ end }}
