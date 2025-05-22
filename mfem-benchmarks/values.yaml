@@ -1,0 +1,44 @@
+# Default values for lammps experiment
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Logging (quiet will hide flux setup)
+logging:
+  quiet: true
+
+experiment:
+  iterations: 1
+  nodes: 1
+  tasks: 2
+
+env:
+  app: mfem
+
+mfem:
+  binary: /opt/build/mfem/tests/benchmarks/pbench_ceed
+  benchmark_filter: BP3
+  proc_grid: "2x1x1"
+  local_size: "1771561"
+  
+flux:
+  image: ghcr.io/converged-computing/flux-view-ubuntu:tag-jammy
+
+minicluster:
+  # Container image
+  image: ghcr.io/converged-computing/mfem-benchmarks:ubuntu2204
+
+# mpirun -np 4 ./pbench_ceed --benchmark_filter=BP3
+# mpirun -np 12 ./pbench_ceed --benchmark_filter=BP3 --benchmark_context=proc_grid=3x2x2
+# mpirun -np 12 ./pbench_ceed --benchmark_filter=BP3 --benchmark_context=proc_grid=3x2x2,local_size=1771561
+
+  # Interactive MiniCluster?
+  interactive: false
+  
+  # MiniCluster size
+  size: 1
+  
+  # Number of NVIDIA gpus
+  gpus: 0
+
+  # Add flux on the fly (set to false if Flux is already in the container)
+  addFlux: false

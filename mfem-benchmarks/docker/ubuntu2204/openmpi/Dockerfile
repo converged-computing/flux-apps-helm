@@ -48,7 +48,7 @@ RUN cd /opt/build/mfem && \
     make -j 4
     
 RUN cd /opt/build/mfem/tests/benchmarks && \
-    make bench_ceed
+    make pbench_ceed
 
 # run the BP3 benchmark (serial for now):
 # ./bench_ceed \
