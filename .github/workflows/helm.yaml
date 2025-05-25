@@ -89,7 +89,13 @@ jobs:
       if: (github.event_name == 'pull_request' && env.skip_test == 'no')
       env:
         app: ${{ matrix.app }}
-      run: helm install app ./${app}
+      run: |
+        if [[ -f "${app}/test.sh" ]];
+          then
+          bash ${app}/test.sh
+        else      
+          helm install app ./${app}
+        fi
 
     - name: Test Completion
       if: (env.skip_test == 'no')
