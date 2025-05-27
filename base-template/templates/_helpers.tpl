@@ -41,7 +41,7 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
          for i in {1..{{ default 1 .Values.experiment.iterations}}}
          do
            echo "FLUX-RUN START $app-iter-\$i"
-           flux run --setattr=user.study_id=$app-iter-\$i -N{{ if .Values.experiment.nodes }}{{ .Values.experiment.nodes }}{{ else }}1{{ end }} {{ if .Values.experiment.tasks }}-n {{ .Values.experiment.tasks }}{{ end }} {{ include "chart.fluxopts" . }} ${apprun} |& tee /tmp/${app}.out
+           flux run --setattr=user.study_id=$app-iter-\$i -N{{ if .Values.experiment.nodes }}{{ .Values.experiment.nodes }}{{ else }}1{{ end }} {{ if .Values.experiment.tasks }}-n {{ .Values.experiment.tasks }}{{ end }} {{ include "chart.fluxopts" . }} ${apprun}
            {{ if .Values.minicluster.commands_post_iteration }}{{ .Values.minicluster.commands_post_iteration }};{{ end }}
             echo "FLUX-RUN END $app-iter-\$i"
          done
@@ -55,13 +55,12 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
          do
            echo "FLUX-RUN START $app-iter-\$i"
            for node in \$(seq 0 {{ default 1 $node_max }}); do
-               flux submit --flags waitable --requires="hosts:$app-\$node" -N 1 --setattr=user.study_id=$app-iter-\$i-node-\$node {{ if .Values.experiment.tasks }}-n {{ .Values.experiment.tasks }}{{ end }} {{ include "chart.fluxopts" . }} ${apprun}               
+               flux submit --flags waitable --requires="hosts:$app-\$node" -N 1 --setattr=user.study_id=$app-iter-\$i-node-\$node {{ if .Values.experiment.tasks }}-n {{ .Values.experiment.tasks }}{{ end }} {{ include "chart.fluxopts" . }}  ${apprun}               
            done 
            echo "FLUX-RUN END $app-iter-\$i"
          done
          flux job wait --all
 {{- end }}
-
 
 {{/* Flux Shared Options */}}
 {{- define "chart.fluxopts" -}}-o cpu-affinity={{ default "per-task" .Values.experiment.cpu_affinity }} -o gpu-affinity={{ default "off" .Values.experiment.gpu_affinity }} {{ if .Values.experiment.run_threads }}--env OMP_NUM_THREADS={{ .Values.experiment.run_threads }}{{ end }} {{ if .Values.experiment.cores_per_task }}--cores-per-task {{ .Values.experiment.cores_per_task }}{{ end }} {{ if .Values.minicluster.gpus }} -g {{ .Values.minicluster.gpus }}{{ end }} {{ if .Values.experiment.exclusive }}--exclusive{{ end }}{{- end }}
@@ -82,17 +81,77 @@ Iterations is not relevant for this one
            dequeue_from_list \$list
            for j in \$list; do
              echo "FLUX-RUN START $app-iter-\${i}-\${j}"
-             flux run -N 2 {{ if .Values.experiment.tasks }}-n {{ .Values.experiment.tasks }}{{ end }}  \
+              flux run -N 2 {{ if .Values.experiment.tasks }}-n {{ .Values.experiment.tasks }}{{ end }}  \
                --setattr=user.study_id=$app-iter-\$i-\${j} \
                --requires="hosts:\${i},\${j}" \
                {{ include "chart.fluxopts" . }} \
-               ${apprun}
+                ${apprun}
              iter=\$((iter+1))
              echo "FLUX-RUN END $app-iter-\${i}-\${j}"
          done
          done                  
 {{- end }}
 
+{{ define "chart.monitor" }}
+  {{ if .Values.experiment.monitor }}{{- $progs := .Values.experiment.monitor | splitList "|" }}
+  - name: bcc-monitor
+    image: {{ default "ghcr.io/converged-computing/bcc-sidecar:ubuntu2204" .Values.experiment.monitor_image }}
+    {{ include "chart.monitor_sidecar" . }}
+    environment:
+    {{- range $key, $value := .Values.env }}
+      {{ $key }}: {{ $value | quote }}
+    {{- end }}
+    command: "{{ include "chart.monitor_command" . }} {{- range $index, $prog := $progs }} -p {{ $prog }} {{- end -}}"{{ end }}
+  {{ if .Values.experiment.monitor_multiple }}{{- $progs := .Values.experiment.monitor_multiple | splitList "|" }}{{- range $index, $prog := $progs }} 
+  - name: bcc-monitor-{{ $prog }}
+    image: {{ default "ghcr.io/converged-computing/bcc-sidecar:ubuntu2204" $.Values.experiment.monitor_image }}
+    {{ include "chart.monitor_sidecar" . }}
+    environment:
+    {{- range $key, $value := $.Values.env }}
+      {{ $key }}: {{ $value | quote }}
+    {{- end }}
+    command: "ulimit -l unlimited && ulimit -l && {{ if $.Values.experiment.monitor_command }}{{ $.Values.experiment.monitor_command }}{{ else }}python3 /opt/programs/ebpf_collect.py --nodes {{ $.Values.experiment.nodes }} --start-indicator-file=/mnt/flux/start_ebpf_collection {{ if $.Values.experiment.monitor_debug }}--debug{{ end }} --json {{ if $.Values.monitor.sleep }}--sleep{{ end }} {{ if $.Values.experiment.monitor_target }}--include-pattern={{ $.Values.experiment.monitor_target }}{{ end }} --stop-indicator-file=/mnt/flux/stop_ebpf_collection{{ end }} -p {{ $prog }} {{- end -}}"{{ end }}
+{{- end }}
+
+{{- define "chart.monitor_command" -}}
+ulimit -l unlimited && ulimit -l && {{ if .Values.experiment.monitor_command }}{{ .Values.experiment.monitor_command }}{{ else }}python3 /opt/programs/ebpf_collect.py --nodes {{ .Values.experiment.nodes }} --start-indicator-file=/mnt/flux/start_ebpf_collection {{ if .Values.experiment.monitor_debug }}--debug{{ end }} --json {{ if .Values.monitor.sleep }}--sleep{{ end }} {{ if .Values.experiment.monitor_target }}--include-pattern={{ .Values.experiment.monitor_target }}{{ end }} --stop-indicator-file=/mnt/flux/stop_ebpf_collection{{ end }}
+{{- end -}}
+
+{{- define "chart.monitor_sidecar" -}}
+    runFlux: false
+    pullAlways: true 
+    securityContext:
+      addCapabilities: [SYS_ADMIN, BPF, PERFMON]
+      privileged: true
+    volumes:
+      modules:
+        hostPath: /lib/modules
+        path: /lib/modules
+      buildsrc:
+        hostPath: /usr/src
+        path: /usr/src
+      debug:
+        hostPath: /sys/kernel/debug
+        path: /sys/kernel/debug
+    commands:
+      pre: echo "ulimit -l unlimited" >> /root/.bashrc{{ end }}
+{{- define "chart.monitor_finish" -}}
+         touch /mnt/flux/stop_ebpf_collection
+{{- end }}
+
+{{- define "chart.monitor_start" -}}
+         echo "The parent process ID is: \$PPID"          
+         echo "The execution parent process ID is: \$\$"         
+         CGROUP_PATH_LINE=\$(cat "/proc/\$\$/cgroup")
+         echo $CGROUP_PATH_LINE
+         CGROUP_V2_PATH=\${CGROUP_PATH_LINE:3}
+         ACTUAL_CGROUP_DIR="/sys/fs/cgroup\${CGROUP_V2_PATH}"
+         TARGET_CGROUP_ID=\$(stat -c '%i' \$ACTUAL_CGROUP_DIR)
+         echo "The cgroup id is \$TARGET_CGROUP_ID"
+         echo -n \$TARGET_CGROUP_ID > /mnt/flux/cgroup-id.txt
+         sleep 10
+         flux exec -r all touch /mnt/flux/start_ebpf_collection
+{{- end }}
 
 {{/* Flux GPUs */}}
 {{- define "chart.gpus" -}}
@@ -127,7 +186,7 @@ Iterations is not relevant for this one
 {{- define "chart.savelogs" -}}
          {{- if .Values.minicluster.save_logs }}
          output=./results/\${app}
-         (apt-get update && apt-get install -y jq) || (yum update -y && yum install -y jq)
+         (apt-get update {{ if .Values.logging.quiet }}> /dev/null 2>&1{{ end }} && apt-get install -y jq {{ if .Values.logging.quiet }}> /dev/null 2>&1{{ end }}) || (yum update -y {{ if .Values.logging.quiet }}> /dev/null 2>&1{{ end }} && yum install -y jq {{ if .Values.logging.quiet }}> /dev/null 2>&1{{ end }})
          mkdir -p \$output
          for jobid in \$(flux jobs -a --json | jq -r .jobs[].id); do
              echo
@@ -148,7 +207,7 @@ Iterations is not relevant for this one
              echo "FLUX-JOB END \${jobid} \${study_id}"
          done
          echo "FLUX JOB STATS"
-         flux job stats         
+         flux job stats 
          {{ if .Values.minicluster.sleep }}sleep infinity{{- end}}         
          {{- end }}
 {{- end }}

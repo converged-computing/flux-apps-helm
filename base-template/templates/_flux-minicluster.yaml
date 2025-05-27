@@ -1,4 +1,45 @@
 {{- define "base-template.flux-minicluster" -}}
+{{- $monitor := or .Values.experiment.monitor .Values.experiment.monitor_multiple false -}}
+{{ if $monitor }}apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: &name install-headers
+  labels:
+    app: *name
+spec:
+  selector:
+    matchLabels:
+      app: *name
+  template:
+    metadata:
+      labels:
+        app: *name
+    spec:
+      hostNetwork: true
+      hostPID: true
+      containers:
+      - image: ghcr.io/converged-computing/kernel-header-installer:ubuntu2204
+        name: header-installer
+        imagePullPolicy: Always
+        command: ["/bin/bash", "/entrypoint.sh"]
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: modules
+          mountPath: /lib/modules
+        - name: shared
+          mountPath: /opt/shared
+      volumes:
+      - name: modules
+        hostPath:
+          path: /lib/modules
+      - name: shared
+        hostPath:
+          path: /opt/shared
+          type: DirectoryOrCreate
+{{ end }}
+---
+{{- $privileged := .Values.minicluster.privileged -}}{{ if $monitor }}{{- $privileged = true -}}{{ end }}
 apiVersion: flux-framework.org/v1alpha2
 kind: MiniCluster
 metadata:
@@ -8,7 +49,7 @@ metadata:
 spec:
   size: {{ default 1 .Values.minicluster.size }}
   {{ if .Values.minicluster.interactive }}interactive: true {{ end }}
-
+  {{ if $monitor }}shareProcessNamespace: true{{ end }}
   logging:
     quiet: {{ if .Values.logging.quiet }}true{{ else }}false{{ end }}
 
@@ -20,9 +61,10 @@ spec:
     container:
       disable: {{ if .Values.minicluster.addFlux }}false{{ else }}true{{ end }}
       {{ if .Values.flux }}{{ if .Values.flux.image }}image: {{ .Values.flux.image }}{{ end }}{{ end }}
-
   containers:
+{{ include "chart.monitor" . }}
   - image: "{{ default "ghcr.io/converged-computing/metric-lammps-cpu:zen4-reax" .Values.minicluster.image }}"
+    name: app
     command: /bin/bash /tmp/run_${app}.sh
     {{ if .Values.minicluster.volumeName }}volumes:
        {{ .Values.minicluster.volumeName }}:
@@ -32,9 +74,10 @@ spec:
     {{ if .Values.minicluster.workdir }}workingDir: {{ .Values.minicluster.workdir }}{{ end }}
     {{ if .Values.minicluster.pullAlways }}pullAlways: true{{ end }}
     launcher: true
+    runFlux: true
     securityContext:
-      privileged: {{ if .Values.minicluster.privileged }}true{{ else }}false{{ end }}
-      {{ if .Values.minicluster.addCapabilities }}addCapabilities: [{{ "{{ .Values.minicluster.addCapabilities }}" }}]{{ end }}
+      privileged: {{ if $privileged }}true{{ else }}false{{ end }}
+      addCapabilities: [{{ if $monitor }}SYS_ADMIN{{ end }}{{ if .Values.minicluster.addCapabilities }}{{ .Values.minicluster.addCapabilities }}{{ end }}]
     resources:
       limits:
         nvidia.com/gpu: "{{ default 0  .Values.minicluster.gpus }}"
@@ -42,14 +85,16 @@ spec:
       {{ if .Values.minicluster.commands_broker_pre }}brokerPre: {{ .Values.minicluster.commands_broker_pre }}{{ end }}
       {{ if .Values.minicluster.commands_init }}init: {{ .Values.minicluster.commands_init }}{{ end }}
       post: |
+         {{ if $monitor }}{{ include "chart.monitor_finish" . }}{{ end }}
          {{ include "chart.fluxfinish" . }}
       pre: |
+         echo "ulimit -l unlimited" >> /root/.bashrc
          {{ if .Values.minicluster.gpus }}{{ include "chart.gpus" . }}{{ end }}
          cat <<EOF >> /tmp/run_${app}.sh
          #!/bin/bash
          set -euo pipefail
-         mkdir -p /tmp/output
          flux resource list
+         {{ if $monitor }}{{ include "chart.monitor_start" . }}{{ end }}
          {{ if .Values.experiment.pairs }}{{ include "chart.fluxpairs" . }}
          {{ else if .Values.experiment.foreach }}{{ include "chart.foreach" . }}
          {{ else }}{{ include "chart.fluxrun" . }}{{ end }}

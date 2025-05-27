@@ -1,0 +1,4 @@
+{{ include "base-template.flux-minicluster" . }}
+    environment:
+      apprun: '{{ .Values.samurai.binary }} {{ if .Values.samurai.min_level }}{{ .Values.samurai.min_level }}{{ end }} {{ if .Values.samurai.max_level }}{{ .Values.samurai.max_level }}{{ end }}'
+      {{- include "base-template.environment" . }}      
