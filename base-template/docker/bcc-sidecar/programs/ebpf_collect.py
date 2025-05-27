@@ -2,14 +2,15 @@
 
 import argparse
 import random
+import time
 import os
 import re
 import sys
 
 
 here = os.path.dirname(__file__)
-known_programs = ["cpu", "tcp", "shmem", "futex", "open_close"]
 
+known_programs = ["cpu", "tcp", "shmem", "futex", "open_close", "flamegraph"]
 sys.path.insert(0, here)
 
 
@@ -61,6 +62,12 @@ def get_parser(description):
         action="store_true",
         default=False,
         help="Print debug calls for open",
+    )
+    parser.add_argument(
+        "--sleep",
+        action="store_true",
+        default=False,
+        help="Sleep after collection.",
     )
     parser.add_argument(
         "-j",
@@ -145,6 +152,10 @@ def main():
         args.exclude_pattern,
         args.debug,  # We aren't using this now, passing for consistency.
     )
+    if args.sleep:
+        while True:
+            time.sleep(10000)
+
 
 if __name__ == "__main__":
     main()

@@ -46,6 +46,8 @@ RUN git clone -b v0.34.0 https://github.com/iovisor/bcc /usr/src/bcc && \
     cd / && \
     rm -rf /usr/src/bcc
 
+ENV BCC_PROBE_LIMIT=1048576
+
 # Set up environment for Python BCC tools (if needed)
 ENV PYTHONPATH=/usr/lib/python3/dist-packages
 RUN python3 -m pip install river --break-system-packages

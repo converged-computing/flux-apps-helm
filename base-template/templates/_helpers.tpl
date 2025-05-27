@@ -94,8 +94,30 @@ Iterations is not relevant for this one
 
 {{ define "chart.monitor" }}
   {{ if .Values.experiment.monitor }}{{- $progs := .Values.experiment.monitor | splitList "|" }}
-  - image: "ghcr.io/converged-computing/bcc-sidecar:ubuntu2204"
-    name: bcc-monitor
+  - name: bcc-monitor
+    image: {{ default "ghcr.io/converged-computing/bcc-sidecar:ubuntu2204" .Values.experiment.monitor_image }}
+    {{ include "chart.monitor_sidecar" . }}
+    environment:
+    {{- range $key, $value := .Values.env }}
+      {{ $key }}: {{ $value | quote }}
+    {{- end }}
+    command: "{{ include "chart.monitor_command" . }} {{- range $index, $prog := $progs }} -p {{ $prog }} {{- end -}}"{{ end }}
+  {{ if .Values.experiment.monitor_multiple }}{{- $progs := .Values.experiment.monitor_multiple | splitList "|" }}{{- range $index, $prog := $progs }} 
+  - name: bcc-monitor-{{ $prog }}
+    image: {{ default "ghcr.io/converged-computing/bcc-sidecar:ubuntu2204" $.Values.experiment.monitor_image }}
+    {{ include "chart.monitor_sidecar" . }}
+    environment:
+    {{- range $key, $value := $.Values.env }}
+      {{ $key }}: {{ $value | quote }}
+    {{- end }}
+    command: "ulimit -l unlimited && ulimit -l && {{ if $.Values.experiment.monitor_command }}{{ $.Values.experiment.monitor_command }}{{ else }}python3 /opt/programs/ebpf_collect.py --nodes {{ $.Values.experiment.nodes }} --start-indicator-file=/mnt/flux/start_ebpf_collection {{ if $.Values.experiment.monitor_debug }}--debug{{ end }} --json {{ if $.Values.monitor.sleep }}--sleep{{ end }} {{ if $.Values.experiment.monitor_target }}--include-pattern={{ $.Values.experiment.monitor_target }}{{ end }} --stop-indicator-file=/mnt/flux/stop_ebpf_collection{{ end }} -p {{ $prog }} {{- end -}}"{{ end }}
+{{- end }}
+
+{{- define "chart.monitor_command" -}}
+ulimit -l unlimited && ulimit -l && {{ if .Values.experiment.monitor_command }}{{ .Values.experiment.monitor_command }}{{ else }}python3 /opt/programs/ebpf_collect.py --nodes {{ .Values.experiment.nodes }} --start-indicator-file=/mnt/flux/start_ebpf_collection {{ if .Values.experiment.monitor_debug }}--debug{{ end }} --json {{ if .Values.monitor.sleep }}--sleep{{ end }} {{ if .Values.experiment.monitor_target }}--include-pattern={{ .Values.experiment.monitor_target }}{{ end }} --stop-indicator-file=/mnt/flux/stop_ebpf_collection{{ end }}
+{{- end -}}
+
+{{- define "chart.monitor_sidecar" -}}
     runFlux: false
     pullAlways: true 
     securityContext:
@@ -112,10 +134,7 @@ Iterations is not relevant for this one
         hostPath: /sys/kernel/debug
         path: /sys/kernel/debug
     commands:
-      pre: echo "ulimit -l unlimited" >> /root/.bashrc
-    command: "ulimit -l unlimited && ulimit -l && {{ if .Values.experiment.monitor_command }}{{ .Values.experiment.monitor_command }}{{ else }}python3 /opt/programs/ebpf_collect.py --nodes {{ .Values.experiment.nodes }} --start-indicator-file=/mnt/flux/start_ebpf_collection {{ if .Values.experiment.monitor_debug }}--debug{{ end }} --json {{ if .Values.experiment.monitor_target }}--include-pattern={{ .Values.experiment.monitor_target }}{{ end }} --stop-indicator-file=/mnt/flux/stop_ebpf_collection{{ end }} {{- range $index, $prog := $progs }} -p {{ $prog }} {{- end -}}"{{ end }}
-{{- end }}
-
+      pre: echo "ulimit -l unlimited" >> /root/.bashrc{{ end }}
 {{- define "chart.monitor_finish" -}}
          touch /mnt/flux/stop_ebpf_collection
 {{- end }}
@@ -188,7 +207,7 @@ Iterations is not relevant for this one
              echo "FLUX-JOB END \${jobid} \${study_id}"
          done
          echo "FLUX JOB STATS"
-         flux job stats         
+         flux job stats 
          {{ if .Values.minicluster.sleep }}sleep infinity{{- end}}         
          {{- end }}
 {{- end }}

@@ -543,7 +543,12 @@ For this setup, you'll see `flux submit` so the jobs will run at the same time o
 
 ##### 3. Monitor with BCC
 
-This setup will deploy a sidecar and monitor different interacts with bcc. We have several programs that help to understand tcp, file open/closes, cpu, shared memory, or futex wait times. We tested deploying multiple sidecars, and found this approach led to a decrease in application performance at 8 nodes or more. Instead, if you select more than one metric, we will still install a single sidecar and use an algorithm to select from the set of programs you requested. Although you can filter to a cgroup or command, for the default we allow all containers in the pod to be seen. It generates a lot more data, but is interesting. Here is how to select a metric:
+This setup will deploy a sidecar and monitor different interacts with bcc. We have several programs that help to understand tcp, file open/closes, cpu, shared memory, or futex wait times. There are two approaches:
+
+- Multiple sidecars per pod (adds overhead, but is acceptable given what the HPC community already does) and the benefit is measuring the same thing between applications.
+- Single sidecar per pod (and metrics distributed across cluster) low to zero overhead, and better for summary metrics or models. We an algorithm to select from the set of programs you requested. 
+
+Although for both approaches you can filter to a cgroup or command, for the default we allow all containers in the pod to be seen. It generates a lot more data, but is interesting. Here is how to select a metric for a single sidecar per pod method:
 
 ```bash
 helm install \
@@ -577,7 +582,7 @@ Cleaning up BPF resources...
 
 </details>
 
-Here is how to do multiple at once:
+Here is how to do multiple at once (each still a single sidecar)
 
 ```bash
 helm install \
@@ -585,6 +590,18 @@ helm install \
   --set minicluster.save_logs=true \
   lammps ./lammps-reax
 ```
+
+Here is how to deploy multiple sidecars:
+
+```bash
+helm install \
+  --set experiment.monitor_multiple=flamegraph|open-close \
+  --set experiment.monitor.sleep=true \
+  --set minicluster.save_logs=true \
+  --dry-run lammps ./lammps-reax
+```
+
+For the flamegraph, you'll want to enable the monitor container to sleep so you can copy svg and folded files out after.
 
 ### 5. Delete
 
