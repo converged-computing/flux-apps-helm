@@ -94,7 +94,7 @@ jobs:
           then
           bash ${app}/test.sh
         else      
-          helm install app ./${app}
+          helm install --set experiment.tasks=1 app ./${app}
         fi
 
     - name: Test Completion
