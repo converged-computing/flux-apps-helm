@@ -89,7 +89,13 @@ jobs:
       if: (github.event_name == 'pull_request' && env.skip_test == 'no')
       env:
         app: ${{ matrix.app }}
-      run: helm install app ./${app}
+      run: |
+        if [[ -f "${app}/test.sh" ]];
+          then
+          bash ${app}/test.sh
+        else      
+          helm install --set experiment.tasks=1 app ./${app}
+        fi
 
     - name: Test Completion
       if: (env.skip_test == 'no')
@@ -101,6 +107,12 @@ jobs:
         pod_name=$(kubectl get pods -o json | jq -r .items[0].metadata.name)
         kubectl logs ${pod_name}
 
+    - name: Check Logs
+      if: failure()
+      run: |
+        pod_name=$(kubectl get pods -o json | jq -r .items[0].metadata.name)
+        kubectl logs ${pod_name}
+       
     - name: Push Helm Chart
       if: (github.event_name != 'pull_request')
       env:

@@ -38,6 +38,9 @@ laghos:
   # ot: 2
   # rp: 2
       
+flux:
+  image: ghcr.io/converged-computing/flux-view-ubuntu:tag-jammy
+      
 minicluster:
   # Container image
   image: "ghcr.io/converged-computing/laghos:ubuntu2204"

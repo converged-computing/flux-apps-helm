@@ -1,0 +1,40 @@
+# Default values for experiment
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Logging (quiet will hide flux setup)
+logging:
+  quiet: true
+
+experiment:
+  iterations: 1
+  # num_threads: 3
+  # cores_per_task: 3
+  nodes: 1
+  tasks: 2
+
+env:
+  app: "samurai"
+
+samurai:
+  binary: /opt/samurai/build/demos/FiniteVolume/finite-volume-advection-2d
+
+#  flux run -N4 -n352 ./finite-volume-advection-2d --min-level=14 --max-level=14
+# flux run -N8 -n704 ./finite-volume-advection-2d --min-level=14 --max-level=14
+
+minicluster:
+  # Container image
+  image: ghcr.io/converged-computing/samurai:ubuntu2204
+  
+  # Interactive MiniCluster?
+  interactive: false
+
+  # Number of NVIDIA gpus
+  gpus: 0
+  
+  # MiniCluster size
+  size: 1
+  
+  # Add flux on the fly (set to false if Flux is already in the container)
+  addFlux: false
+  workdir: /opt/gromacs-2024.2/build/tests/regressiontests-2024.2/complex/argon

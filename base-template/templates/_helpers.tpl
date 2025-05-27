@@ -41,7 +41,7 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
          for i in {1..{{ default 1 .Values.experiment.iterations}}}
          do
            echo "FLUX-RUN START $app-iter-\$i"
-           flux run --setattr=user.study_id=$app-iter-\$i -N{{ if .Values.experiment.nodes }}{{ .Values.experiment.nodes }}{{ else }}1{{ end }} {{ if .Values.experiment.tasks }}-n {{ .Values.experiment.tasks }}{{ end }} {{ include "chart.fluxopts" . }} {{ include "chart.record" . }} ${apprun}
+           flux run --setattr=user.study_id=$app-iter-\$i -N{{ if .Values.experiment.nodes }}{{ .Values.experiment.nodes }}{{ else }}1{{ end }} {{ if .Values.experiment.tasks }}-n {{ .Values.experiment.tasks }}{{ end }} {{ include "chart.fluxopts" . }} ${apprun}
            {{ if .Values.minicluster.commands_post_iteration }}{{ .Values.minicluster.commands_post_iteration }};{{ end }}
             echo "FLUX-RUN END $app-iter-\$i"
          done
@@ -81,7 +81,7 @@ Iterations is not relevant for this one
            dequeue_from_list \$list
            for j in \$list; do
              echo "FLUX-RUN START $app-iter-\${i}-\${j}"
-              {{ include "chart.record" . }} flux run -N 2 {{ if .Values.experiment.tasks }}-n {{ .Values.experiment.tasks }}{{ end }}  \
+              flux run -N 2 {{ if .Values.experiment.tasks }}-n {{ .Values.experiment.tasks }}{{ end }}  \
                --setattr=user.study_id=$app-iter-\$i-\${j} \
                --requires="hosts:\${i},\${j}" \
                {{ include "chart.fluxopts" . }} \
@@ -94,8 +94,30 @@ Iterations is not relevant for this one
 
 {{ define "chart.monitor" }}
   {{ if .Values.experiment.monitor }}{{- $progs := .Values.experiment.monitor | splitList "|" }}
-  - image: "ghcr.io/converged-computing/bcc-sidecar:ubuntu2204"
-    name: bcc-monitor
+  - name: bcc-monitor
+    image: {{ default "ghcr.io/converged-computing/bcc-sidecar:ubuntu2204" .Values.experiment.monitor_image }}
+    {{ include "chart.monitor_sidecar" . }}
+    environment:
+    {{- range $key, $value := .Values.env }}
+      {{ $key }}: {{ $value | quote }}
+    {{- end }}
+    command: "{{ include "chart.monitor_command" . }} {{- range $index, $prog := $progs }} -p {{ $prog }} {{- end -}}"{{ end }}
+  {{ if .Values.experiment.monitor_multiple }}{{- $progs := .Values.experiment.monitor_multiple | splitList "|" }}{{- range $index, $prog := $progs }} 
+  - name: bcc-monitor-{{ $prog }}
+    image: {{ default "ghcr.io/converged-computing/bcc-sidecar:ubuntu2204" $.Values.experiment.monitor_image }}
+    {{ include "chart.monitor_sidecar" . }}
+    environment:
+    {{- range $key, $value := $.Values.env }}
+      {{ $key }}: {{ $value | quote }}
+    {{- end }}
+    command: "ulimit -l unlimited && ulimit -l && {{ if $.Values.experiment.monitor_command }}{{ $.Values.experiment.monitor_command }}{{ else }}python3 /opt/programs/ebpf_collect.py --nodes {{ $.Values.experiment.nodes }} --start-indicator-file=/mnt/flux/start_ebpf_collection {{ if $.Values.experiment.monitor_debug }}--debug{{ end }} --json {{ if $.Values.monitor.sleep }}--sleep{{ end }} {{ if $.Values.experiment.monitor_target }}--include-pattern={{ $.Values.experiment.monitor_target }}{{ end }} --stop-indicator-file=/mnt/flux/stop_ebpf_collection{{ end }} -p {{ $prog }} {{- end -}}"{{ end }}
+{{- end }}
+
+{{- define "chart.monitor_command" -}}
+ulimit -l unlimited && ulimit -l && {{ if .Values.experiment.monitor_command }}{{ .Values.experiment.monitor_command }}{{ else }}python3 /opt/programs/ebpf_collect.py --nodes {{ .Values.experiment.nodes }} --start-indicator-file=/mnt/flux/start_ebpf_collection {{ if .Values.experiment.monitor_debug }}--debug{{ end }} --json {{ if .Values.monitor.sleep }}--sleep{{ end }} {{ if .Values.experiment.monitor_target }}--include-pattern={{ .Values.experiment.monitor_target }}{{ end }} --stop-indicator-file=/mnt/flux/stop_ebpf_collection{{ end }}
+{{- end -}}
+
+{{- define "chart.monitor_sidecar" -}}
     runFlux: false
     pullAlways: true 
     securityContext:
@@ -112,25 +134,7 @@ Iterations is not relevant for this one
         hostPath: /sys/kernel/debug
         path: /sys/kernel/debug
     commands:
-      pre: echo "ulimit -l unlimited" >> /root/.bashrc
-    command: "ulimit -l unlimited && ulimit -l && {{ if .Values.experiment.monitor_command }}{{ .Values.experiment.monitor_command }}{{ else }}python3 /opt/programs/ebpf_collect.py --nodes {{ .Values.experiment.nodes }} --start-indicator-file=/mnt/flux/start_ebpf_collection {{ if .Values.experiment.monitor_debug }}--debug{{ end }} --json {{ if .Values.experiment.monitor_target }}--include-pattern={{ .Values.experiment.monitor_target }}{{ end }} --stop-indicator-file=/mnt/flux/stop_ebpf_collection{{ end }} {{- range $index, $prog := $progs }} -p {{ $prog }} {{- end -}}"{{ end }}
-{{- end }}
-
-{{/* Recording of application libraries 
-Currently only supported for single nodes and debian, requires proot.
-*/}}
-{{- define "chart.record_setup" -}}
-         wget https://github.com/compspec/compat-lib/releases/download/2025-05-12/fs-record {{ if .Values.logging.quiet }}> /dev/null 2>&1{{ end }}
-         chmod +x fs-record && mv fs-record /usr/bin/fs-record
-         apt-get install -y fuse libfuse-dev proot {{ if .Values.logging.quiet }}> /dev/null 2>&1{{ end }} || yum install -y fuse fuse-devel {{ if .Values.logging.quiet }}> /dev/null 2>&1{{ end }}
-{{- end }}
-
-{{- define "chart.record_finish" -}}
-         echo "RECORD-START"
-         cat {{ include "chart.record_file" . }}
-         echo "RECORD-FINISH"
-{{- end }}
-
+      pre: echo "ulimit -l unlimited" >> /root/.bashrc{{ end }}
 {{- define "chart.monitor_finish" -}}
          touch /mnt/flux/stop_ebpf_collection
 {{- end }}
@@ -148,10 +152,6 @@ Currently only supported for single nodes and debian, requires proot.
          sleep 10
          flux exec -r all touch /mnt/flux/start_ebpf_collection
 {{- end }}
-
-{{- define "chart.record" -}}{{ if .Values.experiment.record }}fs-record --out {{ include "chart.record_file" . }} --mpi{{ end }} {{- end }}
-
-{{- define "chart.record_file" -}}{{ if .Values.experiment.record_out }} {{ .Values.experiment.record_out }}{{ else }}/tmp/recording.out{{ end }}{{- end }}
 
 {{/* Flux GPUs */}}
 {{- define "chart.gpus" -}}
@@ -207,7 +207,7 @@ Currently only supported for single nodes and debian, requires proot.
              echo "FLUX-JOB END \${jobid} \${study_id}"
          done
          echo "FLUX JOB STATS"
-         flux job stats         
+         flux job stats 
          {{ if .Values.minicluster.sleep }}sleep infinity{{- end}}         
          {{- end }}
 {{- end }}
