@@ -6,6 +6,8 @@
 logging:
   quiet: true
 
+monitor: {}
+
 experiment:
   iterations: 1
   nodes: 1

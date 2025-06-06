@@ -37,7 +37,9 @@ laghos:
   # ok: 3
   # ot: 2
   # rp: 2
-      
+
+monitor: {}
+
 flux:
   image: ghcr.io/converged-computing/flux-view-ubuntu:tag-jammy
       

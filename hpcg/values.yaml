@@ -16,6 +16,8 @@ experiment:
 env:
   app: "hpcg"
 
+monitor: {}
+
 hpcg:  
   binary: xhpcg
 

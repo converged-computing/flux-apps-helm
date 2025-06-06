@@ -30,6 +30,8 @@ quicksilver:
   # K: 8
   # n: 167772160
 
+monitor: {}
+
 minicluster:
   # Container image
   image: "ghcr.io/converged-computing/metric-quicksilver-cpu:zen4"

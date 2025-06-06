@@ -16,6 +16,8 @@ experiment:
 env:
   app: "e3sm-kernels"
 
+monitor: {}
+
 kernels:
   binary: atm
 

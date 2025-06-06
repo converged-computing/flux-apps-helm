@@ -14,6 +14,8 @@ experiment:
   # tasks: 2
   # tasks should generally not be set
   
+monitor: {}
+
 env:
   app: "pennant"
 

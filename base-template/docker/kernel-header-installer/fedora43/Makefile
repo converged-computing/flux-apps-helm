@@ -1,5 +1,5 @@
-IMAGE_NAME ?= ghcr.io/converged-computing/bcc-sidecar
-IMAGE_TAG ?= ubuntu2204-test
+IMAGE_NAME ?= ghcr.io/converged-computing/kernel-header-installer
+IMAGE_TAG ?= fedora43
 FULL_IMAGE_NAME = $(IMAGE_NAME):$(IMAGE_TAG)
 DOCKERFILE_PATH = Dockerfile
 BUILD_CONTEXT = .

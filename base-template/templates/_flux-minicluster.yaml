@@ -1,5 +1,5 @@
 {{- define "base-template.flux-minicluster" -}}
-{{- $monitor := or .Values.experiment.monitor .Values.experiment.monitor_multiple false -}}
+{{- $monitor := or .Values.monitor.programs .Values.monitor.multiple false -}}
 {{ if $monitor }}apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -18,7 +18,7 @@ spec:
       hostNetwork: true
       hostPID: true
       containers:
-      - image: ghcr.io/converged-computing/kernel-header-installer:ubuntu2204
+      - image: {{ default "ghcr.io/converged-computing/kernel-header-installer:ubuntu2204" .Values.monitor.installer }}
         name: header-installer
         imagePullPolicy: Always
         command: ["/bin/bash", "/entrypoint.sh"]
@@ -66,10 +66,14 @@ spec:
   - image: "{{ default "ghcr.io/converged-computing/metric-lammps-cpu:zen4-reax" .Values.minicluster.image }}"
     name: app
     command: /bin/bash /tmp/run_${app}.sh
-    {{ if .Values.minicluster.volumeName }}volumes:
-       {{ .Values.minicluster.volumeName }}:
-         path: {{ default "/shared" .Values.minicluster.volumePath }}
-         {{ if .Values.minicluster.volumeClaim }}claimName: {{ .Values.minicluster.volumeClaim }}{{ end }}
+    volumes:
+      # Ensure /dev/shm does not limit efa
+      shared-memory:
+        emptyDir: true
+        emptyDirMedium: "memory"
+      {{ if .Values.minicluster.volumeName }}{{ .Values.minicluster.volumeName }}:
+        path: {{ default "/shared" .Values.minicluster.volumePath }}
+        {{ if .Values.minicluster.volumeClaim }}claimName: {{ .Values.minicluster.volumeClaim }}{{ end }}
     {{ end }}
     {{ if .Values.minicluster.workdir }}workingDir: {{ .Values.minicluster.workdir }}{{ end }}
     {{ if .Values.minicluster.pullAlways }}pullAlways: true{{ end }}
@@ -81,6 +85,7 @@ spec:
     resources:
       limits:
         nvidia.com/gpu: "{{ default 0  .Values.minicluster.gpus }}"
+        vpc.amazonaws.com/efa: "{{ default 0  .Values.minicluster.efa }}"
     commands:
       {{ if .Values.minicluster.commands_broker_pre }}brokerPre: {{ .Values.minicluster.commands_broker_pre }}{{ end }}
       {{ if .Values.minicluster.commands_init }}init: {{ .Values.minicluster.commands_init }}{{ end }}

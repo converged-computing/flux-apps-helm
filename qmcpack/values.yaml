@@ -20,6 +20,8 @@ qmcpack:
   binary: qmcpack
   xml: NiO-fcc-S8-dmc-strongscale.xml
 
+monitor: {}
+
 minicluster:
   # Container image
   image: ghcr.io/converged-computing/qmcpack:ubuntu2204

@@ -345,6 +345,7 @@ def collect_trace(
     output_as_table=True,
     include_regex=None,
     exclude_regex=None,
+    interval=100,
     debug=False,  # This flag is unused in provided code
 ):
     global running
@@ -377,9 +378,7 @@ def collect_trace(
         helpers.log("Start indicator found. Proceeding with monitoring.")
 
     bpf_instance = None
-    # Define polling interval for reading BPF maps (e.g., 1 second)
-    # Match original ring_buffer_poll timeout of 100ms if frequent updates are desired
-    polling_interval_seconds = 0.1  # Adjust as needed
+    polling_interval_seconds = interval / 1000
 
     try:
         helpers.log("Initializing eBPF for CPU Scheduling monitoring...")

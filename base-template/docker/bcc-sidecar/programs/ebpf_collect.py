@@ -10,7 +10,15 @@ import sys
 
 here = os.path.dirname(__file__)
 
-known_programs = ["cpu", "tcp", "shmem", "futex", "open_close", "flamegraph"]
+known_programs = [
+    "cpu",
+    "tcp",
+    "shmem",
+    "futex",
+    "open_close",
+    "flamegraph",
+    "tcp-interval",
+]
 sys.path.insert(0, here)
 
 
@@ -62,6 +70,12 @@ def get_parser(description):
         action="store_true",
         default=False,
         help="Print debug calls for open",
+    )
+    parser.add_argument(
+        "--interval",
+        default=100,
+        type=int,
+        help="Default timeout interval to return events",
     )
     parser.add_argument(
         "--sleep",
@@ -150,6 +164,7 @@ def main():
         not args.json,
         args.include_pattern,
         args.exclude_pattern,
+        args.interval,
         args.debug,  # We aren't using this now, passing for consistency.
     )
     if args.sleep:

@@ -11,6 +11,8 @@ experiment:
   nodes: 1
   tasks: 2
 
+monitor: {}
+
 env:
   app: lammps
 
