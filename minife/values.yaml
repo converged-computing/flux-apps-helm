@@ -16,6 +16,8 @@ experiment:
   nodes: 1
   tasks: 2
   
+monitor: {}
+
 minife:
   binary: miniFE.x
   nx: 230

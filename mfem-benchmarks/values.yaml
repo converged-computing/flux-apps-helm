@@ -20,6 +20,8 @@ mfem:
   proc_grid: "2x1x1"
   local_size: "1771561"
   
+monitor: {}
+
 flux:
   image: ghcr.io/converged-computing/flux-view-ubuntu:tag-jammy
 

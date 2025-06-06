@@ -62,6 +62,7 @@ def collect_trace(
     output_as_table=True,
     include_regex=None,
     exclude_regex=None,
+    interval=100,
     debug=False,  # This flag is unused in provided code
 ):
     global running
@@ -92,7 +93,7 @@ def collect_trace(
                 f"\nStart Indicator file defined '{start_indicator_file}'. Waiting."
             )
             while running and not os.path.exists(start_indicator_file):
-                time.sleep(0.5)
+                time.sleep(0.1)
             if not running:
                 helpers.log("Stopped while waiting for start.")
                 return
@@ -128,9 +129,9 @@ def collect_trace(
                 "Check kernel trace pipe for BPF messages: sudo cat /sys/kernel/debug/tracing/trace_pipe\n"
             )
 
-        interval_s = 5
+        polling_interval_seconds = interval / 1000
         while running:
-            time.sleep(interval_s)
+            time.sleep(polling_interval_seconds)
             if not running:
                 break
             print(

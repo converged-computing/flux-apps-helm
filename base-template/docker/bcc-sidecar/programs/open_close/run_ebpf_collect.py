@@ -325,6 +325,7 @@ def collect_trace(
     output_as_table_summary=True,
     include_regex_list=None,
     exclude_regex_list=None,
+    interval=100,
     debug=False,
 ):
     global running
@@ -387,10 +388,10 @@ def collect_trace(
         sys.exit(1)  # Force exit
 
     helpers.log("eBPF program started. Aggregating file access summaries in kernel...")
-
+    polling_interval_seconds = interval / 1000
     try:
         while running:
-            time.sleep(0.2)  # Sleep briefly if not polling debug ring buffer
+            time.sleep(polling_interval_seconds)
             if stop_indicator_file is not None and os.path.exists(stop_indicator_file):
                 helpers.log(
                     f"\nIndicator file '{stop_indicator_file}' found. Stopping."

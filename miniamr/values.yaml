@@ -33,6 +33,8 @@ miniamr:
 # of these number has to equal the number of processors being used.  The
 # default is 1 processor in each direction.
 
+monitor: {}
+
 minicluster:
   # Container image
   # Without flux

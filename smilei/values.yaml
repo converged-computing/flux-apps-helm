@@ -13,6 +13,8 @@ experiment:
   nodes: 1
   tasks: 2
 
+monitor: {}
+
 env:
   app: "smilei"
   example: benchmarks/tst2d_v_o2_multiphoton_Breit_Wheeler.py

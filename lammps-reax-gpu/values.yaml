@@ -28,6 +28,7 @@ lammps:
   y: 2
   z: 2
   
+monitor: {}
 
 minicluster:
   # Container image

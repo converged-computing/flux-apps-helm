@@ -18,6 +18,8 @@ env:
   app: lulesh
   # flux run -N2 -n 125 -o cpu-affinity=per-task -o gpu-affinity=off lulesh -i 100 -s 50 -r 11 -b 1 -c 1
 
+monitor: {}
+
 lulesh:
   binary: lulesh
   iterations: 100

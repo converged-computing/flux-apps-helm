@@ -17,6 +17,8 @@ experiment:
 env:
   app: "nccl-tests"
 
+monitor: {}
+
 flux:
   image: ghcr.io/converged-computing/flux-view-ubuntu:tag-jammy
 

@@ -552,7 +552,7 @@ Although for both approaches you can filter to a cgroup or command, for the defa
 
 ```bash
 helm install \
-  --set experiment.monitor=open-close \
+  --set monitor.programs=open_close \
   --set minicluster.save_logs=true \
   --dry-run lammps ./lammps-reax
 ```
@@ -586,7 +586,7 @@ Here is how to do multiple at once (each still a single sidecar)
 
 ```bash
 helm install \
-  --set experiment.monitor="cpu|shmem|tcp|futex|open-close" \
+  --set monitor.programs="cpu|shmem|tcp|futex|open_close" \
   --set minicluster.save_logs=true \
   lammps ./lammps-reax
 ```
@@ -595,8 +595,8 @@ Here is how to deploy multiple sidecars:
 
 ```bash
 helm install \
-  --set experiment.monitor_multiple=flamegraph|open-close \
-  --set experiment.monitor.sleep=true \
+  --set monitor.multiple=flamegraph|open_close \
+  --set monitor.sleep=true \
   --set minicluster.save_logs=true \
   --dry-run lammps ./lammps-reax
 ```

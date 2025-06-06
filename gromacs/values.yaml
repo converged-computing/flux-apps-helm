@@ -16,6 +16,8 @@ experiment:
 env:
   app: "gromacs"
 
+monitor: {}
+
 gromacs:
   binary: gmx_mpi
   ntomp: 1

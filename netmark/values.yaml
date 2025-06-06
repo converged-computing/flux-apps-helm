@@ -23,6 +23,8 @@ env:
 # -b <msg size in B> : message size in bytes
 # -s: store each trial flag
 
+monitor: {}
+
 netmark:
   binary: netmark
   warmups: 10

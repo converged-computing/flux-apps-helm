@@ -33,6 +33,8 @@ env:
 #   subcom2d-a2a
 #   unstr-mesh
 
+monitor: {}
+
 chatterbug:
   # Expected to be at <binary>/<binary>.x
   # https://github.com/hpcgroup/chatterbug.git

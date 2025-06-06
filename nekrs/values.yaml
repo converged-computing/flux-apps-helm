@@ -16,6 +16,8 @@ experiment:
 env:
   app: "nekrs"
 
+monitor: {}
+
 nekrs:
   binary: nekrs
   par: ./examples/turbPipePeriodic/turbPipe.par
