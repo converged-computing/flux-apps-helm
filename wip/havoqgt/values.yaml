@@ -35,5 +35,6 @@ minicluster:
   
   # Add flux on the fly (set to false if Flux is already in the container)
   addFlux: true
-  commands_init: flux run -n $(nproc) src/generate_rmat -s 17 -o outgraph
+  commands_init: 
+    - flux run -n $(nproc) src/generate_rmat -s 17 -o outgraph
 

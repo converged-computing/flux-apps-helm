@@ -370,6 +370,7 @@ def collect_trace(
     table=True,
     include_regex=None,
     exclude_regex=None,
+    interval=100,
     debug=False,  # This flag is unused in provided code
 ):
     global running
@@ -425,7 +426,7 @@ def collect_trace(
 
     try:
         while running:
-            bpf_instance.ring_buffer_poll(timeout=100)
+            bpf_instance.ring_buffer_poll(timeout=interval)
             if stop_indicator_file is not None and os.path.exists(stop_indicator_file):
                 helpers.log(
                     f"\nIndicator file '{stop_indicator_file}' found. Stopping."

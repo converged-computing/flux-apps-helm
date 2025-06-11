@@ -48,6 +48,9 @@ RUN git clone -b v0.34.0 https://github.com/iovisor/bcc /usr/src/bcc && \
 
 ENV BCC_PROBE_LIMIT=1048576
 
+# Additional packages
+RUN apt-get update && apt-get install -y ibverbs-utils libibverbs-dev libibverbs1 && apt-get clean
+
 # Set up environment for Python BCC tools (if needed)
 ENV PYTHONPATH=/usr/lib/python3/dist-packages
 RUN python3 -m pip install river --break-system-packages

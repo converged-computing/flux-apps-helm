@@ -13,6 +13,8 @@ experiment:
   nodes: 1
   tasks: 2
 
+monitor: {}
+
 env:
   app: "hpl"
 
@@ -35,4 +37,7 @@ minicluster:
   
   # Add flux on the fly (set to false if Flux is already in the container)
   addFlux: false
-  commands_init: ". /opt/spack-environment/spack/share/spack/setup-env.sh && spack env activate /opt/spack-environment"  
+  commands_init:
+    - . /opt/spack-environment/spack/share/spack/setup-env.sh
+    - spack env activate /opt/spack-environment/
+

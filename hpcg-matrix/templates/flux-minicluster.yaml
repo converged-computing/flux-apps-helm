@@ -1,0 +1,4 @@
+{{ include "base-template.flux-minicluster" . }}
+    environment:	
+      apprun: '{{ .Values.hpcg.binary }}'
+      {{- include "base-template.environment" . }}

@@ -16,6 +16,8 @@ experiment:
 env:
   app: "rajaperf"
 
+monitor: {}
+
 rajaperf:
   binary: /opt/RAJAPerf/build/bin/raja-perf.exe 
   # kernels:

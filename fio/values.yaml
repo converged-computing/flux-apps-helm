@@ -16,6 +16,8 @@ experiment:
 env:
   app: "fio"
 
+monitor: {}
+
 fio:
   binary: fio
   testname: test

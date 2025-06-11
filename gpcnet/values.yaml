@@ -16,6 +16,8 @@ experiment:
 env:
   app: "gpcnet"
 
+monitor: {}
+
 # Run example at 64 nodes of BDW 18 parts (2 per node) fully packed on a Cray/ALPS system:
 # aprun -n 2304 -N 36 ./network_test
 # aprun -n 2304 -N 36 ./network_load_test
@@ -40,4 +42,7 @@ minicluster:
   
   # Add flux on the fly (set to false if Flux is already in the container)
   addFlux: false
-  commands_init: ". /opt/spack-environment/spack/share/spack/setup-env.sh && spack env activate /opt/spack-environment"
+  commands_init:
+    - . /opt/spack-environment/spack/share/spack/setup-env.sh
+    - spack env activate /opt/spack-environment/
+

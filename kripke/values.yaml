@@ -16,6 +16,8 @@ experiment:
   nodes: 1
   tasks: 1
   
+monitor: {}
+
 kripke:
   binary: kripke
   # layout: DGZ

@@ -211,3 +211,6 @@ RUN export VERSION="1.2.0" && \
     tar -zxf oras_${VERSION}_*.tar.gz -C oras-install/ && \
     mv oras-install/oras /usr/local/bin/ && \
     rm -rf oras_${VERSION}_*.tar.gz oras-install/
+    
+# Additional packages
+RUN apt-get update && apt-get install -y ibverbs-utils libibverbs-dev libibverbs1 && apt-get clean

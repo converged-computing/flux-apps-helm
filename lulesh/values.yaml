@@ -18,6 +18,8 @@ env:
   app: lulesh
   # flux run -N2 -n 125 -o cpu-affinity=per-task -o gpu-affinity=off lulesh -i 100 -s 50 -r 11 -b 1 -c 1
 
+monitor: {}
+
 lulesh:
   binary: lulesh
   iterations: 100
@@ -42,4 +44,7 @@ minicluster:
   
   # Add flux on the fly (set to false if Flux is already in the container)
   addFlux: false
-  commands_init: ". /opt/spack-environment/spack/share/spack/setup-env.sh && spack env activate /opt/spack-environment/"
+  commands_init:
+    - . /opt/spack-environment/spack/share/spack/setup-env.sh
+    - spack env activate /opt/spack-environment/
+

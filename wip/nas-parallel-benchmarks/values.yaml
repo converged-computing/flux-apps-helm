@@ -48,4 +48,6 @@ minicluster:
   
   # Logic to source the spack environment (needed for the default container)
   # commands_init: ". /opt/spack/share/spack/setup-env.sh && spack load npb"
-  commands_init: ". /opt/spack-environment/spack/share/spack/setup-env.sh && spack env activate /opt/spack-environment"
+  commands_init:
+    - . /opt/spack-environment/spack/share/spack/setup-env.sh
+    - spack env activate /opt/spack-environment/

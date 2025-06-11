@@ -46,6 +46,7 @@ def collect_trace(
     output_as_table=True,
     include_regex=None,
     exclude_regex=None,
+    interval=100,
     debug=False,  # This flag is unused in provided code
 ):
     global running
@@ -108,10 +109,11 @@ def collect_trace(
         )
         return
 
+    # Convert  
     if start_indicator_file is not None:
         helpers.log(f"Start Indicator file defined '{start_indicator_file}'. Waiting.")
         while running and not os.path.exists(start_indicator_file):
-            time.sleep(0.2)
+            time.sleep(0.1)
         helpers.log("Start indicator found. Proceeding.")
 
     try:
@@ -125,9 +127,10 @@ def collect_trace(
         print(f"Error attaching perf event: {e}")
         sys.exit(1)
 
+    polling_interval_seconds = interval / 1000
     try:
         while running:
-            time.sleep(0.2)
+            time.sleep(polling_interval_seconds)
             if stop_indicator_file is not None and os.path.exists(stop_indicator_file):
                 helpers.log(f"Indicator file '{stop_indicator_file}' found. Stopping.")
                 running = False

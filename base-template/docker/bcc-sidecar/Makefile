@@ -1,5 +1,5 @@
 IMAGE_NAME ?= ghcr.io/converged-computing/bcc-sidecar
-IMAGE_TAG ?= ubuntu2204
+IMAGE_TAG ?= ubuntu2204-test
 FULL_IMAGE_NAME = $(IMAGE_NAME):$(IMAGE_TAG)
 DOCKERFILE_PATH = Dockerfile
 BUILD_CONTEXT = .
