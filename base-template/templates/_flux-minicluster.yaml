@@ -13,7 +13,12 @@ spec:
   template:
     metadata:
       labels:
-        app: *name
+        app: *name{{ if .Values.monitor.label }}{{- range $key, $value := .Values.monitor.label }}
+        {{ $key }}: {{ $value | quote }}
+        {{- end }}{{ end }}
+      {{ if .Values.monitor.annotation }}annotations: {{- range $key, $value := .Values.monitor.annotation }}
+        {{ $key }}: {{ $value | quote }}
+        {{- end }}{{ end }}
     spec:
       hostNetwork: true
       hostPID: true
@@ -53,10 +58,15 @@ spec:
   logging:
     quiet: {{ if .Values.logging.quiet }}true{{ else }}false{{ end }}
 
-  {{ if .Values.minicluster.serviceAccountName }}pod:
-    serviceAccountName: {{  .Values.minicluster.serviceAccountName }}{{ end }}
+  pod:
+  {{ if .Values.minicluster.serviceAccountName }}  serviceAccountName: {{  .Values.minicluster.serviceAccountName }}{{ end }}
+  {{ if .Values.label }}  labels: {{- range $key, $value := .Values.label }}
+      {{ $key }}: {{ $value | quote }}
+  {{- end }}{{ end }}
+  {{ if .Values.annotation }}  annotations: {{- range $key, $value := .Values.annotation }}
+      {{ $key }}: {{ $value | quote }}
+  {{- end }}{{ end }}
 
-  # This disables installing flux via the view
   flux:
     container:
       disable: {{ if .Values.minicluster.addFlux }}false{{ else }}true{{ end }}
@@ -88,7 +98,8 @@ spec:
         vpc.amazonaws.com/efa: "{{ default 0  .Values.minicluster.efa }}"
     commands:
       {{ if .Values.minicluster.commands_broker_pre }}brokerPre: {{ .Values.minicluster.commands_broker_pre }}{{ end }}
-      {{ if .Values.minicluster.commands_init }}init: {{ .Values.minicluster.commands_init }}{{ end }}
+      init: |
+        {{ include "chart.fluxinit" . }}
       post: |
          {{ if $monitor }}{{ include "chart.monitor_finish" . }}{{ end }}
          {{ include "chart.fluxfinish" . }}

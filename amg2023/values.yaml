@@ -41,4 +41,6 @@ minicluster:
   addFlux: false
   
   # Logic to source the spack environment (needed for the default container)
-  commands_init: ". /etc/profile.d/z10_spack_environment.sh && flux R encode --hosts=${hosts} --local > ${viewroot}/etc/flux/system/R"
+  commands_init: 
+    - . /etc/profile.d/z10_spack_environment.sh
+    - flux R encode --hosts=${hosts} --local > ${viewroot}/etc/flux/system/R

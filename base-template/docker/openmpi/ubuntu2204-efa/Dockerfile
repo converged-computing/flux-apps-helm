@@ -187,22 +187,15 @@ RUN apt-get update && \
         dnsutils telnet strace git g++ \
         unzip bzip2
 
-# install openmpi without cuda
 WORKDIR /opt
-RUN mkdir -p /usr/local/pancakes && \
-    wget https://download.open-mpi.org/release/open-mpi/v4.1/openmpi-4.1.2.tar.gz && \
-    tar -xzvf openmpi-4.1.2.tar.gz && \
-    cd openmpi-4.1.2 && \
-    ./configure && \
-    make && make install
 
-RUN apt-get update && \
-    apt-get install -y fftw3-dev fftw3 pdsh libfabric-dev libfabric1 \
-        openssh-client openssh-server \
-        dnsutils telnet strace cmake git g++ \
-        unzip bzip2
+RUN export EFA_VERSION=latest && \
+    mkdir /tmp/efa && cd /tmp/efa && \
+    curl -O https://s3-us-west-2.amazonaws.com/aws-efa-installer/aws-efa-installer-${EFA_VERSION}.tar.gz && \
+    tar -xf aws-efa-installer-${EFA_VERSION}.tar.gz && cd aws-efa-installer && ./efa_installer.sh -y --skip-kmod
 
-WORKDIR /opt
+ENV PATH=/opt/amazon/openmpi/bin:$PATH
+ENV LD_LIBRARY_PATH=/opt/amazon/openmpi/lib:$LD_LIBRARY_PATH
 
 # Install oras for saving artifacts
 RUN export VERSION="1.2.0" && \
@@ -211,6 +204,3 @@ RUN export VERSION="1.2.0" && \
     tar -zxf oras_${VERSION}_*.tar.gz -C oras-install/ && \
     mv oras-install/oras /usr/local/bin/ && \
     rm -rf oras_${VERSION}_*.tar.gz oras-install/
-    
-# Additional packages
-RUN apt-get update && apt-get install -y ibverbs-utils libibverbs-dev libibverbs1 && apt-get clean

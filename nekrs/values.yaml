@@ -43,4 +43,5 @@ minicluster:
   addFlux: false
   
   # Pull the data to the working directory, which we assume is bound
-  commands_init: "oras pull ghcr.io/converged-computing/metric-nek5000:libfabric-cpu-data"
+  commands_init: 
+    - "oras pull ghcr.io/converged-computing/metric-nek5000:libfabric-cpu-data"

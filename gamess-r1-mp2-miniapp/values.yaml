@@ -40,4 +40,6 @@ minicluster:
   addFlux: true
   
   # Logic to source the spack environment (needed for the default container)
-  commands_init: ". /opt/spack/share/spack/setup-env.sh && spack load gamess-ri-mp2-miniapp"
+  commands_init: 
+    - . /opt/spack/share/spack/setup-env.sh 
+    - spack load gamess-ri-mp2-miniapp

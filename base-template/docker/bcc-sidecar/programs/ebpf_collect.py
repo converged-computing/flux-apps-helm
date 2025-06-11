@@ -17,6 +17,7 @@ known_programs = [
     "futex",
     "open_close",
     "flamegraph",
+    "ibverbs",
     "tcp-interval",
 ]
 sys.path.insert(0, here)

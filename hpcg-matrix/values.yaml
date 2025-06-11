@@ -1,0 +1,54 @@
+# Default values for experiment
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Logging (quiet will hide flux setup)
+logging:
+  quiet: true
+
+experiment:
+  iterations: 1
+  # num_threads: 3
+  # cores_per_task: 3
+  nodes: 1
+  tasks: 2
+
+monitor: {}
+
+env:
+  app: "hpcg"
+
+hpcg:  
+  binary: /opt/hpcg/xhpcg
+
+minicluster:
+  # Container image
+  image: "ghcr.io/converged-computing/hpcg-matrix:native-O3"
+
+  # Interactive MiniCluster?
+  interactive: false
+
+  # Number of NVIDIA gpus
+  gpus: 0
+  
+  # MiniCluster size
+  size: 1
+  
+  # Add flux on the fly (set to false if Flux is already in the container)
+  addFlux: true
+
+  # This sets the matrix size (40 40 40) and the number of seconds we want it to try to run
+  commands_init: 
+    - rm -r /opt/hpcg/hpcg.dat
+    - echo "" >> /opt/hpcg/hpcg.dat
+    - echo "" >> /opt/hpcg/hpcg.dat
+    - echo "32 32 32" >> /opt/hpcg/hpcg.dat
+    - echo "15" >> /opt/hpcg/hpcg.dat
+    - cat /opt/hpcg/hpcg.dat
+  commands_post: 
+    - echo "FLUX-RESULTS START"
+    - cat hpcg*.txt
+    - echo "HPCG-BENCHMARKS"
+    - cat HPCG-Benchmark*.txt
+    - echo "FLUX-RESULTS END"
+

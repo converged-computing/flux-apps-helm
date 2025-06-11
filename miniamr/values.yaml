@@ -55,4 +55,7 @@ minicluster:
   
   # Logic to source the spack environment (needed for the default container)
   # That was only for a spack install
-  # commands_init: ". /opt/spack/share/spack/setup-env.sh && spack load miniamr"
+  # commands_init:
+  #  - . /opt/spack-environment/spack/share/spack/setup-env.sh
+  #  - spack env activate /opt/spack-environment/
+

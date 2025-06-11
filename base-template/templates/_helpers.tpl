@@ -110,7 +110,7 @@ Iterations is not relevant for this one
     {{- range $key, $value := $.Values.env }}
       {{ $key }}: {{ $value | quote }}
     {{- end }}
-    command: "ulimit -l unlimited && ulimit -l && {{ if $.Values.monitor.command }}{{ $.Values.monitor.command }}{{ else }}python3 /opt/programs/ebpf_collect.py --nodes {{ $.Values.experiment.nodes }} --start-indicator-file=/mnt/flux/start_ebpf_collection {{ if $.Values.monitor.debug }}--debug{{ end }} --json {{ if $.Values.monitor.sleep }}--sleep{{ end }} {{ if $.Values.monitor.target }}--include-pattern={{ $.Values.monitor.target }}{{ end }} --stop-indicator-file=/mnt/flux/stop_ebpf_collection{{ end }} -p {{ $prog }} {{- end -}}"{{ end }}
+    command: "ulimit -l unlimited && ulimit -l && {{ if $.Values.monitor.command }}{{ $.Values.monitor.command }}{{ else }}python3 /opt/programs/ebpf_collect.py --nodes {{ $.Values.experiment.nodes }} --start-indicator-file=/mnt/flux/start_ebpf_collection {{ if $.Values.monitor.debug }}--debug{{ end }} --json {{ if $.Values.monitor.sleep }}--sleep{{ end }} {{ if $.Values.monitor.target }}--include-pattern={{ $.Values.monitor.target }}{{ end }} --stop-indicator-file=/mnt/flux/stop_ebpf_collection{{ end }} -p {{ $prog }}"{{- end -}}{{ end }}
 {{- end }}
 
 {{- define "chart.monitor_command" -}}
@@ -149,7 +149,7 @@ ulimit -l unlimited && ulimit -l && {{ if .Values.monitor.command }}{{ .Values.m
          TARGET_CGROUP_ID=\$(stat -c '%i' \$ACTUAL_CGROUP_DIR)
          echo "The cgroup id is \$TARGET_CGROUP_ID"
          echo -n \$TARGET_CGROUP_ID > /mnt/flux/cgroup-id.txt
-         sleep 10
+         sleep 5
          flux exec -r all touch /mnt/flux/start_ebpf_collection
 {{- end }}
 
@@ -166,6 +166,13 @@ ulimit -l unlimited && ulimit -l && {{ if .Values.monitor.command }}{{ .Values.m
          flux R encode --hosts=${hosts} --cores=0-${procs} --gpu=${gpus} > ${viewroot}/etc/flux/system/R
          cat ${viewroot}/etc/flux/system/R || true
          export CUDA_VISIBLE_DEVICES=0{{ range untilStep 1 $gpus 1 }},{{ . }}{{ end }}{{ end }}
+{{- end }}
+
+{{/* Flux Init */}}
+{{- define "chart.fluxinit" -}}
+         {{- if .Values.minicluster.commands_init }}{{- range $k, $v := .Values.minicluster.commands_init }}
+           {{ . | toYaml | indent 4 | trim }}
+         {{- end }}{{- end }}
 {{- end }}
 
 {{/* Flux Post */}}
