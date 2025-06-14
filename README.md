@@ -1,5 +1,7 @@
 # Flux Operator Apps
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15665233.svg)](https://doi.org/10.5281/zenodo.15665233)
+
 These are simple helm charts to run HPC applications in Kubernetes using the Flux Operator. You can customize each different application to your needs, from the container, to size, to iterations, etc. We have a simple strategy that uses:
 
  - [base-template](base-template): A base template MiniCluster that is used acrossed apps.
