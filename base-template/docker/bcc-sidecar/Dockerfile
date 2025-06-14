@@ -36,7 +36,7 @@ RUN apt-get update && \
     && apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-RUN git clone -b v0.34.0 https://github.com/iovisor/bcc /usr/src/bcc && \
+RUN git clone --depth 1 -b v0.34.0 https://github.com/iovisor/bcc /usr/src/bcc && \
     mkdir -p /usr/src/bcc/build && \
     cd /usr/src/bcc/build && \
     cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DPYTHON_CMD=python3 && \

@@ -35,7 +35,7 @@ RUN mkdir -p setup && \
   { \
     echo "SHELL        = /bin/sh"; \
     echo "CXX          = ${CXX_COMPILER}"; \
-    echo "CXXFLAGS     = \$(DEFINES) ${OPTIMIZATION_FLAGS} -march=${MARCH_FLAG} -fopenmp"; \
+    echo "CXXFLAGS     = \$(DEFINES) ${OPTIMIZATION_FLAGS} ${MARCH_FLAG} -fopenmp"; \
     echo "LINKER       = \$(CXX)"; \
     echo "LINKFLAGS    = \$(CXXFLAGS)"; \
     echo "MPI_INC      ="; \

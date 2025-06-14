@@ -19,32 +19,22 @@ OPTIMIZATIONS=(
   "Og"    # Optimize for debugging
 )
 
-# Dimension 2: Micro-architectures (see notes below for more options)
 ARCHITECTURES=(
-  # Special 'native' flag
   "native"
+  "neoverse-n1"      # AWS Graviton2, Ampere Altra
+  "neoverse-v1"      # AWS Graviton3 (SVE support)
+  "neoverse-n2"      # Successor to N1 (SVE2 support)
+  "neoverse-v2"      # Successor to V1 (SVE2 support)
+  "ampere1"          # Alias for neoverse-n1, used for Ampere eMAG
+  "a64fx"            # Fujitsu A64FX (as used in Fugaku supercomputer, SVE support)  
+  "cortex-a72"     # Raspberry Pi 4
+  "cortex-a53"       # Very common, older 64-bit low-power core
+  "cortex-a57"       # Older 64-bit high-performance core (paired with A53)
+  "cortex-a76"       # High-performance core from 2018
+  "cortex-x1"        # High-performance "custom" core
 
-  # A. Generic, Portable Architectures (based on instruction set levels)
-  "x86-64-v2"
-  "x86-64-v3"
-  "x86-64-v4"
-
-  # B. Intel-Specific Architectures
-  "sandybridge"
-  "ivybridge"
-  "haswell"
-  "broadwell"
-  "skylake"
-  "skylake-avx512"
-  "icelake-server"
-  "sapphirerapids"
-
-  # C. AMD-Specific Architectures
-  "btver2"          # Piledriver
-  "bdver4"          # Excavator
-  "znver1"          # Zen 1
-  "znver2"          # Zen 2
-  "znver3"          # Zen 3
+  # --- F. Generic CPU Models ---
+  "generic"          # A generic ARMv8-A CPU model
 )
 
 # --- Build Loop ---
@@ -56,10 +46,10 @@ for arch in "${ARCHITECTURES[@]}"; do
     FULL_OPT_FLAG="-$opt"
     
     # The -march flag is the architecture name
-    FULL_MARCH_FLAG="-march=$arch"
+    FULL_MARCH_FLAG="-mcpu=${arch}"
 
     # Construct the unique Docker tag (e.g., "hpcg-benchmark:skylake-avx512-O3")
-    TAG="${IMAGE_NAME}:${arch}-${opt}"
+    TAG="${IMAGE_NAME}:${arch}-${opt}-arm"
 
     echo "------------------------------------------------------------"
     echo "Building for:"
@@ -68,10 +58,14 @@ for arch in "${ARCHITECTURES[@]}"; do
     echo "Image will be tagged as: ${TAG}"
     echo "------------------------------------------------------------"
 
-    docker build . \
-      --build-arg "OPTIMIZATION_FLAGS=${FULL_OPT_FLAG}" \
-      --build-arg "MARCH_FLAG=${FULL_MARCH_FLAG}" \
-      -t "${TAG}"
+    cmd="docker buildx build . \
+        --platform linux/arm64 \
+        --build-arg "OPTIMIZATION_FLAGS=-${opt}" \
+        --build-arg "MARCH_FLAG=${FULL_MARCH_FLAG}" \
+        -t "${TAG}" \
+        --load"
+    echo $cmd
+    $cmd
   done
 done
 
