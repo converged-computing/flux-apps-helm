@@ -155,7 +155,7 @@ ulimit -l unlimited && ulimit -l && {{ if .Values.monitor.command }}{{ .Values.m
 
 {{/* Flux GPUs */}}
 {{- define "chart.gpus" -}}
-         {{ if .Values.minicluster.gpus }}procs=$(nproc); procs=$((procs - 1));   
+         {{ if .Values.minicluster.gpus }}{{ if .Values.minicluster.tasks }}procs={{ .Values.minicluster.tasks }}{{ else }}procs=$(nproc){{ end }}; procs=$((procs - 1));   
          gpus={{ .Values.minicluster.gpus }}; 
          if [[ "$gpus" == "1" ]]; then
              gpus=0;
@@ -163,6 +163,9 @@ ulimit -l unlimited && ulimit -l && {{ if .Values.monitor.command }}{{ .Values.m
              gpus=$((gpus - 1)); gpus=0-$gpus
          fi
          {{ $gpus := (.Values.minicluster.gpus | int) }}
+         if [[ "${hosts}" == "" ]]; then
+             hosts=$(hostname)
+         fi
          flux R encode --hosts=${hosts} --cores=0-${procs} --gpu=${gpus} > ${viewroot}/etc/flux/system/R
          cat ${viewroot}/etc/flux/system/R || true
          export CUDA_VISIBLE_DEVICES=0{{ range untilStep 1 $gpus 1 }},{{ . }}{{ end }}{{ end }}

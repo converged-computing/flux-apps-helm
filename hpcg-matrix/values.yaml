@@ -45,6 +45,8 @@ minicluster:
     - echo "32 32 32" >> /opt/hpcg/hpcg.dat
     - echo "15" >> /opt/hpcg/hpcg.dat
     - cat /opt/hpcg/hpcg.dat
+  commands_pre:
+    - sleep infinity
   commands_post: 
     - echo "FLUX-RESULTS START"
     - cat hpcg*.txt
