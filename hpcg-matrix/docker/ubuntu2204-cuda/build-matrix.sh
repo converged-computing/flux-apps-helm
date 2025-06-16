@@ -97,6 +97,7 @@ for opt_input in "${OPTIMIZATIONS[@]}"; do
     # during iterative development. For production builds, removing --no-cache is fine.
     docker_build_cmd=(
       docker build
+      --progress plain
       --build-arg "OPTIMIZATION_LEVEL=${parsed_opt_level}"
       --build-arg "MARCH=${arch}"
       --build-arg "MTUNE=${mtune_val}"
