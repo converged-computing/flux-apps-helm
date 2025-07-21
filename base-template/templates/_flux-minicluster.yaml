@@ -50,7 +50,14 @@ kind: MiniCluster
 metadata:
   name: {{ .Release.Name }}
   labels:
-    {{- include "chart.labels" . | nindent 4 }}
+    {{- include "chart.labels" . | nindent 4 -}}
+    {{ if .Values.label }}{{- range $key, $value := .Values.label }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}{{ end }}
+  {{ if .Values.annotation }}annotations: {{- range $key, $value := .Values.annotation }}
+    {{ $key }}: {{ $value | quote }}
+    {{- end }}{{ end }}
+
 spec:
   size: {{ default 1 .Values.minicluster.size }}
   {{ if .Values.minicluster.interactive }}interactive: true {{ end }}
@@ -60,10 +67,10 @@ spec:
 
   pod:
   {{ if .Values.minicluster.serviceAccountName }}  serviceAccountName: {{  .Values.minicluster.serviceAccountName }}{{ end }}
-  {{ if .Values.label }}  labels: {{- range $key, $value := .Values.label }}
+  {{ if .Values.podLabel }}  labels: {{- range $key, $value := .Values.podLabel }}
       {{ $key }}: {{ $value | quote }}
   {{- end }}{{ end }}
-  {{ if .Values.annotation }}  annotations: {{- range $key, $value := .Values.annotation }}
+  {{ if .Values.podAnnotation }}  annotations: {{- range $key, $value := .Values.podAnnotation }}
       {{ $key }}: {{ $value | quote }}
   {{- end }}{{ end }}
 
