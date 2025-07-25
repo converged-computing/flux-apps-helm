@@ -41,12 +41,13 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
          for i in {1..{{ default 1 .Values.experiment.iterations}}}
          do
            echo "FLUX-RUN START $app-iter-\$i"
-           flux run --setattr=user.study_id=$app-iter-\$i -N{{ if .Values.experiment.nodes }}{{ .Values.experiment.nodes }}{{ else }}1{{ end }} {{ if .Values.experiment.tasks }}-n {{ .Values.experiment.tasks }}{{ end }} {{ include "chart.fluxopts" . }} ${apprun}
+           flux run --setattr=user.study_id=$app-iter-\$i -N{{ if .Values.experiment.nodes }}{{ .Values.experiment.nodes }}{{ else }}1{{ end }} {{ include "chart.fluxopts" . }} ${apprun}
            {{ if .Values.minicluster.commands_post_iteration }}{{ .Values.minicluster.commands_post_iteration }};{{ end }}
             echo "FLUX-RUN END $app-iter-\$i"
          done
 {{- end }}
 
+{{- define "chart.tasks" -}}{{ if eq .Values.experiment.tasks "all" }} -n $(( $(lscpu | grep '^Core(s) per socket:' | awk '{print $4}') * $(lscpu | grep '^Socket(s):' | awk '{print $2}') )){{ else if .Values.experiment.tasks }}-n {{ .Values.experiment.tasks }}{{ end }}{{- end }}
 
 {{/* Flux Run For Each (node) */}}
 {{- define "chart.foreach" -}}
@@ -55,7 +56,7 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
          do
            echo "FLUX-RUN START $app-iter-\$i"
            for node in \$(seq 0 {{ default 1 $node_max }}); do
-               flux submit --flags waitable --requires="hosts:$app-\$node" -N 1 --setattr=user.study_id=$app-iter-\$i-node-\$node {{ if .Values.experiment.tasks }}-n {{ .Values.experiment.tasks }}{{ end }} {{ include "chart.fluxopts" . }}  ${apprun}               
+               flux submit --flags waitable --requires="hosts:$app-\$node" -N 1 --setattr=user.study_id=$app-iter-\$i-node-\$node  {{ include "chart.fluxopts" . }}  ${apprun}               
            done 
            echo "FLUX-RUN END $app-iter-\$i"
          done
@@ -63,7 +64,7 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{- end }}
 
 {{/* Flux Shared Options */}}
-{{- define "chart.fluxopts" -}}-o cpu-affinity={{ default "per-task" .Values.experiment.cpu_affinity }} -o gpu-affinity={{ default "off" .Values.experiment.gpu_affinity }} {{ if .Values.experiment.run_threads }}--env OMP_NUM_THREADS={{ .Values.experiment.run_threads }}{{ end }} {{ if .Values.experiment.cores_per_task }}--cores-per-task {{ .Values.experiment.cores_per_task }}{{ end }} {{ if .Values.minicluster.gpus }} -g {{ .Values.minicluster.gpus }}{{ end }} {{ if .Values.experiment.exclusive }}--exclusive{{ end }}{{- end }}
+{{- define "chart.fluxopts" -}}{{ include "chart.tasks" . }} -o cpu-affinity={{ default "per-task" .Values.experiment.cpu_affinity }} -o gpu-affinity={{ default "off" .Values.experiment.gpu_affinity }} {{ if .Values.experiment.run_threads }}--env OMP_NUM_THREADS={{ .Values.experiment.run_threads }}{{ end }} {{ if .Values.experiment.cores_per_task }}--cores-per-task {{ .Values.experiment.cores_per_task }}{{ end }} {{ if .Values.minicluster.gpus }} -g {{ .Values.minicluster.gpus }}{{ end }} {{ if .Values.experiment.exclusive }}--exclusive{{ end }}{{- end }}
 
 {{/* Flux Run with Pairs 
 Iterations is not relevant for this one
@@ -81,7 +82,7 @@ Iterations is not relevant for this one
            dequeue_from_list \$list
            for j in \$list; do
              echo "FLUX-RUN START $app-iter-\${i}-\${j}"
-              flux run -N 2 {{ if .Values.experiment.tasks }}-n {{ .Values.experiment.tasks }}{{ end }}  \
+              flux run -N 2  \
                --setattr=user.study_id=$app-iter-\$i-\${j} \
                --requires="hosts:\${i},\${j}" \
                {{ include "chart.fluxopts" . }} \
