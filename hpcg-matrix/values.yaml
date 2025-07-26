@@ -11,7 +11,7 @@ experiment:
   # num_threads: 3
   # cores_per_task: 3
   nodes: 1
-  tasks: 2
+  # tasks: 2
 
 monitor: {}
 
@@ -45,6 +45,8 @@ minicluster:
     - echo "32 32 32" >> /opt/hpcg/hpcg.dat
     - echo "15" >> /opt/hpcg/hpcg.dat
     - cat /opt/hpcg/hpcg.dat
+  commands_pre:
+    - sleep infinity
   commands_post: 
     - echo "FLUX-RESULTS START"
     - cat hpcg*.txt
