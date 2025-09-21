@@ -16,6 +16,14 @@ build:
 		$(BUILD_CONTEXT)
 	@echo "Docker image $(FULL_IMAGE_NAME) built successfully."
 
+arm:
+	@echo "Building Docker image $(FULL_IMAGE_NAME)-arm..."
+	docker build \
+		-f $(DOCKERFILE_PATH).arm \
+		-t $(FULL_IMAGE_NAME)-arm \
+		$(BUILD_CONTEXT)
+	@echo "Docker image $(FULL_IMAGE_NAME)-arm built successfully."
+
 # Push the docker image
 push:
 	@echo "Pushing image $(FULL_IMAGE_NAME)..."
@@ -27,5 +35,5 @@ clean:
 	docker rmi $(FULL_IMAGE_NAME) || true
 	@echo "Docker image $(FULL_IMAGE_NAME) removed (if it existed)."
 
-.PHONY: all build clean
+.PHONY: all build clean arm
 

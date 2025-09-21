@@ -47,7 +47,7 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
          done
 {{- end }}
 
-{{- define "chart.tasks" -}}{{ if eq .Values.experiment.tasks "all" }} -n $(( $(lscpu | grep '^Core(s) per socket:' | awk '{print $4}') * $(lscpu | grep '^Socket(s):' | awk '{print $2}') )){{ else if .Values.experiment.tasks }}-n {{ .Values.experiment.tasks }}{{ end }}{{- end }}
+{{- define "chart.tasks" -}}{{ if .Values.experiment.all_tasks }} -n $(( $(lscpu | grep '^Core(s) per socket:' | awk '{print $4}') * $(lscpu | grep '^Socket(s):' | awk '{print $2}') )){{ else if .Values.experiment.tasks }}-n {{ .Values.experiment.tasks }}{{ end }}{{- end }}
 
 {{/* Flux Run For Each (node) */}}
 {{- define "chart.foreach" -}}
