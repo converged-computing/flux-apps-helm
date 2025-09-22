@@ -1,5 +1,8 @@
-FROM ubuntu:22.04 AS builder
+FROM ubuntu:24.04 AS builder
 ENV DEBIAN_FRONTEND=noninteractive
+
+# docker build -t ghcr.io/converged-computing/flux-slingshot:ubuntu2404 .
+# docker push ghcr.io/converged-computing/flux-slingshot:ubuntu2404
 
 RUN apt-get update && apt-get install -y build-essential \
     tar \
@@ -13,11 +16,12 @@ RUN apt-get update && apt-get install -y build-essential \
     zip \
     libblas-dev \
     liblapack-dev \
-    fftw3-dev fftw3 \
+    libfftw3-dev libfftw3-bin \
     libxml2 \
     libxml2-dev \
     hdf5-tools \
     libhdf5-dev \
+    cmake \
     libboost-all-dev \
     && apt-get clean
 
@@ -64,7 +68,7 @@ RUN apt-get update && \
 
 # Python - instead of a system python we install anaconda
 # https://docs.conda.io/en/latest/miniconda.html#linux-installers
-RUN pip install --upgrade --ignore-installed \
+RUN pip install --upgrade --ignore-installed --break-system-packages \
         "markupsafe==2.0.0" \
         coverage cffi ply six pyyaml "jsonschema>=2.6,<4.0" \
         sphinx sphinx-rtd-theme sphinxcontrib-spelling 
@@ -105,25 +109,15 @@ RUN locale-gen en_US.UTF-8
 # NOTE: luaposix installed by rocks due to Ubuntu bug: #1752082 https://bugs.launchpad.net/ubuntu/+source/lua-posix/+bug/1752082
 RUN luarocks install luaposix
 
-# Install openpmix, prrte
-WORKDIR /opt/prrte
-RUN git clone https://github.com/openpmix/openpmix.git && \
-    git clone https://github.com/openpmix/prrte.git && \
-    ls -l && \
-    set -x && \
-    cd openpmix && \
-    git checkout fefaed568f33bf86f28afb6e45237f1ec5e4de93 && \
-    ./autogen.pl && \
-    ./configure --prefix=/usr --disable-static && make -j 4 install && \
-    ldconfig && \
-    cd .. && \
+# Install openpmix, prrte. Openpmix (pmix2) seems to be installed by hwloc, v5.x
+RUN git clone --recurse-submodules https://github.com/openpmix/prrte.git && \
     cd prrte && \
-    git checkout 477894f4720d822b15cab56eee7665107832921c && \
+    git checkout v3.0.1 && \
     ./autogen.pl && \
-    ./configure --prefix=/usr && make -j 4 install && \
-    cd ../.. && \
-    rm -rf prrte
-
+    ./configure --prefix=/opt/prrte && \
+    # This installs OK but the exit code is off.
+    make -j all install || true
+ 
 ENV LANG=C.UTF-8
 ARG FLUX_SECURITY_VERSION=0.11.0
 
@@ -147,9 +141,10 @@ RUN mkdir -p /var/run/munge && \
     chown -R munge /etc/munge/munge.key /var/run/munge && \
     chmod 600 /etc/munge/munge.key
 
-RUN wget https://github.com/flux-framework/flux-core/releases/download/v0.61.2/flux-core-0.61.2.tar.gz && \
-    tar xzvf flux-core-0.61.2.tar.gz && \
-    cd flux-core-0.61.2 && \
+ENV FLUX_CORE_VERSION=0.76.0
+RUN wget https://github.com/flux-framework/flux-core/releases/download/v${FLUX_CORE_VERSION}/flux-core-${FLUX_CORE_VERSION}.tar.gz && \
+    tar xzvf flux-core-${FLUX_CORE_VERSION}.tar.gz && \
+    cd flux-core-${FLUX_CORE_VERSION} && \
     ./configure --prefix=/usr --sysconfdir=/etc && \
     make clean && \
     make && \
@@ -169,33 +164,63 @@ RUN sudo apt-get -qq install -y --no-install-recommends \
 
 ENV LD_LIBRARY_PATH=/opt/miniconda/lib
 
-ENV CMAKE=3.23.1
-RUN curl -s -L https://github.com/Kitware/CMake/releases/download/v$CMAKE/cmake-$CMAKE-linux-x86_64.sh > cmake.sh && \
-    sudo sh cmake.sh --prefix=/usr/local --skip-license
-    
-RUN wget https://github.com/flux-framework/flux-sched/releases/download/v0.33.1/flux-sched-0.33.1.tar.gz && \
-    tar -xzvf flux-sched-0.33.1.tar.gz && \
-    cd flux-sched-0.33.1 && \
+ENV FLUX_SCHED_VERSION=0.45.0
+RUN wget https://github.com/flux-framework/flux-sched/releases/download/v${FLUX_SCHED_VERSION}/flux-sched-${FLUX_SCHED_VERSION}.tar.gz && \
+    tar -xzvf flux-sched-${FLUX_SCHED_VERSION}.tar.gz && \
+    cd flux-sched-${FLUX_SCHED_VERSION} && \
     ./configure --prefix=/usr --sysconfdir=/etc && \
     make && \
     sudo make install && \
     ldconfig
 
 RUN apt-get update && \
-    apt-get install -y fftw3-dev fftw3 pdsh libfabric-dev libfabric1 \
+    apt-get install -y libfftw3-dev libfftw3-bin pdsh libfabric-dev libfabric1 \
         openssh-client openssh-server \
         dnsutils telnet strace git g++ \
         unzip bzip2
 
+# Additional debugging
+RUN apt-get update && \
+    apt-get install -y pdsh \
+        openssh-client openssh-server \
+        dnsutils telnet strace libconfig-dev \
+        unzip bzip2
+
 WORKDIR /opt
 
-RUN export EFA_VERSION=latest && \
-    mkdir /tmp/efa && cd /tmp/efa && \
-    curl -O https://s3-us-west-2.amazonaws.com/aws-efa-installer/aws-efa-installer-${EFA_VERSION}.tar.gz && \
-    tar -xf aws-efa-installer-${EFA_VERSION}.tar.gz && cd aws-efa-installer && ./efa_installer.sh -y --skip-kmod
+# Additional packages
+RUN apt-get update && apt-get install -y ibverbs-utils libibverbs-dev libibverbs1 && apt-get clean
+    
+WORKDIR /opt    
+ENV FI_PROVIDER=cxi
 
-ENV PATH=/opt/amazon/openmpi/bin:$PATH
-ENV LD_LIBRARY_PATH=/opt/amazon/openmpi/lib:$LD_LIBRARY_PATH
+RUN apt-get install -y libuv1-dev fuse3 libyaml-dev libsensors-dev dkms linux-headers-$(uname -r) libfuse3-dev libfuse-dev libjson-c-dev
+
+RUN git clone https://github.com/HewlettPackard/shs-cassini-headers && \
+   mv shs-cassini-headers/include/* /usr/include/ && \
+   mv shs-cassini-headers/share/* /usr/share/
+
+RUN git clone https://github.com/HewlettPackard/shs-cxi-driver.git && \
+    cp -R shs-cxi-driver/include/* /usr/include/
+
+RUN git clone https://github.com/HewlettPackard/shs-libcxi && \
+   cd shs-libcxi && \
+   ./autogen.sh && ./configure --prefix=/usr && make && make install 
+
+RUN git clone -b v2.2.0 https://github.com/ofiwg/libfabric.git /opt/libfabric && \
+    cd /opt/libfabric && ./autogen.sh && \ 
+     ./configure --enable-tcp=yes --enable-udp=yes --enable-sockets=yes --enable-verbs=no --enable-shm=yes --enable-mrail=yes --enable-rxd=yes --enable-rxm=yes --enable-cxi=yes && \
+    make -j 4 && make install
+
+RUN wget https://download.open-mpi.org/release/open-mpi/v4.1/openmpi-4.1.2.tar.gz && \
+    tar -xzvf openmpi-4.1.2.tar.gz && \
+    cd openmpi-4.1.2 && \
+    ./configure --with-ofi=/usr/local && \
+    make -j 4 && make install && ldconfig
+
+# Clean up
+RUN rm -rf /opt/*.tar.gz && \
+    cd /opt && rm -rf libfabric/ prrte/ flux-sched-0.45.0/ flux-core-0.76.0/ 
 
 # Install oras for saving artifacts
 RUN export VERSION="1.2.0" && \
@@ -204,4 +229,4 @@ RUN export VERSION="1.2.0" && \
     tar -zxf oras_${VERSION}_*.tar.gz -C oras-install/ && \
     mv oras-install/oras /usr/local/bin/ && \
     rm -rf oras_${VERSION}_*.tar.gz oras-install/
-
+   
